@@ -91,7 +91,6 @@ void serialEvent() {
             parseStringMessage(messageString); //parse AND calls the appropiate functions
             messageString = "";
         }
-
     }
 }
 
@@ -168,7 +167,6 @@ bool parseStringMessage(const String & _messageString) {
             // this means we received anything else (not a number, not a letter from A-Z, not a number or packet terminator):
             // ignore and signal the problem?
         }
-
     }
     return (cmdExecuted);
 }
@@ -199,12 +197,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         else
         DisplayScan::stopDisplay();
     }
-    else if ((_cmdString == SCAN_PAUSE)&&(_numArgs == 1)) {         // Parameters: 0/1 (0: stop, 1: resume scan)
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        if (argStack[0].toInt() > 0) DisplayScan::pauseDisplay();
-        else
-        DisplayScan::resumeDisplay();
-    }
+
     else if ((_cmdString == SET_BLANKING_RED)&&(_numArgs == 1))   {     // Parameters: 0/1. It sets blankinFlag state
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         DisplayScan::setBlankingRed( (argStack[0].toInt() > 0 ? 1 : 0 ) );
@@ -267,7 +260,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
         // Force display whatever the previous state:
         DisplayScan::startDisplay(); // start engine (whatever the previous state)
-        DisplayScan::resumeDisplay();// and resume in case it was in pause
     }
     // EXAMPLE 2 : MORE POSE PARAMETERS
     // * The pose parameters are COMPOSED with the global ones.
@@ -343,11 +335,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
 
         if (DisplayScan::getRunningState())
-        PRINTLN(">> ISR STATE: ON");
-        else
-        PRINTLN(">> ISR STATE: OFF");
-
-        if (DisplayScan::getPauseState())
         PRINTLN(">> DISPLAY STATUS: ON");
         else
         PRINTLN(">> DISPLAY STATUS: OFF");

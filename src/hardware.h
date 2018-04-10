@@ -4,13 +4,28 @@
 #include "Arduino.h"
 #include "Utils.h"
 
-// ************************* GPIO PINS DEFINITION ********************************
+// ========================= WHICH HARDWA ARE WE USING?  =======================
+// * NOTE ATTN: This code is only for the Teensy 3.x and up.
+// If using a teensy <3.5, then there is only one DAC.
+//#define TEENSY_35_36
+#define TEENSY_31_32
+//#define TEENSY_LC
+
+// ========================= GPIO PINS DEFINITION ==============================
 // 1) Mirrors:
 //  a) "real" DAC, 12 bit resolution
-// On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22), A14 on the
-// Teensy 3.1/3.2, and A12 on the Teensy LC.
+// On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22),
+// A14 on the Teensy 3.1/3.2, and A12 on the Teensy LC.
+#if defined TEENSY_35_36
 #define PIN_ADCX	A21
-#define PIN_ADCY	A22
+#elif defined TEENSY_31_32
+#define PIN_ADCX	A14
+#elif defined TEENSY_LC
+#define PIN_ADCX	A12
+#endif
+
+#define PIN_ADCY A22 // this is only for the Teensy 3.5 and 3.6
+
 //  b) PWM pins to do hardware offset (can be set near 0 and calibrate center by softare...)
 #define PIN_OFFSETX  8
 #define PIN_OFFSETY  7

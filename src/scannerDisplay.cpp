@@ -10,8 +10,11 @@ namespace DisplayScan {
     bool canSwapFlag;
     volatile bool resizeFlag;
 
-    // ======================= OTHERS  =================================
-    bool blankingFlag; // inter-point laser on/off (true means off or "blankingFlag")
+    bool blankingFlag;
+
+    IntervalTimer scannerTimer;
+    uint16_t dt;
+    bool running;
 
     void init() {
 
@@ -31,26 +34,23 @@ namespace DisplayScan {
 
         // 3) Default scan parameters:
         blankingFlag = true;
-        setInterPointTime(DEFAULT_RENDERING_INTERVAL);
+        dt = DEFAULT_RENDERING_INTERVAL;
 
-        // 3) Set interrupt routine (NOTE: "scannerTimer" is a #define using Timer1)
-        scannerTimer.begin(displayISR, microseconds);
-        stopDisplay();
+        // 3) Set interrupt routine by default? No.
+        //scannerTimer.begin(displayISR, dt);
+        running = false;
     }
 
     void startDisplay() {
-        scannerTimer.start(); // we assume period set
+        scannerTimer.begin(displayISR, dt);
+        running = true;
     }
     void stopDisplay() {
-        scannerTimer.stop();
-        // Reset mirrors to center position? Not necessarily!
+        scannerTimer.end();
+        running = true;
     }
 
-    void pauseDisplay() {scannerTimer.pause();}
-    void resumeDisplay() {scannerTimer.resume();}
-
-    bool getRunningState() { return( scannerTimer.getRunningState() ); }
-    bool getPauseState() {return(scannerTimer.getPauseState());}
+    bool getRunningState() {return(running);}
 
     void stopSwapping() {canSwapFlag=false;}
     void startSwapping() {canSwapFlag=true;}
@@ -72,7 +72,8 @@ namespace DisplayScan {
         uint16_t getBufferSize() {return(sizeBuffers);}
 
         void setInterPointTime(uint16_t _dt) {
-            scannerTimer.setPeriod(_dt);
+            dt=_dt;
+            scannerTimer.update(dt);
         }
         void setBlankingRed(bool _newBlankState) {
             blankingFlag = _newBlankState;
