@@ -1,0 +1,145 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Laser-Scanner-Controller---SUPER-RES-ATOM---TEENSY3.X	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/README.md	/^# Laser-Scanner-Controller---SUPER-RES-ATOM---TEENSY3.X$/;"	function	line:1
+_P2_H	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^#define _P2_H$/;"	macro	line:2
+MAX_NUM_POINTS	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^#define MAX_NUM_POINTS /;"	macro	line:10
+P2	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^class P2 {$/;"	class	line:13
+P2	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    P2(): x(0), y(0) {}$/;"	function	line:16	class:P2	signature:()
+P2	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    P2(const float _x, const float _y) {$/;"	function	line:17	class:P2	signature:(const float _x, const float _y)
+P2	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    P2(const P2& point) {$/;"	function	line:21	class:P2	signature:(const P2& point)
+operator =	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void operator=( const P2& point ) {$/;"	function	line:27	class:P2	signature:( const P2& point )
+set	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void set(float _x, float _y) {$/;"	function	line:32	class:P2	signature:(float _x, float _y)
+set	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void set(const P2& _point) {$/;"	function	line:36	class:P2	signature:(const P2& _point)
+translate	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void translate(P2& _center) {$/;"	function	line:44	class:P2	signature:(P2& _center)
+rotate	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void rotate(float _angle) {$/;"	function	line:49	class:P2	signature:(float _angle)
+scale	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    inline void scale(float _factor) {$/;"	function	line:55	class:P2	signature:(float _factor)
+x	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    float x, y;$/;"	member	line:72	class:P2
+y	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^    float x, y;$/;"	member	line:72	class:P2
+PointBuffer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Class_P2.h	/^typedef P2 PointBuffer[MAX_NUM_POINTS];$/;"	typedef	line:75
+my	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^P2 my;$/;"	variable	line:3
+Graphics	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^namespace Graphics {$/;"	namespace	line:5	file:
+setCenter	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void setCenter(const P2 &_center) {$/;"	function	line:8	namespace:Graphics	signature:(const P2 &_center)
+setCenter	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void setCenter(const float &_x, const float &_y) {$/;"	function	line:11	namespace:Graphics	signature:(const float &_x, const float &_y)
+setAngle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void setAngle(const float _angle) {$/;"	function	line:14	namespace:Graphics	signature:(const float _angle)
+setScaleFactor	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void setScaleFactor(const float _scaleFactor) {$/;"	function	line:18	namespace:Graphics	signature:(const float _scaleFactor)
+clearScene	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	extern void clearScene() {$/;"	function	line:23	namespace:Graphics	signature:()
+drawLine	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawLine(const P2 &_fromPoint, const float _lenX, const float _lenY, const uint16_t _numPoints) {$/;"	function	line:28	namespace:Graphics	signature:(const P2 &_fromPoint, const float _lenX, const float _lenY, const uint16_t _numPoints)
+drawLine	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawLine(const P2 &_fromPoint, const P2 &_toPoint, const uint16_t _numPoints) {$/;"	function	line:37	namespace:Graphics	signature:(const P2 &_fromPoint, const P2 &_toPoint, const uint16_t _numPoints)
+drawLine	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawLine(uint16_t const _numPoints) {\/\/ horizontal, "centered", unit length$/;"	function	line:40	namespace:Graphics	signature:(uint16_t const _numPoints)
+drawRectangle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawRectangle(const P2 &_fromBottomLeftCornerPoint, const float _lenX, const float _lenY, const uint16_t _nx, const uint16_t _ny) {$/;"	function	line:44	namespace:Graphics	signature:(const P2 &_fromBottomLeftCornerPoint, const float _lenX, const float _lenY, const uint16_t _nx, const uint16_t _ny)
+drawRectangle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawRectangle(const P2 &_lowerLeftCorner, const P2 &_upperRightCorner, const uint16_t _nx, const uint16_t _ny) {$/;"	function	line:50	namespace:Graphics	signature:(const P2 &_lowerLeftCorner, const P2 &_upperRightCorner, const uint16_t _nx, const uint16_t _ny)
+drawSquare	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawSquare(const P2 &_lowerLeftCorner, const float _sideLength, const uint16_t _numPointsSide) {$/;"	function	line:59	namespace:Graphics	signature:(const P2 &_lowerLeftCorner, const float _sideLength, const uint16_t _numPointsSide)
+drawSquare	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawSquare(const P2 &_center, const uint16_t _numPointsSide) {$/;"	function	line:70	namespace:Graphics	signature:(const P2 &_center, const uint16_t _numPointsSide)
+drawSquare	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawSquare(const uint16_t _numPointsSide) {$/;"	function	line:73	namespace:Graphics	signature:(const uint16_t _numPointsSide)
+drawCircle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^ 	void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints) {$/;"	function	line:77	namespace:Graphics	signature:(const P2 &_center, const float _radius, const uint16_t _numPoints)
+drawCircle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawCircle(const float _radius, const uint16_t _numPoints) {$/;"	function	line:85	namespace:Graphics	signature:(const float _radius, const uint16_t _numPoints)
+drawCircle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawCircle(const uint16_t _numPoints) {$/;"	function	line:88	namespace:Graphics	signature:(const uint16_t _numPoints)
+drawZigZag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawZigZag($/;"	function	line:92	namespace:Graphics	signature:( const P2 &_fromPoint, const float _lenX, const float _lenY, const uint16_t _nx, const uint16_t _ny )
+drawZigZag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawZigZag($/;"	function	line:99	namespace:Graphics	signature:( const P2 &_fromPoint, const P2 &_toPoint, const uint16_t _nx, const uint16_t _nuy )
+drawZigZag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.cpp	/^	void drawZigZag(const uint16_t _x, const uint16_t _ny) {$/;"	function	line:105	namespace:Graphics	signature:(const uint16_t _x, const uint16_t _ny)
+_H_WRAPPER_GRAPHICS_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.h	/^#define _H_WRAPPER_GRAPHICS_$/;"	macro	line:50
+Graphics	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/graphics.h	/^namespace Graphics {$/;"	namespace	line:57
+Hardware	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^namespace Hardware {$/;"	namespace	line:3	file:
+Gpio	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^	namespace Gpio {$/;"	namespace	line:5	namespace:Hardware	file:
+init	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void init() { \/\/ set default modes, output values, etc of pins, other that the laser and scanner:$/;"	function	line:7	namespace:Hardware::Gpio	signature:()
+setPWMFreq	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void setPWMFreq(uint16_t _freq) {$/;"	function	line:37	namespace:Hardware::Gpio	signature:(uint16_t _freq)
+Lasers	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^	namespace Lasers {$/;"	namespace	line:42	namespace:Hardware	file:
+init	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void init() {$/;"	function	line:43	namespace:Hardware::Lasers	signature:()
+test	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void test() {$/;"	function	line:54	namespace:Hardware::Lasers	signature:()
+setSwitchRed	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void setSwitchRed(bool _state) { \/\/ I make a method here in case there will be some need to do more than digitalWrite$/;"	function	line:58	namespace:Hardware::Lasers	signature:(bool _state)
+setPowerRed	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void setPowerRed(uint16_t _power) {$/;"	function	line:62	namespace:Hardware::Lasers	signature:(uint16_t _power)
+Scanner	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^	namespace Scanner {$/;"	namespace	line:69	namespace:Hardware	file:
+init	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void init() {$/;"	function	line:71	namespace:Hardware::Scanner	signature:()
+testMirrorRange	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void testMirrorRange(uint16_t _durationMs) {$/;"	function	line:78	namespace:Hardware::Scanner	signature:(uint16_t _durationMs)
+testCircleRange	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^		void testCircleRange(uint16_t _durationMs) {$/;"	function	line:91	namespace:Hardware::Scanner	signature:(uint16_t _durationMs)
+init	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^	void init() {$/;"	function	line:110	namespace:Hardware	signature:()
+resetBoard	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.cpp	/^	void resetBoard() {$/;"	function	line:118	namespace:Hardware	signature:()
+_HARDWARE_H_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define _HARDWARE_H_$/;"	macro	line:2
+PIN_ADCX	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_ADCX	/;"	macro	line:12
+PIN_ADCY	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_ADCY	/;"	macro	line:13
+PIN_OFFSETX	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_OFFSETX /;"	macro	line:15
+PIN_OFFSETY	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_OFFSETY /;"	macro	line:16
+FREQ_PWM	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define FREQ_PWM /;"	macro	line:19
+MAX_DUTY_CYCLE	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MAX_DUTY_CYCLE /;"	macro	line:20
+PIN_SWITCH_RED	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_SWITCH_RED /;"	macro	line:21
+PIN_PWM_RED	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_PWM_RED /;"	macro	line:22
+PIN_LED_DEBUG	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_LED_DEBUG /;"	macro	line:25
+PIN_LED_MESSAGE	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define PIN_LED_MESSAGE /;"	macro	line:26
+MAX_MIRRORS_ADX	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MAX_MIRRORS_ADX	/;"	macro	line:29
+MIN_MIRRORS_ADX	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MIN_MIRRORS_ADX	/;"	macro	line:30
+MAX_MIRRORS_ADY	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MAX_MIRRORS_ADY /;"	macro	line:31
+MIN_MIRRORS_ADY	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MIN_MIRRORS_ADY /;"	macro	line:32
+CENTER_MIRROR_ADX	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define CENTER_MIRROR_ADX /;"	macro	line:38
+CENTER_MIRROR_ADY	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define CENTER_MIRROR_ADY /;"	macro	line:39
+MAX_LASER_POWER	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^#define MAX_LASER_POWER /;"	macro	line:42
+Hardware	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^namespace Hardware {$/;"	namespace	line:48
+Lasers	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^	namespace Lasers {$/;"	namespace	line:52	namespace:Hardware
+Scanner	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^	namespace Scanner {$/;"	namespace	line:63	namespace:Hardware
+setMirrorsTo	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^		inline void setMirrorsTo(int16_t _posX, int16_t _posY) {$/;"	function	line:67	namespace:Hardware::Scanner	signature:(int16_t _posX, int16_t _posY)
+recenterMirrors	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^		inline void recenterMirrors() {$/;"	function	line:87	namespace:Hardware::Scanner	signature:()
+Gpio	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^	namespace Gpio {$/;"	namespace	line:102	namespace:Hardware
+setDigitalPin	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^		inline void setDigitalPin(uint8_t _pin, bool _state) {$/;"	function	line:107	namespace:Hardware::Gpio	signature:(uint8_t _pin, bool _state)
+setPWMDuty	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^		inline void setPWMDuty(uint8_t _pin, uint16_t _duty) {analogWrite(_pin, _duty);}$/;"	function	line:119	namespace:Hardware::Gpio	signature:(uint8_t _pin, uint16_t _duty)
+ledDebug	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^	inline void ledDebug(bool _state) { \/\/ overkill wrapper? no, it could do a blink or something like that,$/;"	function	line:126	namespace:Hardware	signature:(bool _state)
+ledMessage	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/hardware.h	/^	inline void ledMessage(bool _state) { \/\/ overkill wrapper? no, it could do a blink or something like that,$/;"	function	line:131	namespace:Hardware	signature:(bool _state)
+Renderer2D	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^namespace Renderer2D {$/;"	namespace	line:3	file:
+angle	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    float angle = 0;$/;"	member	line:9	namespace:Renderer2D	file:
+scaleFactor	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    float scaleFactor = 1.0;$/;"	member	line:10	namespace:Renderer2D	file:
+sizeBlueprint	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    uint16_t sizeBlueprint = 0; \/\/ this would not be necessary if using an STL container. It is$/;"	member	line:12	namespace:Renderer2D	file:
+bluePrintArray	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    PointBuffer bluePrintArray;$/;"	member	line:16	namespace:Renderer2D	file:
+clearBlueprint	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    void clearBlueprint() {$/;"	function	line:18	namespace:Renderer2D	signature:()
+getSizeBlueprint	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    uint16_t getSizeBlueprint() {$/;"	function	line:24	namespace:Renderer2D	signature:()
+getLastPoint	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    const P2 getLastPoint() {$/;"	function	line:28	namespace:Renderer2D	signature:()
+addToBlueprint	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    void addToBlueprint(const P2 _newPoint) { \/\/ add point and increment index:$/;"	function	line:32	namespace:Renderer2D	signature:(const P2 _newPoint)
+writeInBluePrintArray	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    void writeInBluePrintArray(uint16_t _index, const P2 &_newPoint) {$/;"	function	line:37	namespace:Renderer2D	signature:(uint16_t _index, const P2 &_newPoint)
+renderFigure	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.cpp	/^    void renderFigure() {$/;"	function	line:43	namespace:Renderer2D	signature:()
+_RENDERER_H_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.h	/^#define _RENDERER_H_$/;"	macro	line:2
+Renderer2D	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/renderer2D.h	/^namespace Renderer2D {$/;"	namespace	line:27
+DisplayScan	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^namespace DisplayScan {$/;"	namespace	line:3	file:
+displayBuffer1	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    PointBuffer displayBuffer1, displayBuffer2;$/;"	member	line:6	namespace:DisplayScan	file:
+displayBuffer2	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    PointBuffer displayBuffer1, displayBuffer2;$/;"	member	line:6	namespace:DisplayScan	file:
+ptrCurrentDisplayBuffer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    volatile PointBuffer *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;$/;"	member	line:7	namespace:DisplayScan	file:
+ptrHiddenDisplayBuffer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    volatile PointBuffer *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;$/;"	member	line:7	namespace:DisplayScan	file:
+readingHead	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    uint16_t readingHead,  newSizeBuffers;$/;"	member	line:8	namespace:DisplayScan	file:
+newSizeBuffers	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    uint16_t readingHead,  newSizeBuffers;$/;"	member	line:8	namespace:DisplayScan	file:
+sizeBuffers	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    volatile uint16_t sizeBuffers;$/;"	member	line:9	namespace:DisplayScan	file:
+canSwapFlag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    bool canSwapFlag;$/;"	member	line:10	namespace:DisplayScan	file:
+resizeFlag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    volatile bool resizeFlag;$/;"	member	line:11	namespace:DisplayScan	file:
+blankingFlag	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    bool blankingFlag; \/\/ inter-point laser on\/off (true means off or "blankingFlag")$/;"	member	line:14	namespace:DisplayScan	file:
+init	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void init() {$/;"	function	line:16	namespace:DisplayScan	signature:()
+startDisplay	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void startDisplay() {$/;"	function	line:41	namespace:DisplayScan	signature:()
+stopDisplay	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void stopDisplay() {$/;"	function	line:44	namespace:DisplayScan	signature:()
+pauseDisplay	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void pauseDisplay() {scannerTimer.pause();}$/;"	function	line:49	namespace:DisplayScan	signature:()
+resumeDisplay	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void resumeDisplay() {scannerTimer.resume();}$/;"	function	line:50	namespace:DisplayScan	signature:()
+getRunningState	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    bool getRunningState() { return( scannerTimer.getRunningState() ); }$/;"	function	line:52	namespace:DisplayScan	signature:()
+getPauseState	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    bool getPauseState() {return(scannerTimer.getPauseState());}$/;"	function	line:53	namespace:DisplayScan	signature:()
+stopSwapping	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void stopSwapping() {canSwapFlag=false;}$/;"	function	line:55	namespace:DisplayScan	signature:()
+startSwapping	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void startSwapping() {canSwapFlag=true;}$/;"	function	line:56	namespace:DisplayScan	signature:()
+resizeBuffer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^    void resizeBuffer(uint16_t _newSize) {$/;"	function	line:58	namespace:DisplayScan	signature:(uint16_t _newSize)
+getBufferSize	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^        uint16_t getBufferSize() {return(sizeBuffers);}$/;"	function	line:72	namespace:DisplayScan	signature:()
+setInterPointTime	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^        void setInterPointTime(uint16_t _dt) {$/;"	function	line:74	namespace:DisplayScan	signature:(uint16_t _dt)
+setBlankingRed	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^        void setBlankingRed(bool _newBlankState) {$/;"	function	line:77	namespace:DisplayScan	signature:(bool _newBlankState)
+writeOnHiddenBuffer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^        void writeOnHiddenBuffer(uint16_t _absIndex, const P2& _point) {$/;"	function	line:81	namespace:DisplayScan	signature:(uint16_t _absIndex, const P2& _point)
+displayISR	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.cpp	/^        void displayISR() {$/;"	function	line:92	namespace:DisplayScan	signature:()
+_SCANNER_H_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^#define _SCANNER_H_$/;"	macro	line:3
+DEFAULT_RENDERING_INTERVAL	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^#define DEFAULT_RENDERING_INTERVAL /;"	macro	line:21
+scannerTimer	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^IntervalTimer scannerTimer; \/\/ check: https:\/\/www.pjrc.com\/teensy\/td_timing_IntervalTimer.html$/;"	variable	line:26
+DisplayScan	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^namespace DisplayScan { \/\/ note: this namespace contains methods that are beyond the low level hardware ones for controlling the$/;"	namespace	line:28
+Utils	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.cpp	/^namespace Utils {$/;"	namespace	line:3	file:
+_util_h_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define _util_h_$/;"	macro	line:2
+DEBUG_MODE	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define DEBUG_MODE /;"	macro	line:10
+CW	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define CW /;"	macro	line:18
+CCW	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define CCW /;"	macro	line:19
+PRINT	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define PRINT(/;"	macro	line:24
+PRINTLN	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define PRINTLN(/;"	macro	line:25
+PRINT_CSTRING	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define PRINT_CSTRING(/;"	macro	line:26
+PRINT	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^# define PRINT(/;"	macro	line:28
+PRINTLN	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^# define PRINTLN(/;"	macro	line:29
+PRINT_CSTRING	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define PRINT_CSTRING(/;"	macro	line:30
+ARRAY_SIZE	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define ARRAY_SIZE(/;"	macro	line:35
+INRANGE	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^#define INRANGE(/;"	macro	line:39
+Utils	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/Utils.h	/^namespace Utils {$/;"	namespace	line:43
