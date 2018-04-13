@@ -5,10 +5,11 @@
 // Therefore, I need to declare everything with external linkage (using "extern" keyword in its declaration)
 
 #include "Arduino.h"
+#include "Definitions.h"
+#include "Utils.h"
 #include "Class_P2.h"
 #include "scannerDisplay.h"
 //#include "hardware.h"
-#include "Utils.h"
 
 // namespace DefaultParamRender {
 //
@@ -51,7 +52,8 @@ namespace Renderer2D {
 	extern void renderFigure(); // render with current pose transformation
 
 	//namespace { // "private"
-		extern PointBuffer bluePrintArray;
+		//extern PointBuffer bluePrintArray;
+		extern P2 bluePrintArray[MAX_NUM_POINTS];
 	//}
 
 } // end namespace

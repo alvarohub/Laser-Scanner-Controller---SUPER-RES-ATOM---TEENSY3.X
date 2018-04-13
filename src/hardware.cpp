@@ -31,6 +31,7 @@ namespace Hardware {
 			// On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22), A14 on the
 			// Teensy 3.1/3.2, and A12 on the Teensy LC.
 
+			PRINTLN(">> GPIOs READY");
 		}
 
 		// Set frequency in HZ on pins 5, 6, 9, 10, 20, 21, 22, 23 (works on 3.1 to 3.6)
@@ -49,6 +50,8 @@ namespace Hardware {
 			//Default values:
 			setSwitchRed(LOW); // no need to have a switch state for the time being (digital output works as a boolean state)
 			setPowerRed(MAX_LASER_POWER);    // half power (rem: no need to have a "power" variable for the time being - PWM is done by hardware)
+
+			PRINTLN(">> LASERS READY");
 		}
 
 		void test() {
@@ -69,7 +72,9 @@ namespace Hardware {
 	namespace Scanner {
 
 		void init() {
-			// set pins and interrupt routines on circular buffer - uses DueTimer.h and DSP.h
+			// RENCENTER mirror and fill BOTH buffers with the central position too:
+			recenterMirrors();
+			PRINTLN(">> SCANNERS READY");
 		}
 
 		//inline void setMirrorsTo(uint16_t _posX, uint16_t _posY);

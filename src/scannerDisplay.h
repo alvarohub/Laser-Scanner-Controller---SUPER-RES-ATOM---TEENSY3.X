@@ -10,12 +10,13 @@
 // REM: another option that only works for methods is to make them "inline"
 
 #include "Arduino.h"
+#include "Definitions.h"
 #include "Utils.h"
 #include "Class_P2.h"
 #include "hardware.h"
 
 // We need to use ATOMIC_BLOCK (critical sections stopping the interrupts):
-// #include <util/atomic.h> // not for the Arduino DUE !!!
+ #include <util/atomic.h> // not for the Arduino DUE !!!
 
 // *********** ISR DISPLAYING parameters **********************
 #define DEFAULT_RENDERING_INTERVAL 1000 // in microseconds [ATTN: analogWrite takes ~10us]
@@ -25,7 +26,7 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	// mirrors: it is actually the diaplaying engine!
 
 	// ======================= SCANNER CONTROL methods  =======================
-	extern void init(); // init hardware (if necessary)
+	extern void init();
 
 	extern void startDisplay();
 	extern void stopDisplay();
@@ -57,14 +58,20 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 		// =============DOUBLE RING BUFFERS =================================
 		// * NOTE: Double buffering is VERY USEFUL to avoid seeing the
 		// mirrors stops while rendering a figure, or having a deformed figure.
-		extern PointBuffer displayBuffer1, displayBuffer2;
+		// extern PointBuffer displayBuffer1, displayBuffer2; <-- unclear, prefer:
+        extern P2 displayBuffer1[MAX_NUM_POINTS]; // displayBuffer1 is a const pointer
+        // to the P2 object displayBuffer1[0]. Using displayBuffer1[i] or *(displayBuffer1+i) is
+        // exactly the same (pointer arithmetics works because the compiler knows it is a
+        // pointer to objects of type P2)
+        extern P2 displayBuffer2[MAX_NUM_POINTS]; // or P2 displayBuffer1* and use
+        // dynamic allocation with displayBuffer1 = new P2[MAX_NUM_POINTS]
 		extern bool canSwapFlag;
 		extern uint16_t newSizeBuffers;
 		extern uint16_t readingHead;
 
 		// The following variables must be qualified volatile, as they may be modificated
 		// outside the section of code where they appear [because of the ISR]
-		extern volatile PointBuffer *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;
+		extern volatile P2 *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;
 		extern volatile uint16_t sizeBuffers;
 		extern volatile bool resizeFlag;
 

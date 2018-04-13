@@ -50,9 +50,10 @@ openGL like renderer.
 #define _H_WRAPPER_GRAPHICS_
 
 #include "Arduino.h"
+#include "Definitions.h"
+#include "Utils.h"
 #include "Class_P2.h"
 #include "renderer2D.h"
-#include "Utils.h"
 
 namespace Graphics {
 

@@ -13,7 +13,7 @@ namespace Renderer2D {
     // just the size of the current bluepring array, modified and set when drawing a figure (see
     // graphic primitives)
 
-    PointBuffer bluePrintArray;
+    P2 bluePrintArray[MAX_NUM_POINTS];// PointBuffer bluePrintArray;
 
     void clearBlueprint() {
         sizeBlueprint = 0;
@@ -45,8 +45,11 @@ namespace Renderer2D {
         // but also after modifying pose to avoid approximation errors.
 
         DisplayScan::stopSwapping(); // necessary during the re-writting to the hidden buffer
-        // Draw the figure with proper translation, rotation and scale on the "hidden" buffer:
+        //* NOTE: if the displaying engine was not working, it's not a problem - at the
+        // end of the rendering, just before setting swapping flag to true, the "resizeBuffer"
+        // method will reset the head.
 
+        // Draw the figure with proper translation, rotation and scale on the "hidden" buffer:
         for (uint16_t i = 0; i < sizeBlueprint; i++) {
             P2 point(bluePrintArray[i]);
             // In order: resize, rotate and then translate (resize and rotate are commutative)
@@ -56,6 +59,7 @@ namespace Renderer2D {
             //point.constrainPos(); won't do that - prefer to compute with floats outside range, but the Scanner setMirrorsTo method
             // will take care of the contrain.
             DisplayScan::writeOnHiddenBuffer(i, point); // the "bridge" method between the renderer and the displaying engine!
+            //if (veryFirstRender) swapBuffers();
         }
 
         DisplayScan::resizeBuffer(sizeBlueprint); // could be merged with resumeSwapping?

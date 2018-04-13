@@ -22,7 +22,9 @@
 */
 
 // INCLUDES (in Arduino framework, we need to #include the libs in the "main" compile unit too...)
-#include "Utils.h"                 // wrappers for low level methods and other things
+#include "Arduino.h"
+#include "Definitions.h"    // Program constants and MACROS (including hardware stuff)
+#include "Utils.h"          // wrappers for low level methods and other things
 #include "Class_P2.h"
 #include "hardware.h"
 #include "scannerDisplay.h"
@@ -30,30 +32,29 @@
 
 //  ================== SETUP ==================
 void setup() {
-// ===== INIT SERIAL COMMUNICATION:
-  //Com::initSerialCom();
-  initSerialCom();
-  PRINTLN(">>REBOOTING... ");
 
-  // ===== INIT HARDWARE
+  // 1] INIT SERIAL COMMUNICATION:
+  initSerialCom(); // <-- TODO: make a "Com" namespace to use other communication protocols/hardware
+  // * NOTE: it seems a delay is necessary after setting the serial port on the teensy 3.x, but
+  //         the "delay()" function does not work well on the setup() on Arduino framework: we
+  //         need to make an ugly blocking "delay" (put it only in DEBUG mode?)
+  Utils::waitBlink(4);
+
+  // 2] INIT HARDWARE
   Hardware::init();
 
-  // ===== INIT DISPLAY ENGINE (default is stand by)
+  // 3] INIT DISPLAY ENGINE (default is stand by)
   DisplayScan::init();
 
   // Check FREE RAM in DEBUG mode:
   //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
 
-  PRINTLN(">>READY!");
+  PRINTLN(">> SYSTEM READY!");
 }
 
 // ================== MAIN LOOP ==================
 void loop() {
 
   //updateSerialCom(); //no need, we are using a serial event handler!
-
-//  analogWrite(PIN_ADCX, (uint16_t)(millis()%4096)); // do not increment current buffer head
-//  analogWrite(PIN_ADCY, ((millis()+2048)%4096)); // also increment buffer head
-
 
 }

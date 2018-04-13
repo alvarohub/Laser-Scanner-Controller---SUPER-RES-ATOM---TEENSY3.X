@@ -2,12 +2,8 @@
 #define _P2_H
 
 #include "Arduino.h"
+#include "Definitions.h"
 #include "Utils.h"
-
-
-// IMPORTANT: for the time being, we will NOT use a vector<> array, so we need
-// to set maximum number of points (P2) larger than any figure size. If this is too large, compile will fail.
-#define MAX_NUM_POINTS 1000
 
 // Very simple 2D integer vector class:
 class P2 {
@@ -72,6 +68,6 @@ class P2 {
     float x, y;
 };
 
-typedef P2 PointBuffer[MAX_NUM_POINTS];
+//typedef P2 PointBuffer[MAX_NUM_POINTS];
 
 #endif

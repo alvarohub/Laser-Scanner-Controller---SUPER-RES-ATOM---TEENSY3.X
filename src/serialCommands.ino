@@ -1,6 +1,9 @@
 
-#include "renderer2D.h"
+#include "Definitions.h"
 #include "Utils.h"
+
+#include "renderer2D.h"
+
 // I include the following or low level stuff (but perhaps better to use Utils wrappers in the future):
 #include "scannerDisplay.h"
 #include "graphics.h"
@@ -29,22 +32,21 @@
 
 //  b) Figure primitives:
 #define CLEAR_SCENE         "CLEAR"
-#define CIRCLE_TEST         "CIRCLE TEST"
-
 #define MAKE_LINE           "LINE"
 #define ADD_LINE            "ADD LINE"
 #define MAKE_CIRCLE         "CIRCLE"
 #define ADD_CIRCLE          "ADD CIRCLE"
-
-#define MAKE_RECTANGLE      "RECTANGLE"
-
-#define MAKE_DISK_SQUARES   "MANY SQUARES"
+#define MAKE_RECTANGLE      "RECT"
 // TODO: other figures...
 
-// 4) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
-#define DISPLAY_STATUS      "DISPLAY STATUS"
-#define TEST_MIRRORS_RANGE  "TEST A"
-#define TEST_CIRCLE_RANGE   "TEST B"
+// 4) TEST FIGURES:
+#define CIRCLE_TEST         "TEST CIRCLE"
+#define MAKE_DISK_SQUARES   "TEST SQUARES"
+
+// 5) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
+#define DISPLAY_STATUS      "STATUS"
+#define TEST_MIRRORS_RANGE  "RANGEA"
+#define TEST_CIRCLE_RANGE   "RANGEB"
 #define SET_DIGITAL_PIN     "PIN"   // Up to the user to check range and initialization
 #define RESET_BOARD         "RESET" // (no parameters)
 
@@ -133,7 +135,7 @@ bool parseStringMessage(const String & _messageString) {
         else if (val == NUMBER_SEPARATOR) {
             if (argStack[numArgs].length() > 0) {
                 //PRINTLN(" (separator)");
-                PRINT("* ARGUMENT n."); PRINT(numArgs); PRINT(" equal to "); PRINTLN(argStack[numArgs]);
+                PRINT(">> GOT ARGUMENT n."); PRINT(numArgs); PRINT(" equal to "); PRINTLN(argStack[numArgs]);
                 numArgs++;
             }
             else { // ignore the separator
@@ -255,7 +257,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else if ((_cmdString == CIRCLE_TEST) &&(_numArgs == 0))     {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();    // <-- CLEAR previous figures
-        Graphics::drawCircle(100); // also: drawCircle(P2(0,0), 1.0, 100);
+        Graphics::drawCircle(P2(0,0), 100.0, 100);
+        // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
         Renderer2D::renderFigure();
 
         // Force display whatever the previous state:
@@ -335,11 +338,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
 
         if (DisplayScan::getRunningState())
-        PRINTLN(">> DISPLAY STATUS: ON");
+        PRINTLN(">>   STATUS: ON");
         else
-        PRINTLN(">> DISPLAY STATUS: OFF");
+        PRINTLN(">>   STATUS: OFF");
 
-        PRINT(">> NUM BUFFER POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+        PRINT(">>   NUM BUFFER POINTS:"); PRINTLN(DisplayScan::getBufferSize());
     }
 
     else if ((_cmdString == TEST_MIRRORS_RANGE)&&(_numArgs == 1))    {
