@@ -7,12 +7,7 @@ namespace Hardware {
 		void init() { // set default modes, output values, etc of pins, other that the laser and scanner:
 
 			// ========= Setting Digital pins
-			// * NOTE 1: if we want to really speed up things on pin xx, we could use on the DUE:
-			// g_APinDescription[ xx ].pPort -> PIO_SODR = g_APinDescription[8].ulPin;
-			// g_APinDescription[ xx ].pPort -> PIO_CODR = g_APinDescription[8].ulPin;
-			// [Under the hood, Arduino IDE uses Atmel’s CMSIS compliant libraries]
-			// [it seems that this methods in a loop() generate a 16MHz square signal while
-			// the use of the digitalWrite methods can only go up to 200Hz...]
+			// * NOTE : we set here only the pins that do not belong to specific hardware;
 			pinMode(PIN_LED_DEBUG, OUTPUT);   digitalWrite(PIN_LED_DEBUG, LOW);     // for debug, etc
 			pinMode(PIN_LED_MESSAGE, OUTPUT); digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
@@ -41,15 +36,17 @@ namespace Hardware {
 	}
 
 	namespace Lasers {
+
 		void init() {
-			pinMode(PIN_SWITCH_RED, OUTPUT);  digitalWrite(PIN_SWITCH_RED, LOW);
 
 			// Power: will use the PWM pins. No need to set as output, plus its frequency
 			// is set in the Gpio init().
 
-			//Default values:
-			setSwitchRed(LOW); // no need to have a switch state for the time being (digital output works as a boolean state)
-			setPowerRed(MAX_LASER_POWER);    // half power (rem: no need to have a "power" variable for the time being - PWM is done by hardware)
+			// Switch: set as digital outputs:
+			for (uint8_t i=0; i<NUM_LASERS; i++) pinMode(pinSwitchLaser[i], OUTPUT);
+
+			setPowerAll(0);
+			switchOffAll();
 
 			PRINTLN(">> LASERS READY");
 		}
@@ -58,14 +55,15 @@ namespace Hardware {
 
 		}
 
-		void setSwitchRed(bool _state) { // I make a method here in case there will be some need to do more than digitalWrite
-			digitalWrite(PIN_SWITCH_RED, _state);
+		extern void switchOffAll() {
+			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], LOW);
+		}
+		extern void swithOnAll() { // NOTE: power is set independently
+			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], LOW);
 		}
 
-		void setPowerRed(uint16_t _power) {
-			// * NOTE 1: analogWrite(PIN_PWM_RED, _power) does not works properly plus the carrier is 1kHz.
-			// * NOTE 2: the 11 bit constraint is done in the setPWMDuty method: mo need to do it here.
-			Gpio::setPWMDuty(PIN_PWM_RED, _power);
+		extern void setPowerAll(uint16_t _power) {
+			for (uint8_t i=0; i<NUM_LASERS; i++) analogWrite(pinPowerLaser[i], _power);
 		}
 	}
 
@@ -81,14 +79,20 @@ namespace Hardware {
 		//inline void recenterMirrors();
 
 		void testMirrorRange(uint16_t _durationMs) {
-			uint32_t startTime = millis();
-			while (millis()-startTime<_durationMs) {
-				for (uint16_t x = MIN_MIRRORS_ADX; x < MAX_MIRRORS_ADX; x+=10) {
-					for (uint16_t y = MIN_MIRRORS_ADY; y < MAX_MIRRORS_ADY; y+=10) {
+			elapsedMicros usec =0;
+			unsigned long startScanning = millis();
+			while (millis() - startScanning <_durationMs) {
+				for (uint16_t y = MIN_MIRRORS_ADY; y < MAX_MIRRORS_ADY; y+=10) {
+					for (uint16_t x = MIN_MIRRORS_ADX; x < MAX_MIRRORS_ADX; x+=10) {
 						analogWrite( PIN_ADCX, x );
-						analogWrite( PIN_ADCY, y );
-						delay(1); // in ms (ATTN: of course delay() not be used in the ISR stuff)
+						#ifdef TEENSY_35_36
+						analogWrite( PIN_ADCX, y );
+						#endif
+						while (usec < 1000) ; // wait
+						usec = 0;
 					}
+					while (usec < 100) ; // wait
+					usec = 0;
 				}
 			}
 		}
@@ -112,6 +116,31 @@ namespace Hardware {
 	}
 
 	// ======== OTHERS GENERIC HARWARE ROUTINES:
+	void blinkLed(uint8_t _pinLed, uint8_t _times) {
+		// Non blocking blink! Avoid to use delay() too
+		elapsedMicros usec = 0;
+		for (uint8_t i=0; i<_times; i++) {
+
+			// Use a loop, or elapsedMicros [see: https://www.pjrc.com/teensy/teensy31.html]
+			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
+			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
+
+			digitalWrite(_pinLed, HIGH);
+			while (usec<500000) {} // half a second
+			usec = 0;
+			digitalWrite(_pinLed, LOW);
+			while (usec<500000) {} // half a second
+			usec = 0;
+		}
+	}
+
+	void blinkLedDebug(uint8_t _times) {
+		blinkLed(PIN_LED_DEBUG, _times);
+	}
+	void blinkLedMessage(uint8_t _times) {
+		blinkLed(PIN_LED_MESSAGE, _times);
+	}
+
 	void init() {
 		//initSerial(); // make a namespace for serial? TODO
 		Gpio::init();

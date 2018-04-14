@@ -66,13 +66,13 @@
 #define PIN_OFFSETX  8
 #define PIN_OFFSETY  7
 
-//2) Lasers
+// Min and max: (in ADC units):
+#define MAX_LASER_POWER 4095 // 12 bit PWM res; maybe not used for now
+// min laser power is 0.
 #define FREQ_PWM 40000  // This will set the PWM pins frequency to 40kHz, resulting in an 11 bit resolution
-#define MAX_DUTY_CYCLE  2047 // 2^11-1 = 2047
-#define PIN_SWITCH_RED  36 // we could use just PWM, but it is better to have a digital "switch"
-#define PIN_PWM_RED 2 // PWM capable [DUE pwm capable pin: 2 to 13]
 
-//3) LED indicators:
+
+//3) ============== LED indicators (digital) ==================
 #define PIN_LED_DEBUG   13
 #define PIN_LED_MESSAGE 14
 
@@ -88,9 +88,5 @@
 // code corresponds to setting OFFSETADX/Y to 0).
 #define CENTER_MIRROR_ADX  2047
 #define CENTER_MIRROR_ADY  2047
-
-// LASER (in ADC units):
-#define MAX_LASER_POWER 4095 // we can limit this!
-// (min is 0)
 
 #endif

@@ -21,8 +21,8 @@
 #define SET_POWER_RED       "POWER"  // Parameters: 0 to 2047 (11 bit res).
 
 // 2) Hardware::Scan commands:
-#define SCAN_STATE           "SCAN" // Parameters: 0/1 (0: stop, 1: resume scan)
-#define SCAN_PAUSE           "PAUSE"
+#define START_DISPLAY          "START"
+#define STOP_DISPLAY          "STOP"
 
 // 3) Figures and pose:
 #define RESET_POSE_GLOBAL   "RESET POSE"
@@ -45,9 +45,9 @@
 
 // 5) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
 #define DISPLAY_STATUS      "STATUS"
-#define TEST_MIRRORS_RANGE  "RANGEA"
-#define TEST_CIRCLE_RANGE   "RANGEB"
-#define SET_DIGITAL_PIN     "PIN"   // Up to the user to check range and initialization
+#define TEST_MIRRORS_RANGE  "SQUARE RANGE"
+#define TEST_CIRCLE_RANGE   "CIRCLE RANGE"
+#define SET_DIGITAL_PIN     "SET PIN"   // Up to the user to check range and initialization
 #define RESET_BOARD         "RESET" // (no parameters)
 
 // =============================================================================
@@ -192,11 +192,13 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     //==========================================================================
     // B) ====== SCANNER COMMANDS  =============================================
     //==========================================================================
-    else if ((_cmdString == SCAN_STATE)&&(_numArgs == 1)) {         // Parameters: 0/1 (0: stop, 1: resume scan)
+    else if ((_cmdString == START_DISPLAY)&&(_numArgs == 0)) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        if (argStack[0].toInt() > 0)
         DisplayScan::startDisplay();
-        else
+    }
+
+    else if ((_cmdString == STOP_DISPLAY)&&(_numArgs == 0)) {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         DisplayScan::stopDisplay();
     }
 
@@ -342,16 +344,22 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         else
         PRINTLN(">>   STATUS: OFF");
 
-        PRINT(">>   NUM BUFFER POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+        PRINT(">>   NUM FIGURE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
     }
 
     else if ((_cmdString == TEST_MIRRORS_RANGE)&&(_numArgs == 1))    {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        bool previousState = DisplayScan::getRunningState();
+        DisplayScan::stopDisplay();
         Hardware::Scanner::testMirrorRange(argStack[0].toInt());
+        if (previousState) DisplayScan::startDisplay();
     }
     else if ((_cmdString == TEST_CIRCLE_RANGE)&&(_numArgs == 1))    {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        bool previousState = DisplayScan::getRunningState();
+        DisplayScan::stopDisplay();
         Hardware::Scanner::testCircleRange(argStack[0].toInt());
+        if (previousState) DisplayScan::startDisplay();
     }
 
 
@@ -360,7 +368,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
     }
 
-    else if ((_cmdString == RESET_BOARD)&&(_numArgs == 0))     {     // Parameters: 0/1 (0: stop, 1: resume scan)
+    else if ((_cmdString == RESET_BOARD)&&(_numArgs == 0))     {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         delay(1000);
         Hardware::resetBoard();
@@ -372,8 +380,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     }
 
     if (parseOk) { // signal that everything went fine:
-        digitalWrite(PIN_LED_MESSAGE, LOW);
-        digitalWrite(PIN_LED_MESSAGE, HIGH);
+        Hardware::blinkLedMessage(2);
     }
 
     return parseOk;

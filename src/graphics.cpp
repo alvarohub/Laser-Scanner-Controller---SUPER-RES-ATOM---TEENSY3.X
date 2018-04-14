@@ -1,7 +1,5 @@
 #include "graphics.h"
 
-P2 my;
-
 namespace Graphics {
 
 	// ======================== POSE and SIZE =============================
@@ -14,7 +12,7 @@ namespace Graphics {
 	void setAngle(const float _angle) {
 		Renderer2D::angle = _angle;
 	}
-	
+
 	void setScaleFactor(const float _scaleFactor) {
 		Renderer2D::scaleFactor = _scaleFactor;
 	}
