@@ -66,11 +66,11 @@ namespace Graphics {
 	extern void setScaleFactor(const float _scaleFactor);
 
 	// (2) "Scene" setting methods and rendering wrappers:
-	extern void clearScene(); // to call before doing a new figure IF we
-	// want to delete the older one. This will be a typical sequence in the
-	// interpretCommand() method.
+	extern void clearScene(); // force clear scene
+	extern void updateScene();
+	extern void setClearMode(bool _clearModeFlag);
 	//extern void renderFigure(); // unnecessary wrapper, and less clear than
-	// calling the Renderer2D (we could then change the rendering engine easily)
+	//calling the Renderer2D (we could then change the rendering engine easily)
 
 	//(3) Basic shapes. We need to pass at least the number of points - we
 	// * NOTE1: could have a default "opengl-like" state variable, but it's
@@ -88,7 +88,12 @@ namespace Graphics {
 		const P2 &_fromPoint, const P2 &_toPoint,
 		const uint16_t _numPoints
 	);
-	extern void drawLine();	  // center on (0,0), unitary length
+	extern void drawLine(uint16_t const _numPoints);// center on (0,0),
+	// unitary length
+
+	extern void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints);
+	extern void drawCircle(const float _radius, const uint16_t _numPoints);
+	extern void drawCircle(const uint16_t _numPoints); // center on (0,0), unitary radius.
 
 	extern void drawRectangle(
 		const P2 &_fromBottomLeftCornerPoint,
@@ -99,6 +104,7 @@ namespace Graphics {
 		const P2 &_lowerLeftCorner, const P2 &_upperRightCorner,
 		const uint16_t _nx, const uint16_t _ny
 	);
+
 	extern void drawSquare(
 		const P2 &_fromBottomLeftCornerPoint,
 		const float sideLength,
@@ -106,11 +112,6 @@ namespace Graphics {
 	);
 	extern void drawSquare(const P2 &_center, const uint16_t _numPointsSide);
 	extern void drawSquare(const uint16_t _numPointsSide); // center on (0,0), unitary sides
-
-	extern void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints);
-	extern void drawCircle(const float _radius, const uint16_t _numPoints);
-	extern void drawCircle(const uint16_t _numPoints); // center on (0,0), unitary radius.
-
 
 	extern void drawZigZag(
 		const P2 &_fromPoint,
@@ -123,6 +124,7 @@ namespace Graphics {
 	);
 	extern void drawZigZag(const uint16_t _x, const uint16_t _ny);
 
+	extern bool clearModeFlag;
 
 } // end namespace
 

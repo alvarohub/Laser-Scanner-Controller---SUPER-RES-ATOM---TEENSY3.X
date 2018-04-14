@@ -2,7 +2,10 @@
 
 namespace Graphics {
 
+	bool clearModeFlag = true;
+
 	// ======================== POSE and SIZE =============================
+	// REM: in the future make a more OpenGL matrix stack
 	void setCenter(const P2 &_center) {
 		Renderer2D::center.set(_center);
 	}
@@ -18,8 +21,14 @@ namespace Graphics {
 	}
 
 	// ======================== SCENE SETTING METHODS =====================
-	extern void clearScene() {
+	void clearScene() {
 		Renderer2D::clearBlueprint();
+	}
+	void setClearMode(bool _clearModeFlag) {
+		clearModeFlag = _clearModeFlag;
+	}
+	void updateScene() { // internally called ("private")
+		if (clearModeFlag) clearScene();
 	}
 
 	// ======================== BASIC SHAPES ============================
@@ -39,12 +48,30 @@ namespace Graphics {
 		drawLine(P2(-0.5,0.0), P2(0.5, 0.0), _numPoints);
 	}
 
+	void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints) {
+		for (uint16_t i = 0; i < _numPoints; i++) {
+			float phi = 2.0*PI/_numPoints*i;
+			P2 auxPoint(_radius*cos(phi), _radius*sin(phi));
+			auxPoint.x += _center.x; auxPoint.y += _center.y;
+			Renderer2D::addToBlueprint(auxPoint);
+		}
+	}
+
+	void drawCircle(const float _radius, const uint16_t _numPoints) {
+		drawCircle(P2(0.0,0.0), _radius, _numPoints);
+	}
+
+	void drawCircle(const uint16_t _numPoints) {
+		drawCircle(1.0, _numPoints);
+	}
+
 	void drawRectangle(const P2 &_fromBottomLeftCornerPoint, const float _lenX, const float _lenY, const uint16_t _nx, const uint16_t _ny) {
 		drawLine(_fromBottomLeftCornerPoint,  _lenX,      0,  _nx);
 		drawLine(Renderer2D::getLastPoint(),      0,  _lenY,  _ny);
 		drawLine(Renderer2D::getLastPoint(), -_lenX,      0,  _nx);
 		drawLine(Renderer2D::getLastPoint(),      0, -_lenX,  _ny);
 		}
+
 	void drawRectangle(const P2 &_lowerLeftCorner, const P2 &_upperRightCorner, const uint16_t _nx, const uint16_t _ny) {
 		P2 auxPoint(_upperRightCorner.x, _lowerLeftCorner.y);
 		drawLine(_lowerLeftCorner, auxPoint, _nx);
@@ -65,27 +92,15 @@ namespace Graphics {
 			}
 		}
 	}
+
 	void drawSquare(const P2 &_center, const uint16_t _numPointsSide) {
 		drawRectangle(P2(_center.x-0.5, _center.y-0.5), P2(_center.x+0.5, _center.y+0.5), _numPointsSide, _numPointsSide);
 	}
+
 	void drawSquare(const uint16_t _numPointsSide) {
 		drawRectangle(P2(-0.5, -0.5), P2(0.5, 0.5), _numPointsSide, _numPointsSide);
 	}
 
- 	void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints) {
-		for (uint16_t i = 0; i < _numPoints; i++) {
-			float phi = 2.0*PI/_numPoints*i;
-			P2 auxPoint(_radius*cos(phi), _radius*sin(phi));
-			auxPoint.x += _center.x; auxPoint.y += _center.y;
-			Renderer2D::addToBlueprint(auxPoint);
-		}
-	}
-	void drawCircle(const float _radius, const uint16_t _numPoints) {
-		drawCircle(P2(0.0,0.0), _radius, _numPoints);
-	}
-	void drawCircle(const uint16_t _numPoints) {
-		drawCircle(1.0, _numPoints);
-	}
 
 	void drawZigZag(
 		const P2 &_fromPoint,

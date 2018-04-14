@@ -17,12 +17,13 @@
 
 // ==================== COMMANDS:
 // 1) Laser commands:
-#define SET_BLANKING_RED    "BLANK"  // Parameters: 0/1. It sets the boolean blankingFlag
-#define SET_POWER_RED       "POWER"  // Parameters: 0 to 2047 (11 bit res).
+#define SET_BLANKING    "BLANK"  // Parameters: 0/1. It sets the boolean blankingFlag
+#define SET_POWER       "POWER"  // Parameters: 0 to 2047 (11 bit res).
 
 // 2) Hardware::Scan commands:
-#define START_DISPLAY          "START"
-#define STOP_DISPLAY          "STOP"
+#define START_DISPLAY       "START"
+#define STOP_DISPLAY        "STOP"
+#define DISPLAY_STATUS      "STATUS"
 
 // 3) Figures and pose:
 #define RESET_POSE_GLOBAL   "RESET POSE"
@@ -30,24 +31,26 @@
 #define SET_CENTER_GLOBAL   "CENTER"
 #define SET_FACTOR_GLOBAL   "FACTOR"
 
-//  b) Figure primitives:
-#define CLEAR_SCENE         "CLEAR"
+//4) Scene clearing mode [clear scene or not]
+#define CLEAR_SCENE   "CLEAR"
+#define CLEAR_MODE    "CLMODE"
+
+// 5) Figure primitives:
 #define MAKE_LINE           "LINE"
-#define ADD_LINE            "ADD LINE"
 #define MAKE_CIRCLE         "CIRCLE"
-#define ADD_CIRCLE          "ADD CIRCLE"
 #define MAKE_RECTANGLE      "RECT"
-// TODO: other figures...
+#define MAKE_SQUARE         "SQUARE"
+#define MAKE_ZIGZAG         "ZIGZAG"
 
-// 4) TEST FIGURES:
-#define CIRCLE_TEST         "TEST CIRCLE"
-#define MAKE_DISK_SQUARES   "TEST SQUARES"
+// 6) TEST FIGURES:
+#define CIRCLE_TEST         "CITEST"
+#define SQUARE_TEST         "SQTEST"
 
-// 5) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
-#define DISPLAY_STATUS      "STATUS"
-#define TEST_MIRRORS_RANGE  "SQUARE RANGE"
-#define TEST_CIRCLE_RANGE   "CIRCLE RANGE"
-#define SET_DIGITAL_PIN     "SET PIN"   // Up to the user to check range and initialization
+// 8) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
+#define TEST_MIRRORS_RANGE  "SQRANGE"
+#define TEST_CIRCLE_RANGE   "CIRANGE"
+#define BLINK_LED_DEBUG     "BLINK"
+#define SET_DIGITAL_PIN     "SETPIN"   // Up to the user to check range and initialization
 #define RESET_BOARD         "RESET" // (no parameters)
 
 // =============================================================================
@@ -184,7 +187,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     //==========================================================================
     // A) ====== LASER COMMANDS ================================================
     //==========================================================================
-    if ((_cmdString == SET_POWER_RED)&&(_numArgs == 1)) {     // Parameters: 0 to 4096 (12 bit res).
+    if ((_cmdString == SET_POWER)&&(_numArgs == 1)) {     // Parameters: 0 to 4096 (12 bit res).
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, 4095));
     }
@@ -202,7 +205,19 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         DisplayScan::stopDisplay();
     }
 
-    else if ((_cmdString == SET_BLANKING_RED)&&(_numArgs == 1))   {     // Parameters: 0/1. It sets blankinFlag state
+    else if ((_cmdString == DISPLAY_STATUS)&&(_numArgs == 0))    {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+
+        if (DisplayScan::getRunningState())
+        PRINTLN(">>   STATUS: ON");
+        else
+        PRINTLN(">>   STATUS: OFF");
+
+        PRINT(">>   NUM FIGURE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+    }
+
+    // ================== LASERS =======================================
+    else if ((_cmdString == SET_BLANKING)&&(_numArgs == 1))   {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         DisplayScan::setBlankingRed( (argStack[0].toInt() > 0 ? 1 : 0 ) );
     }
@@ -247,104 +262,151 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
     //==========================================================================
     // D) ============ FIGURES (check Graphics namespace) ======================
-    // * NOTE 1 : after all the figure composition, it is imperative to call to
-    //  the method Renderer2D::renderFigure().
+    // * NOTE 1 : after all the figure composition, it is
+    // imperative to call to the method Renderer2D::renderFigure().
+    // * NOTE 2 : The pose parameters are COMPOSED with the global ones.
+    // * NOTE 3 : Depending on the number of arguments, different pre-sets are used
     //==========================================================================
+
+    // == CLEAR SCENE and CLEAR MODE ==========================================
     else if ((_cmdString == CLEAR_SCENE)&&(_numArgs == 0))     {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();
+    }
+    else if ((_cmdString == CLEAR_MODE)&&(_numArgs == 1))     {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::setClearMode(argStack[0].toInt());
+    }
+
+    // == MAKE LINE ==========================================
+    else if (_cmdString == MAKE_LINE) {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::updateScene();
+        switch(_numArgs) {
+            case 1: // num point [unit length, "centered" and horizontal]
+            Graphics::drawLine(argStack[0].toInt());
+            break;
+            case 5:
+            { // from point, lenX, lenY, num points
+                P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawLine(
+                    startP2,
+                    argStack[2].toFloat(), argStack[3].toFloat(),
+                    argStack[4].toInt()
+                );
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
         Renderer2D::renderFigure();
     }
-    // EXAMPLE 1 : NO PARAMETERS (unit radius circle, centered, 100 points)
+
+    // == MAKE CIRCLE ==========================================
+    // a) Depending on the number of arguments, we do something different:
+    //    - with one parameter (nb points), we draw a circle in (0,0) with unit radius
+    //      [of course, the radius is multiplied by the currrent scaling factor]
+    else if (_cmdString == MAKE_CIRCLE)     {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::updateScene();
+        switch(_numArgs) {
+            case 1: // num point [unit radius, centered]
+            Graphics::drawCircle(argStack[0].toInt());
+            break;
+            case 5:
+            { // center point, radius, num points
+                P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[4].toInt());
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
+        Renderer2D::renderFigure();
+    }
+
+    // == MAKE RECTANGLE ==========================================
+    else if ((_cmdString == MAKE_RECTANGLE)&&(_numArgs == 6))     {
+        PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+        Graphics::updateScene();
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawRectangle(
+            fromP2,
+            argStack[2].toFloat(), argStack[3].toFloat(),
+            argStack[4].toInt(), argStack[5].toInt()
+        );
+        Renderer2D::renderFigure();
+    }
+
+    // == MAKE SQUARE ==========================================
+    else if (_cmdString == MAKE_SQUARE) {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::updateScene();
+        switch(_numArgs) {
+            case 1: // num point [unit side, centered]
+            Graphics::drawSquare(argStack[0].toInt());
+            break;
+            case 4:
+            { // center point, radius, num points
+                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
+        Renderer2D::renderFigure();
+    }
+
+    // ....
+
+    // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
+    // and displaying is STARTED whatever the previous state]
+    // a) CIRCLE, NO PARAMETERS (500 ADC units radius circle, centered, 100 points)
     else if ((_cmdString == CIRCLE_TEST) &&(_numArgs == 0))     {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();    // <-- CLEAR previous figures
-        Graphics::drawCircle(P2(0,0), 100.0, 100);
+        Graphics::clearScene();
+        Graphics::drawCircle(P2(0,0), 500.0, 100);
         // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
         Renderer2D::renderFigure();
-
-        // Force display whatever the previous state:
+        // THIS IS A TEST: Force display whatever the previous state:
         DisplayScan::startDisplay(); // start engine (whatever the previous state)
     }
-    // EXAMPLE 2 : MORE POSE PARAMETERS
-    // * The pose parameters are COMPOSED with the global ones.
-    // * We will draw a circle in (0,0) with unit radius.
-    // Parameter is nb points: drawCircle(number points)
-    else if ((_cmdString == MAKE_CIRCLE)&&(_numArgs == 1))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();    // <-- CLEAR previous figures
-        Graphics::drawCircle(argStack[0].toInt());
-        Renderer2D::renderFigure();
-    }
-    // EXAMPLE 3 : ... and the same without clearing the scene:
-    else if ((_cmdString == ADD_CIRCLE)&&(_numArgs == 1))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::drawCircle(argStack[0].toInt());
-        Renderer2D::renderFigure();
-    }
-    // EXAMPLE 4 : MORE POSE PARAMETERS for the SAME COMMAND STRING
-    // * The pose parameters are COMPOSED with the global ones.
-    // * We will draw a circle: drawCircle(center, radius, number points);
-    else if ((_cmdString == MAKE_CIRCLE)&&(_numArgs == 4))     {
-        PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
-        Graphics::clearScene();    // <-- CLEAR previous figures
-        P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
-        Renderer2D::renderFigure();
-    }
-    // EXAMPLE 5 : CONSERVE PREVIOUS FIGURES:
-    // * We will draw a line: drawLine(start point, end point, number points);
-    else if ((_cmdString == ADD_LINE)&&(_numArgs == 5))  {
-        //Graphics::clearScene(); // <-- Previous figures remain unaltered
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
-        P2 endP2(argStack[2].toFloat(), argStack[3].toFloat());
-        Graphics::drawLine(startP2, endP2, argStack[2].toInt());
-        Renderer2D::renderFigure();
-    }
-    // EXAMPLE 6: RECTANGLE, no parameters:
-    else if ((_cmdString == MAKE_RECTANGLE)&&(_numArgs == 0))  {
+    // b) : SQUARE, NO PARAMETERS (500 ADC units side, centered, 10 points/side)
+    else if ((_cmdString == SQUARE_TEST)&&(_numArgs == 0))  {
+        Graphics::updateScene();
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();
-        Graphics::drawRectangle(P2(-100,0), P2(200, 100), 20.0, 30.0);
+        Graphics::drawRectangle(P2(-250,-250), P2(250, 250), 20.0, 30.0);
         Renderer2D::renderFigure();
     }
-    // EXAMPLE 7: COMPOSITE FIGURES:
-    // * Example here is SEVEN UNIT SQUARES in a circle (parameters: radius)
-    // * NOTE: of course this is centered, rotated and scaled using current global
-    //   pose; meaning that if we want to rotate this or scale, we just need to
-    //   use SET_ANGLE_GLOBAL, SET_SCALE_GLOBAL, SET_CENTER_GLOBAL
-    else if ((_cmdString == MAKE_DISK_SQUARES)&&(_numArgs == 1))  {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();
-        float radius = argStack[0].toFloat();
-        for (uint8_t k=0; k<7; k++) {
-            float phi = 2.0*PI/7*k;
-            P2 centerP2(radius*cos(phi), radius*sin(phi));
-            Graphics::drawSquare(centerP2, 20); // square with 20 points/side
-        }
-        // And finally, do the render [see? only at the END of all the
-        // figure drawing and settings]
-        Renderer2D::renderFigure();
-    }
+
     // .........................................................................
     // ... BUILD HERE WHAT YOU NEED
     // .........................................................................
 
 
     //==========================================================================
-    // E) ============ MISCELANEA LOW LEVEL COMMANDS ===========================
+    // E) ============  LOW LEVEL COMMANDS ===========================
     //==========================================================================
 
-    else if ((_cmdString == DISPLAY_STATUS)&&(_numArgs == 0))    {
+    else if ((_cmdString == SET_DIGITAL_PIN)&&(_numArgs == 2))    {     // Parameters:pin, sate
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+    }
 
-        if (DisplayScan::getRunningState())
-        PRINTLN(">>   STATUS: ON");
-        else
-        PRINTLN(">>   STATUS: OFF");
+    else if ((_cmdString == BLINK_LED_DEBUG )&&(_numArgs == 1))    {     // Parameters: number of times
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Hardware::blinkLedDebug(argStack[0].toInt());
+    }
 
-        PRINT(">>   NUM FIGURE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+    else if ((_cmdString == RESET_BOARD)&&(_numArgs == 0))     {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        delay(1000);
+        Hardware::resetBoard();
     }
 
     else if ((_cmdString == TEST_MIRRORS_RANGE)&&(_numArgs == 1))    {
@@ -360,18 +422,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         DisplayScan::stopDisplay();
         Hardware::Scanner::testCircleRange(argStack[0].toInt());
         if (previousState) DisplayScan::startDisplay();
-    }
-
-
-    else if ((_cmdString == SET_DIGITAL_PIN)&&(_numArgs == 2))    {     // Parameters:pin, sate
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
-    }
-
-    else if ((_cmdString == RESET_BOARD)&&(_numArgs == 0))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        delay(1000);
-        Hardware::resetBoard();
     }
 
     else { // unkown command!

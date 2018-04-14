@@ -80,7 +80,7 @@ namespace Hardware {
 
 		void testMirrorRange(uint16_t _durationMs) {
 			elapsedMicros usec =0;
-			unsigned long startScanning = millis();
+			uint32_t startScanning = millis();
 			while (millis() - startScanning <_durationMs) {
 				for (uint16_t y = MIN_MIRRORS_ADY; y < MAX_MIRRORS_ADY; y+=10) {
 					for (uint16_t x = MIN_MIRRORS_ADX; x < MAX_MIRRORS_ADX; x+=10) {
@@ -88,29 +88,33 @@ namespace Hardware {
 						#ifdef TEENSY_35_36
 						analogWrite( PIN_ADCX, y );
 						#endif
-						while (usec < 1000) ; // wait
+						while (usec < 100) ; // wait
 						usec = 0;
 					}
-					while (usec < 100) ; // wait
+					while (usec < 1000) ; // wait
 					usec = 0;
 				}
 			}
 		}
 
 		void testCircleRange(uint16_t _durationMs) {
-			uint16_t startTime = millis();
+			elapsedMicros usec =0;
+			uint32_t startScanning = millis();
 			float phi;
-			while (millis()-startTime<_durationMs) {
-
-				for (uint16_t k=0;k<360;k++) {
+			while (millis()-startScanning<_durationMs) {
+				for (uint16_t k=0;k<100;k++) {
 					phi = DEG_TO_RAD*k;
-					int16_t x=(int16_t)(  1.0*CENTER_MIRROR_ADX*(1.0+cos(phi))  );
-					int16_t y=(int16_t)(  1.0*CENTER_MIRROR_ADY*(1.0+sin(phi))  );
+					uint16_t x=(uint16_t)(  1.0*CENTER_MIRROR_ADX*(1.0+cos(phi))  );
+					uint16_t y=(uint16_t)(  1.0*CENTER_MIRROR_ADY*(1.0+sin(phi))  );
 					analogWrite( PIN_ADCX, x );
-					analogWrite( PIN_ADCY, y );
-					delay(1);
+					#ifdef TEENSY_35_36
+					analogWrite( PIN_ADCX, y );
+					#endif
+					while (usec < 100) ; // wait
+					usec = 0;
 				}
-
+				while (usec < 1000) ; // wait
+				usec = 0;
 			}
 		}
 	}

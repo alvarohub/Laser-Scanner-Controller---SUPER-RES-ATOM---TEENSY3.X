@@ -80,15 +80,14 @@ namespace Hardware {
 	namespace Scanner {
 		extern void init();
 
-		// Mirror positioning [critical function!]
+		// ATTENTION : (0,0) corresponds to the middle position of the mirrors
 		inline void setMirrorsTo(int16_t _posX, int16_t _posY) {
 
-			// ATTENTION !!: the (0,0) corresponds to the middle position of the mirrors:
 			_posX += CENTER_MIRROR_ADX;
 			_posY += CENTER_MIRROR_ADY;
 
-			// constrainPos(_posx, _posy); // not using a function call is better [use a MACRO,
-			// an inlined function or write the code here]:
+			// constrainPos(_posx, _posy); // not using a function call is
+			// better [use a MACRO, an inlined function or write the code here]:
 			if (_posX > MAX_MIRRORS_ADX) _posX = MAX_MIRRORS_ADX;
 			else if (_posX < MIN_MIRRORS_ADX) _posX = MIN_MIRRORS_ADX;
 			if (_posY > MAX_MIRRORS_ADY) _posY = MAX_MIRRORS_ADY;
@@ -98,9 +97,12 @@ namespace Hardware {
 			// NOTE2: these DAC outputs are weird, and it is documented: voltage range from
 			// about 0.55 to 2.75V (1/6 to 5/6 from VCC = 3.3V). This means that, at 12nit res,
 			// the value 2047 is (1/6+(1/6+5/6)/2)*4.4 = 2/3*3.3 = 2.2V
-			analogWrite( PIN_ADCX, _posX );
-			analogWrite( PIN_ADCY, _posY );
+			analogWrite( PIN_ADCX, (uint16_t)_posX );
+			#ifdef TEENSY_35_36
+			analogWrite( PIN_ADCX, (uint16_t)_posY );
+			#endif
 		}
+
 		inline void recenterMirrors() {
 			setMirrorsTo(0,0);
 			//setMirrorsTo(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);

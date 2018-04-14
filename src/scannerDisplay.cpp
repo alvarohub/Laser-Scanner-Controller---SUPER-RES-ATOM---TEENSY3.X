@@ -103,7 +103,7 @@ namespace DisplayScan {
             // TODO: also add delay for laser off? (TODO)
         }
 
-        // Position mirrors:
+        // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
         int16_t ADCX = (int16_t)( (ptrCurrentDisplayBuffer + readingHead)->x )  ;
         int16_t ADCY = (int16_t)( (ptrCurrentDisplayBuffer + readingHead)->y );
         Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
