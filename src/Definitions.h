@@ -62,7 +62,7 @@
 #define PIN_ADCY 	3
 #endif
 
-//  b) PWM pins to do hardware offset (can be set near 0 and calibrate center by softare...)
+//  b) PWM pins to do hardware offset [can be set near 0 and calibrate center by softare...]. NOT USED for the time being - should not be necessary. 
 #define PIN_OFFSETX  8
 #define PIN_OFFSETY  7
 

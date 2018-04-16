@@ -9,7 +9,7 @@ namespace DisplayScan {
     volatile P2 *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;
     uint16_t readingHead,  newSizeBuffers;
     volatile uint16_t sizeBuffers;
-    bool canSwapFlag;
+    volatile bool needSwapFlag;
     volatile bool resizeFlag;
 
     bool blankingFlag;
@@ -21,12 +21,17 @@ namespace DisplayScan {
     void init() {
 
         // Set the displaying buffer pointer to the first ring buffer [filled with the
-        // central point], and set swapping flags:
-        displayBuffer1[0]=P2(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
-        displayBuffer2[0]=P2(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
+        // central point], and set swapping flag:
+
         // NOTE: I don't need to initialize the whole array because the ONLY place the
         // effective buffer size is changed is in the render() method (Renderer namespace),
-        // which does fill the buffer as needed.
+        // which does fill the buffer as needed. HOWEVER, for some reason [maybe an error
+        // on the indexes, will check later] accessing a not defined point will make
+        // the program crash!!???
+        for (uint16_t i=0; i<MAX_NUM_POINTS; i++) {
+            displayBuffer1[i] = P2(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
+            displayBuffer2[i] = P2(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
+        }
 
         sizeBuffers = newSizeBuffers = 0;
 
@@ -34,7 +39,7 @@ namespace DisplayScan {
         // the first element of the array displayBuffer1[].
         ptrHiddenDisplayBuffer = &(displayBuffer2[0]);
         readingHead = 0;
-        canSwapFlag=true;
+        needSwapFlag=false;
         resizeFlag=false;
 
         // 3) Default scan parameters:
@@ -50,7 +55,7 @@ namespace DisplayScan {
         // Most other interrupts default to 128, millis() and micros() are priority 32.
         //  As a general guideline, interrupt routines that run longer should be given lower
         //　priority (higher numerical values).
-        // * NOTE 2 : priority should be set after begin (meaning it has to be set every time we stop
+        // * NOTE 2 : priority should be set after begin  - meaning it has to be set every time we stop
         // and restart??? I put it in "startDisplay()" method then.
         // Check here for details:
         //        - https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
@@ -60,9 +65,13 @@ namespace DisplayScan {
     }
 
     void startDisplay() {
-        if (!running) scannerTimer.begin(displayISR, dt);
-        scannerTimer.priority(112);
-        running = true;
+        if ( (!running) && (scannerTimer.begin(displayISR, dt)) ) {
+            scannerTimer.priority(112);
+            running = true;
+        }
+        else {
+            PRINTLN(">> ERROR: could not set ISR.");
+        }
     }
     void stopDisplay() {
         if (running) scannerTimer.end(); // perhaps the condition is not necessary
@@ -84,13 +93,15 @@ namespace DisplayScan {
     }
 
     void writeOnHiddenBuffer(uint16_t _absIndex, const P2& _point) {
+        // NOTE: in the future, the display buffer should contain ints,
+        // but the blueprint floats to make the transformations and rendering.
+
         //(*ptrHiddenDisplayBuffer)[_absIndex].set(_point); // better not to make a call
         ptrHiddenDisplayBuffer[_absIndex].x=_point.x; // note: *(ptr+i) = ptr[i]
         (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
     }
 
-    void stopSwapping() {canSwapFlag=false;}
-    void startSwapping() {canSwapFlag=true;}
+    void requestBufferSwap() {needSwapFlag=true;}
 
     void resizeBuffer(uint16_t _newSize) {
         //PRINT("NEW SIZE BUFFER: "); PRINTLN(_newSize);
@@ -103,61 +114,74 @@ namespace DisplayScan {
             resizeFlag = true; // <-- this is to be able to finish the previous figure
             newSizeBuffers = _newSize;
             interrupts();
-        //}
-    }
-
-    // =================================================================
-    // =========== Mirror-psitioning ISR that is called every dt =======
-    //==================================================================
-    // * NOTE 1 : this is perhaps the most critical method. And it has to be
-    // as fast as possible!! (in the future, do NOT use analogWrite() !!)
-    // * NOTE 2 : general guideline is to keep your function short and avoid
-    // calling other functions if possible.
-    void displayISR() {
-
-        if (blankingFlag) {
-            Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)
-            // TODO: also add delay for laser off? (TODO)
+            //}
         }
 
-        // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
-        int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
-        int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
+        // =================================================================
+        // =========== Mirror-psitioning ISR that is called every dt =======
+        //==================================================================
+        // * NOTE 1 : this is perhaps the most critical method. And it has to be
+        // as fast as possible!! (in the future, do NOT use analogWrite() !!)
+        // * NOTE 2 : general guideline is to keep your function short and avoid
+        // calling other functions if possible.
+        void displayISR() {
 
-        // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
-        Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
-
-        // After setting, advance the readingHead on the round-robin buffer:
-        // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
-        // hence the condition on sizeBuffer size:
-        if (!sizeBuffers) readingHead = (readingHead + 1) % sizeBuffers; // no need to qualify it as volatile
-        // since only the ISR will use it.
-
-        if (blankingFlag) {
-            // TODO: delay for mirror positioning?
-            Hardware::Lasers::setSwitchRed(HIGH); // avoid calling a function here if possible (TODO)
-
-        }
-
-        // Exchange buffers when finishing displaying the current buffer,
-        // but ONLY if canSwapFlag is true, meaning the rendering engine is not
-        // still writing in the hidden buffer [check renderFigure() method]:
-        if ( canSwapFlag && !readingHead ) { // i.e. if we can swap and we are in the (re)start of buffer
-            // * NOTE : the second condition is optional: we could start displaying from
-            // the current readingHead - but this will deform the figure when
-            // rendering too fast.
-            if (resizeFlag) {
-                sizeBuffers = newSizeBuffers; // NOTE: sizeBuffers should be volatile
-                resizeFlag = false;           // NOTE: resizeFlag should be volatile
-                // Restart readingHead? no need, since it IS already zero here:
-                //if (readingHead>=sizeBuffers) readingHead = 0;
+            if (blankingFlag) {
+                Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)
+                // TODO: also add delay for laser off? (TODO)
             }
-            // * NOTE : ptrCurrentDisplayBuffer and ptrHiddenDisplayBuffer are volatile!
-            volatile P2 *ptrAux = ptrCurrentDisplayBuffer; // could be cast non volatile?
-            ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
-            ptrHiddenDisplayBuffer = ptrAux;
+
+            // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
+            int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
+            int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
+
+        //    PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
+
+            // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
+            Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
+
+
+            // After setting, advance the readingHead on the round-robin buffer:
+            // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
+            // hence the condition on sizeBuffer size:
+            if (sizeBuffers) readingHead = (readingHead + 1) % sizeBuffers; // no need to qualify it as volatile
+            // since only the ISR will use it.
+
+
+            if (blankingFlag) {
+                // TODO: non-blocking delay for mirror positioning before switching
+                // the laser on? ...for the time being: blocking (for tests)
+                elapsedMicros pause = 0;
+                while (pause<DELAY_POSITIONING_MIRRORS_US);
+
+                Hardware::Lasers::setSwitchRed(HIGH); // avoid calling a function here if possible (TODO)
+
+            }
+
+            // Exchange buffers when finishing displaying the current buffer,
+            // and canSwapFlag is true - meaning the rendering engine finished drawing a
+            // new figure on the hidden buffer [check renderFigure() method]:
+            if ( needSwapFlag && !readingHead ) {
+                // i.e. if we can swap and we are in the (re)start of buffer
+                // * NOTE : the second condition is optional: we could start displaying from
+                // the current readingHead - but this will deform the figure when
+                // rendering too fast.
+
+                // NOTE: when rendering AND resizing, we also set the resizeFlag to true:
+                if (resizeFlag) {
+                    sizeBuffers = newSizeBuffers; // NOTE: sizeBuffers should be volatile
+                    resizeFlag = false;           // NOTE: resizeFlag should be volatile
+                    // Restart readingHead? no need, since it IS already zero here:
+                    //if (readingHead>=sizeBuffers) readingHead = 0;
+                }
+
+                // * NOTE : ptrCurrentDisplayBuffer and ptrHiddenDisplayBuffer are volatile!
+                volatile P2 *ptrAux = ptrCurrentDisplayBuffer; // could be cast non volatile?
+                ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
+                ptrHiddenDisplayBuffer = ptrAux;
+                needSwapFlag = false;
+            }
+
         }
 
     }
-
-}

@@ -19,7 +19,13 @@
  #include <util/atomic.h> // not for the Arduino DUE !!!
 
 // *********** ISR DISPLAYING parameters **********************
-#define DEFAULT_RENDERING_INTERVAL 100000 // in microseconds [ATTN: analogWrite takes ~10us]
+// NOTE: analogWrite - for the ADC - takes ~10us? (is it blocking?)
+
+// ISR timer interval for rendering each point [non-blocking of course]
+#define DEFAULT_RENDERING_INTERVAL 100 // in microseconds
+
+//  Delay after sending a position to the ADC, in order to account for mirror inertia.
+#define DELAY_POSITIONING_MIRRORS_US 10  // in us.
 
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
 	// mirrors: it is actually the diaplaying engine!
@@ -31,8 +37,7 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern void stopDisplay();
 	extern bool getRunningState();
 
-	extern void stopSwapping();
-	extern void startSwapping();
+	extern void requestBufferSwap();
 
 	// IMPORTANT: if, in Renderer2D, the number of points change, you may want
 	// to stop the displaying engine. This is ok, as it will be done automatically
@@ -64,7 +69,7 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         // pointer to objects of type P2)
         extern P2 displayBuffer2[MAX_NUM_POINTS]; // or P2 displayBuffer1* and use
         // dynamic allocation with displayBuffer1 = new P2[MAX_NUM_POINTS]
-		extern bool canSwapFlag;
+		extern volatile bool needSwapFlag;
 		extern uint16_t newSizeBuffers;
 		extern uint16_t readingHead;
 

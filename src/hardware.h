@@ -47,8 +47,8 @@ namespace Hardware {
 		#define NUM_LASERS 5
 
 		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve the value of current power;
-		const uint8_t pinPowerLaser[5] = {2,3,4,5,6};  // PWM capable:
-		const uint8_t pinSwitchLaser[5] = {36, 37, 38, 39, 40};
+		const uint8_t pinPowerLaser[5] = {2, 3, 4, 5, 6};  // PWM capable:
+		const uint8_t pinSwitchLaser[5] = {14, 15, 16, 17, 18};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
 		enum {RED=0, GREEN = 1, BLUE = 2, YELLOW =3, MAGENTA = 4};

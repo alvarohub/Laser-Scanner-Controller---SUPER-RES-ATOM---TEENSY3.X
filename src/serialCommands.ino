@@ -157,7 +157,7 @@ bool parseStringMessage(const String & _messageString) {
                 cmdExecuted = interpretCommand(cmdString, numArgs, argStack);
                 // *********************************************************
 
-                if (cmdExecuted) PRINTLN(">> END SUCCESSFUL EXECUTION");
+                //if (cmdExecuted) PRINTLN(">> END SUCCESSFUL EXECUTION");
                 //else PRINTLN(">>FAIL");
 
                 // Even if "cmdExecuted" is false, reset the number of stack arguments
@@ -428,7 +428,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         parseOk = false;
     }
 
-    if (parseOk) { // signal that everything went fine:
+    if (parseOk) {
+        PRINTLN("END SUCCESSFUL EXECUTION");
         Hardware::blinkLedMessage(2);
     }
 

@@ -16,10 +16,8 @@ namespace Renderer2D {
     P2 bluePrintArray[MAX_NUM_POINTS];// PointBuffer bluePrintArray;
 
     void clearBlueprint() {
-        sizeBlueprint = 0;
-        DisplayScan::stopSwapping();
-        DisplayScan::resizeBuffer(sizeBlueprint);
-        DisplayScan::startSwapping();
+        DisplayScan::resizeBuffer(0);
+        DisplayScan::requestBufferSwap();
     }
     uint16_t getSizeBlueprint() {
         return(sizeBlueprint);
@@ -29,13 +27,19 @@ namespace Renderer2D {
         return(bluePrintArray[sizeBlueprint-1]);
     }
 
-    void addToBlueprint(const P2 _newPoint) {
+    void addToBlueprint(const P2 &_newPoint) {
+
         // add point and increment index:
         if (sizeBlueprint<MAX_NUM_POINTS)
         bluePrintArray[sizeBlueprint++] = _newPoint;
         // otherwise do nothing
+
+        PRINTLN(sizeBlueprint);
     }
 
+    // Not used for now, but this will enable re-writting over the
+    // current blueprint [although it will be a better idea to delete
+    // whole objects to avoid the mess]
     void writeInBluePrintArray(uint16_t _index, const P2 &_newPoint) {
         // Could be used to overwrite a figure, but normally we would use addToBluePrint(...)
         if (_index<MAX_NUM_POINTS) bluePrintArray[_index] = _newPoint;
@@ -45,11 +49,6 @@ namespace Renderer2D {
     void renderFigure() {
         // * NOTE: this needs to be called when changing the figure or number of points,
         // but also after modifying pose to avoid approximation errors.
-
-        DisplayScan::stopSwapping(); // necessary during the re-writting to the hidden buffer
-        //* NOTE: if the displaying engine was not working, it's not a problem - at the
-        // end of the rendering, just before setting swapping flag to true, the "resizeBuffer"
-        // method will reset the head.
 
         // Draw the figure with proper translation, rotation and scale on the "hidden" buffer:
         for (uint16_t i = 0; i < sizeBlueprint; i++) {
@@ -61,13 +60,11 @@ namespace Renderer2D {
             //point.constrainPos(); won't do that - prefer to compute with floats outside range, but the Scanner setMirrorsTo method
             // will take care of the contrain.
             DisplayScan::writeOnHiddenBuffer(i, point); // the "bridge" method between the renderer and the displaying engine!
-            //if (veryFirstRender) swapBuffers();
         }
 
-        DisplayScan::resizeBuffer(sizeBlueprint); // could be merged with resumeSwapping?
-        //PRINTLN(sizeBlueprint);
+        DisplayScan::resizeBuffer(sizeBlueprint);
 
-        DisplayScan::startSwapping();// render is over... the ISR will swap buffers if needed.
+        DisplayScan::requestBufferSwap();// render is over... the ISR will swap buffers and reset the flag.
     }
 
 }

@@ -46,7 +46,7 @@ namespace Renderer2D {
 
 	extern const P2 getLastPoint();
 
-	extern void addToBlueprint(const P2 _newPoint);
+	extern void addToBlueprint(const P2 &_newPoint);
 	extern void writeInBluePrintArray(uint16_t _index, const P2 &_newPoint);
 
 	extern void renderFigure(); // render with current pose transformation
