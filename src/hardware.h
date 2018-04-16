@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "Definitions.h"
 #include "Utils.h"
+#include "scannerDisplay.h"
 
 // ============ LOW LEVEL HARDWARE METHODS ================================
 // * NOTE 1: make the critic code inline!
@@ -80,9 +81,10 @@ namespace Hardware {
 	namespace Scanner {
 		extern void init();
 
-		// ATTENTION : (0,0) corresponds to the middle position of the mirrors
+
 		inline void setMirrorsTo(int16_t _posX, int16_t _posY) {
 
+			// ATTENTION : (0,0) corresponds to the middle position of the mirrors!
 			_posX += CENTER_MIRROR_ADX;
 			_posY += CENTER_MIRROR_ADY;
 
@@ -93,13 +95,10 @@ namespace Hardware {
 			if (_posY > MAX_MIRRORS_ADY) _posY = MAX_MIRRORS_ADY;
 			else if (_posY < MIN_MIRRORS_ADY) _posY = MIN_MIRRORS_ADY;
 
-			// NOTE: using alogWrite is far from optimal! in the future go more barebones!![note the CENTER_MIRROR_ADX/Y offset]
-			// NOTE2: these DAC outputs are weird, and it is documented: voltage range from
-			// about 0.55 to 2.75V (1/6 to 5/6 from VCC = 3.3V). This means that, at 12nit res,
-			// the value 2047 is (1/6+(1/6+5/6)/2)*4.4 = 2/3*3.3 = 2.2V
+			// NOTE: using alogWrite is far from optimal! in the future go more barebones!!
 			analogWrite( PIN_ADCX, (uint16_t)_posX );
 			#ifdef TEENSY_35_36
-			analogWrite( PIN_ADCX, (uint16_t)_posY );
+			analogWrite( PIN_ADCY, (uint16_t)_posY );
 			#endif
 		}
 
@@ -113,8 +112,8 @@ namespace Hardware {
 		// called when the DisplayScan is paused or stopped [if this is
 		// not done, it should work anyway but with a crazy back and forth
 		// of the galvano mirrors:
-		extern void testMirrorRange(uint16_t _durationMs);
-		extern void testCircleRange(uint16_t _durationMs);
+		extern void testMirrorRange(uint16_t _durationSec);
+		extern void testCircleRange(uint16_t _durationSec);
 
 	}
 

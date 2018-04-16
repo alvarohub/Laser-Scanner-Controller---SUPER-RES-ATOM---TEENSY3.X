@@ -22,6 +22,9 @@ namespace Graphics {
 
 	// ======================== SCENE SETTING METHODS =====================
 	void clearScene() {
+		// NOTE: for now we just clear the "whole" blueprint, meaning
+		// that clearScene and clearBlueprint do the same, but
+		// in the future we will have separate blueprints for each object.
 		Renderer2D::clearBlueprint();
 	}
 	void setClearMode(bool _clearModeFlag) {
@@ -31,12 +34,20 @@ namespace Graphics {
 		if (clearModeFlag) clearScene();
 	}
 
+	void addVertex(const P2& _newPoint) {
+		// NOTE: as with the clearScene, for now this is just equal to
+		// Renderer2D::addToBlueprint(const P2 _newPoint), but we will
+		// have different objects in the future - with an ID, and defined
+		// with begin/end if we want to "copy" OpenGL style.
+		Renderer2D::addToBlueprint(_newPoint);
+	}
+
 	// ======================== BASIC SHAPES ============================
 	void drawLine(const P2 &_fromPoint, const float _lenX, const float _lenY, const uint16_t _numPoints) {
 		float dx = _lenX/_numPoints, dy = _lenY/_numPoints;
 		P2 newPoint(_fromPoint);
 		for (uint16_t i = 0; i < _numPoints; i++) {
-			Renderer2D::addToBlueprint(newPoint);
+			addVertex(newPoint);
 			// TODO: use overloaded operators (make a good 2D vector class)!!
 			newPoint.x+=dx; newPoint.y+=dy;
 		}
@@ -53,7 +64,7 @@ namespace Graphics {
 			float phi = 2.0*PI/_numPoints*i;
 			P2 auxPoint(_radius*cos(phi), _radius*sin(phi));
 			auxPoint.x += _center.x; auxPoint.y += _center.y;
-			Renderer2D::addToBlueprint(auxPoint);
+			addVertex(auxPoint);
 		}
 	}
 
@@ -88,7 +99,7 @@ namespace Graphics {
 			for (uint16_t i = 0; i < _numPointsSide; i++) {
 				if (k%2) x += (k<1? 1.0 : -1.0)*step*i;
 				else y += (k<1? 1.0 : -1.0)*step*i;
-				Renderer2D::addToBlueprint(P2(x, y));
+				addVertex(P2(x, y));
 			}
 		}
 	}

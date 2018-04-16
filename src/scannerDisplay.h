@@ -19,8 +19,7 @@
  #include <util/atomic.h> // not for the Arduino DUE !!!
 
 // *********** ISR DISPLAYING parameters **********************
-#define DEFAULT_RENDERING_INTERVAL 1000 // in microseconds [ATTN: analogWrite takes ~10us]
-
+#define DEFAULT_RENDERING_INTERVAL 100000 // in microseconds [ATTN: analogWrite takes ~10us]
 
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
 	// mirrors: it is actually the diaplaying engine!
@@ -78,9 +77,14 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 		// TIMER INTERRUPT for scanner positionning. IntervalTimer is supported only on 32 bit
 		// boards: Teensy LC, 3.0, 3.1, 3.2, 3.5 & 3.6. Up to 4 IntervalTimer objects may be active
 		// simultaneuously on Teensy 3.0 - 3.6. Teensy LC has only 2 timers for IntervalTimer.
+        // NOTE: Teensy (Cortex M4) is capable of *priorites* in the interrupts (16 nested levels).
+        //       I will set the IntervalTimer to a higher priority than millis() and micros() which
+        //       are set to priority 32 (there are 256 levels, arranged in 16 groups).
+        //       For that, we use the "priority(..)" method of IntervalTimer.
+        //       (Check Paul Stoffregen notes).
 		extern IntervalTimer scannerTimer; // check: https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
 		extern void displayISR();
-		extern uint16_t dt;
+		extern uint32_t dt;
 		extern bool running;
 
 		// ======================= OTHERS  =================================

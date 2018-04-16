@@ -72,6 +72,8 @@ namespace Graphics {
 	//extern void renderFigure(); // unnecessary wrapper, and less clear than
 	//calling the Renderer2D (we could then change the rendering engine easily)
 
+	extern void addVertex(const P2& _newPoint);
+
 	//(3) Basic shapes. We need to pass at least the number of points - we
 	// * NOTE1: could have a default "opengl-like" state variable, but it's
 	// not very meaninful.

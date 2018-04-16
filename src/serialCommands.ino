@@ -50,8 +50,8 @@
 #define TEST_MIRRORS_RANGE  "SQRANGE"
 #define TEST_CIRCLE_RANGE   "CIRANGE"
 #define BLINK_LED_DEBUG     "BLINK"
-#define SET_DIGITAL_PIN     "SETPIN"   // Up to the user to check range and initialization
-#define RESET_BOARD         "RESET" // (no parameters)
+#define SET_DIGITAL_PIN     "SETPIN"
+#define RESET_BOARD         "RESET"
 
 // =============================================================================
 String messageString;
@@ -138,7 +138,7 @@ bool parseStringMessage(const String & _messageString) {
         else if (val == NUMBER_SEPARATOR) {
             if (argStack[numArgs].length() > 0) {
                 //PRINTLN(" (separator)");
-                PRINT(">> GOT ARGUMENT n."); PRINT(numArgs); PRINT(" equal to "); PRINTLN(argStack[numArgs]);
+                PRINT(">> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
                 numArgs++;
             }
             else { // ignore the separator
@@ -317,7 +317,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
             case 5:
             { // center point, radius, num points
                 P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[4].toInt());
+                Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
             }
             break;
             default:
@@ -377,7 +377,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     }
     // b) : SQUARE, NO PARAMETERS (500 ADC units side, centered, 10 points/side)
     else if ((_cmdString == SQUARE_TEST)&&(_numArgs == 0))  {
-        Graphics::updateScene();
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();
         Graphics::drawRectangle(P2(-250,-250), P2(250, 250), 20.0, 30.0);

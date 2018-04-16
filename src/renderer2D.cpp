@@ -29,8 +29,10 @@ namespace Renderer2D {
         return(bluePrintArray[sizeBlueprint-1]);
     }
 
-    void addToBlueprint(const P2 _newPoint) { // add point and increment index:
-        if (sizeBlueprint<MAX_NUM_POINTS) bluePrintArray[sizeBlueprint++] = _newPoint;
+    void addToBlueprint(const P2 _newPoint) {
+        // add point and increment index:
+        if (sizeBlueprint<MAX_NUM_POINTS)
+        bluePrintArray[sizeBlueprint++] = _newPoint;
         // otherwise do nothing
     }
 
