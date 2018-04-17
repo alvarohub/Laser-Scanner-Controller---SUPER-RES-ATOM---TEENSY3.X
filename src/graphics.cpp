@@ -25,7 +25,8 @@ namespace Graphics {
 		// NOTE: for now we just clear the "whole" blueprint, meaning
 		// that clearScene and clearBlueprint do the same, but
 		// in the future we will have separate blueprints for each object.
-		Renderer2D::clearBlueprint();
+		Renderer2D::clearBlueprint(); // clear blueprint is just like drawing an 
+		// object with... zero points (and not added to the others)
 	}
 	void setClearMode(bool _clearModeFlag) {
 		clearModeFlag = _clearModeFlag;

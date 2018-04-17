@@ -7,10 +7,9 @@ namespace DisplayScan {
     P2 displayBuffer1[MAX_NUM_POINTS];
     P2 displayBuffer2[MAX_NUM_POINTS];
     volatile P2 *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;
-    uint16_t readingHead,  newSizeBuffers;
-    volatile uint16_t sizeBuffers;
+    uint16_t readingHead,  newSizeBufferDisplay; // no need to be volatile
+    volatile uint16_t sizeBufferDisplay;
     volatile bool needSwapFlag;
-    volatile bool resizeFlag;
 
     bool blankingFlag;
 
@@ -33,14 +32,13 @@ namespace DisplayScan {
             displayBuffer2[i] = P2(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
         }
 
-        sizeBuffers = newSizeBuffers = 0;
+        sizeBufferDisplay = newSizeBufferDisplay = 0;
 
         ptrCurrentDisplayBuffer = &(displayBuffer1[0]); // Note: displayBuffer1 is a const pointer to
         // the first element of the array displayBuffer1[].
         ptrHiddenDisplayBuffer = &(displayBuffer2[0]);
         readingHead = 0;
         needSwapFlag=false;
-        resizeFlag=false;
 
         // 3) Default scan parameters:
         blankingFlag = true;
@@ -80,8 +78,7 @@ namespace DisplayScan {
 
     bool getRunningState() {return(running);}
 
-
-    uint16_t getBufferSize() {return(sizeBuffers);}
+    uint16_t getBufferSize() {return(sizeBufferDisplay);}
 
     void setInterPointTime(uint16_t _dt) {
         dt=_dt;
@@ -101,20 +98,19 @@ namespace DisplayScan {
         (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
     }
 
-    void requestBufferSwap() {needSwapFlag=true;}
+    void requestBufferSwap() {needSwapFlag = true;}
 
     void resizeBuffer(uint16_t _newSize) {
         //PRINT("NEW SIZE BUFFER: "); PRINTLN(_newSize);
         // The following is a critical piece of code and must be ATOMIC, otherwise the flag may be reset
-        // by the ISR before newSizeBuffers is set. Now, this means the displaying
+        // by the ISR before newSizeBufferDisplay is set. Now, this means the displaying
         // engine will briefly stop - but really briefly, and moreover the resizing
         // of the buffer is only done at the end of a rendering figure: not very often.
-        //ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
-            noInterrupts();
-            resizeFlag = true; // <-- this is to be able to finish the previous figure
-            newSizeBuffers = _newSize;
-            interrupts();
-            //}
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
+            //noInterrupts();
+            newSizeBufferDisplay = _newSize;
+            //interrupts();
+            }
         }
 
         // =================================================================
@@ -135,7 +131,7 @@ namespace DisplayScan {
             int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
             int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
 
-        //    PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
+          // PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
 
             // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
             Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
@@ -144,7 +140,7 @@ namespace DisplayScan {
             // After setting, advance the readingHead on the round-robin buffer:
             // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
             // hence the condition on sizeBuffer size:
-            if (sizeBuffers) readingHead = (readingHead + 1) % sizeBuffers; // no need to qualify it as volatile
+            if (sizeBufferDisplay) readingHead = (readingHead + 1) % sizeBufferDisplay; // no need to qualify it as volatile
             // since only the ISR will use it.
 
 
@@ -158,25 +154,23 @@ namespace DisplayScan {
 
             }
 
-            // Exchange buffers when finishing displaying the current buffer,
-            // and canSwapFlag is true - meaning the rendering engine finished drawing a
+            // Exchange buffers when finishing displaying the current buffer
+            // AND needSwapFlag is true - meaning the rendering engine finished drawing a
             // new figure on the hidden buffer [check renderFigure() method]:
             if ( needSwapFlag && !readingHead ) {
-                // i.e. if we can swap and we are in the (re)start of buffer
+                // i.e. if we need to swap and we are in the start of buffer
                 // * NOTE : the second condition is optional: we could start displaying from
                 // the current readingHead - but this will deform the figure when
                 // rendering too fast.
 
-                // NOTE: when rendering AND resizing, we also set the resizeFlag to true:
-                if (resizeFlag) {
-                    sizeBuffers = newSizeBuffers; // NOTE: sizeBuffers should be volatile
-                    resizeFlag = false;           // NOTE: resizeFlag should be volatile
-                    // Restart readingHead? no need, since it IS already zero here:
-                    //if (readingHead>=sizeBuffers) readingHead = 0;
-                }
+                // NOTE: resizing may or may not have taken place while rendering a
+                // new scene/figure, but instead of having a flag, let's just use
+                // the value of newSizeBufferDisplay which is set in the renderer method.
 
-                // * NOTE : ptrCurrentDisplayBuffer and ptrHiddenDisplayBuffer are volatile!
-                volatile P2 *ptrAux = ptrCurrentDisplayBuffer; // could be cast non volatile?
+                // * NOTE : The following variables are volatile - they
+                //need to be, because they are modified in the ISR:
+                sizeBufferDisplay = newSizeBufferDisplay;
+                volatile P2 *ptrAux = ptrCurrentDisplayBuffer;
                 ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
                 ptrHiddenDisplayBuffer = ptrAux;
                 needSwapFlag = false;

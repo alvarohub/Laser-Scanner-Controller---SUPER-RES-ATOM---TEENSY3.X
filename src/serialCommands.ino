@@ -381,6 +381,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Graphics::clearScene();
         Graphics::drawRectangle(P2(-250,-250), P2(250, 250), 20.0, 30.0);
         Renderer2D::renderFigure();
+        DisplayScan::startDisplay(); 
     }
 
     // .........................................................................

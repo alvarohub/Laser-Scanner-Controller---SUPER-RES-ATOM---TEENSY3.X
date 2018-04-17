@@ -70,13 +70,13 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         extern P2 displayBuffer2[MAX_NUM_POINTS]; // or P2 displayBuffer1* and use
         // dynamic allocation with displayBuffer1 = new P2[MAX_NUM_POINTS]
 		extern volatile bool needSwapFlag;
-		extern uint16_t newSizeBuffers;
+		extern uint16_t newSizeBufferDisplay; // no need to be volatile
 		extern uint16_t readingHead;
 
 		// The following variables must be qualified volatile, as they may be modificated
 		// outside the section of code where they appear [because of the ISR]
 		extern volatile P2 *ptrCurrentDisplayBuffer, *ptrHiddenDisplayBuffer;
-		extern volatile uint16_t sizeBuffers;
+		extern volatile uint16_t sizeBufferDisplay;
 		extern volatile bool resizeFlag;
 
 		// TIMER INTERRUPT for scanner positionning. IntervalTimer is supported only on 32 bit

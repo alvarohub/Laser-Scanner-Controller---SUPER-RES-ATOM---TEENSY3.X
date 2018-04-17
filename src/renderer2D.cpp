@@ -5,7 +5,7 @@ namespace Renderer2D {
     // ======================= DEFAULT STATE VARIABLE DEFINITIONS  =======================
     // NOTE: default parameters should be in a "defaultParameters" file (Json or XML?). For the
     // time being, they are in Utils.h
-    P2 center(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
+    P2 center(0,0); // note (0,0) in "renderer" coordinates is the center of mirrors.
     float angle = 0;
     float scaleFactor = 1.0;
 
@@ -15,10 +15,7 @@ namespace Renderer2D {
 
     P2 bluePrintArray[MAX_NUM_POINTS];// PointBuffer bluePrintArray;
 
-    void clearBlueprint() {
-        DisplayScan::resizeBuffer(0);
-        DisplayScan::requestBufferSwap();
-    }
+
     uint16_t getSizeBlueprint() {
         return(sizeBlueprint);
     } // mainly for check
@@ -63,8 +60,17 @@ namespace Renderer2D {
         }
 
         DisplayScan::resizeBuffer(sizeBlueprint);
+        DisplayScan::requestBufferSwap();// render is over: the ISR needs to swap buffers
+        // and reset the flag.
+    }
 
-        DisplayScan::requestBufferSwap();// render is over... the ISR will swap buffers and reset the flag.
+    void clearBlueprint() {
+        sizeBlueprint = 0;
+
+        // The following is equivalent to calling the renderFigure method with
+        // zero points in fact!
+        DisplayScan::resizeBuffer(sizeBlueprint);
+        DisplayScan::requestBufferSwap();
     }
 
 }
