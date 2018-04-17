@@ -59,18 +59,12 @@ namespace Renderer2D {
             DisplayScan::writeOnHiddenBuffer(i, point); // the "bridge" method between the renderer and the displaying engine!
         }
 
-        DisplayScan::resizeBuffer(sizeBlueprint);
-        DisplayScan::requestBufferSwap();// render is over: the ISR needs to swap buffers
-        // and reset the flag.
+        DisplayScan::setDisplayBuffer(bluePrintArray, sizeBlueprint);
     }
 
     void clearBlueprint() {
         sizeBlueprint = 0;
-
-        // The following is equivalent to calling the renderFigure method with
-        // zero points in fact!
-        DisplayScan::resizeBuffer(sizeBlueprint);
-        DisplayScan::requestBufferSwap();
+        renderFigure();
     }
 
 }

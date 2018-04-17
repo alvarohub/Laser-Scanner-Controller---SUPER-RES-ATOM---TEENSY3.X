@@ -118,11 +118,11 @@ namespace Graphics {
 	extern void drawZigZag(
 		const P2 &_fromPoint,
 		const float _lenX, const float _lenY,
-		const uint16_t _nx, const uint16_t _ny
+		const uint16_t _nx = 10, const uint16_t _ny = 10
 	);
 	extern void drawZigZag(
 		const P2 &_fromPoint, const P2 &_toPoint,
-		const uint16_t _nx, const uint16_t _nuy
+		const uint16_t _nx = 10, const uint16_t _nuy = 10
 	);
 	extern void drawZigZag(const uint16_t _x, const uint16_t _ny);
 

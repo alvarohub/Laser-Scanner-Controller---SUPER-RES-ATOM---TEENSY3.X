@@ -37,13 +37,9 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern void stopDisplay();
 	extern bool getRunningState();
 
-	extern void requestBufferSwap();
-
-	// IMPORTANT: if, in Renderer2D, the number of points change, you may want
-	// to stop the displaying engine. This is ok, as it will be done automatically
-	// in the ISR by NOT exchanging buffers until finishing the change [actually it
-	// will be extremely fast, so it may not even stop once].
-	void resizeBuffer(uint16_t _newSize); // this is delicate (check implementation)
+    // The following corresponds in OpenGL to the sending of the "rendered" vertex array
+    // to the framebuffer...
+    extern void setDisplayBuffer(const P2 *ptrBlueprint, uint16_t _sizeBlueprint);
 
 	extern uint16_t getBufferSize();
 

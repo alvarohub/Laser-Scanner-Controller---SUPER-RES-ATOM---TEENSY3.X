@@ -361,6 +361,37 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Renderer2D::renderFigure();
     }
 
+    // == MAKE ZIGZAG ==========================================
+    else if (_cmdString == MAKE_ZIGZAG) {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::updateScene();
+        switch(_numArgs) {
+            case 6: // full info: start point, lenx, leny, num points x, numpoints y;
+            { // center point, radius, num points
+                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawZigZag(
+                    fromP2,
+                    argStack[2].toFloat(), argStack[3].toFloat(),
+                    argStack[4].toInt(), argStack[5].toInt()
+                );
+            }
+            break;
+            case 4: // numpoints: 10x10
+            {
+                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawZigZag(
+                    fromP2,
+                    argStack[2].toFloat(), argStack[3].toFloat()
+                );
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
+        Renderer2D::renderFigure();
+    }
+
     // ....
 
     // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
@@ -381,7 +412,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Graphics::clearScene();
         Graphics::drawRectangle(P2(-250,-250), P2(250, 250), 20.0, 30.0);
         Renderer2D::renderFigure();
-        DisplayScan::startDisplay(); 
+        DisplayScan::startDisplay();
     }
 
     // .........................................................................
