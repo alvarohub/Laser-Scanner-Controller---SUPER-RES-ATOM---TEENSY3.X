@@ -42,8 +42,8 @@
 // ========================= WHICH HARDWAARE WE USING?  ========================
 // * NOTE ATTN: This code is only for the Teensy 3.x and up.
 // If using a teensy <3.5, then there is only one DAC.
-//#define TEENSY_35_36
-#define TEENSY_31_32
+#define TEENSY_35_36
+//#define TEENSY_31_32
 //#define TEENSY_LC
 
 // ========================= GPIO PINS DEFINITION ==============================
@@ -52,8 +52,8 @@
 // On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22); on the
 // Teensy 3.1/3.2 there is only one DAC on pin A14, same than LC on pin A12
 #if defined TEENSY_35_36
-#define PIN_ADCX	A21
-#define PIN_ADCY 	A22
+#define PIN_ADCX	 A21 // DAC0 
+#define PIN_ADCY 	 A22 // DAC1
 #elif defined TEENSY_31_32
 #define PIN_ADCX	A14
 #define PIN_ADCY 	3
@@ -62,7 +62,7 @@
 #define PIN_ADCY 	3
 #endif
 
-//  b) PWM pins to do hardware offset [can be set near 0 and calibrate center by softare...]. NOT USED for the time being - should not be necessary. 
+//  b) PWM pins to do hardware offset [can be set near 0 and calibrate center by softare...]. NOT USED for the time being - should not be necessary.
 #define PIN_OFFSETX  8
 #define PIN_OFFSETY  7
 

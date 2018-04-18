@@ -45,7 +45,7 @@ namespace Renderer2D {
             P2 point(bluePrintArray[i]);
 
             // 1) The true render: in order: resize, rotate and then translate (resize and rotate are commutative)
-            point.scale(scaleFactor);
+            point.scale(scaleFactor); // equal to point = point*scaleFactor.
             point.rotate(angle);
             point.translate(center);
 

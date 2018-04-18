@@ -100,6 +100,8 @@ namespace DisplayScan {
 
     void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {
         // note: can I use memcpy with size(P2)?? probably yes and much faster... TP TRY!!
+        //memcpy (ptrHiddenDisplayBuffer, _ptrFrameBuffer, _size*sizeof(P2));
+
         for (uint16_t k=0; k<_size; k++) {
             ptrHiddenDisplayBuffer[k].x=_ptrFrameBuffer[k].x;
             ptrHiddenDisplayBuffer[k].y=_ptrFrameBuffer[k].y;
@@ -126,6 +128,15 @@ namespace DisplayScan {
     // * NOTE 2 : general guideline is to keep your function short and avoid
     // calling other functions if possible.
     void displayISR() {
+
+        // Check blanking flag for each laser:
+        //Hardware::Lasers::blankUpdateAll();
+        // void blankUpdateAll() {
+        //     for (uint8_t l=0; j<NUM_LASERS; l++) {
+        //         if blankingLa
+        //     }
+        // }
+
 
         if (blankingFlag) {
             Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)

@@ -4,7 +4,3 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
-_SCANNER_H_	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^#define _SCANNER_H_$/;"	macro	line:3
-DEFAULT_RENDERING_INTERVAL	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^#define DEFAULT_RENDERING_INTERVAL /;"	macro	line:25
-DELAY_POSITIONING_MIRRORS_US	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^#define DELAY_POSITIONING_MIRRORS_US /;"	macro	line:28
-DisplayScan	/Users/alvaro/Dropbox/ABBELIGHT/ALVARO CODE/laserScanControl_ATOM_TEENSY/src/scannerDisplay.h	/^namespace DisplayScan { \/\/ note: this namespace contains methods that are beyond the low level hardware ones for controlling the$/;"	namespace	line:30

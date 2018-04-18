@@ -50,16 +50,19 @@ namespace Hardware {
 		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve the value of current power;
 		const uint8_t pinPowerLaser[5] = {2, 3, 4, 5, 6};  // PWM capable:
 		const uint8_t pinSwitchLaser[5] = {14, 15, 16, 17, 18};
+		//bool blankingLaser[5];// = {true, true, true, true, true};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
 		enum {RED=0, GREEN = 1, BLUE = 2, YELLOW =3, MAGENTA = 4};
 
 		extern void init();
 		extern void test();
+
 		void switchOffAll();
 		void switchOnAll();
 		void setPowerAll( uint16_t _power );
 
+		// Other methods for low level, more explicit control:
 		inline void setSwitchRed(bool _state) {digitalWrite(pinSwitchLaser[RED], _state);}
 		inline void setPowerRed(uint16_t _power) {analogWrite(pinPowerLaser[RED], _power);}
 

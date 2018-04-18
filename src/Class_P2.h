@@ -2,8 +2,8 @@
 #define _P2_H
 
 #include "Arduino.h"
-#include "Definitions.h"
-#include "Utils.h"
+//#include "Definitions.h"
+//#include "Utils.h"
 
 // Very simple 2D integer vector class:
 class P2 {
