@@ -10,11 +10,11 @@ namespace Renderer2D {
     float scaleFactor = 1.0;
 
     uint16_t sizeBlueprint = 0; // this would not be necessary if using an STL container. It is
-    // just the size of the current bluepring array, modified and set when drawing a figure (see
-    // graphic primitives)
+    // just the size of the current bluepring array, modified and set when drawing a figure [see
+    // graphic primitives]
 
-    P2 bluePrintArray[MAX_NUM_POINTS];// PointBuffer bluePrintArray;
-
+    P2 bluePrintArray[MAX_NUM_POINTS];// P2f (floating point precision: do a TEMPLATE and typedef for P2 class!!)
+    P2 frameBuffer[MAX_NUM_POINTS]; // the rendered, clipped points (do a P2i)
 
     uint16_t getSizeBlueprint() {
         return(sizeBlueprint);
@@ -27,19 +27,12 @@ namespace Renderer2D {
     void addToBlueprint(const P2 &_newPoint) {
 
         // add point and increment index:
-        if (sizeBlueprint<MAX_NUM_POINTS)
-        bluePrintArray[sizeBlueprint++] = _newPoint;
+        if (sizeBlueprint<MAX_NUM_POINTS) {
+            bluePrintArray[sizeBlueprint++] = _newPoint;
+        }
         // otherwise do nothing
 
         PRINTLN(sizeBlueprint);
-    }
-
-    // Not used for now, but this will enable re-writting over the
-    // current blueprint [although it will be a better idea to delete
-    // whole objects to avoid the mess]
-    void writeInBluePrintArray(uint16_t _index, const P2 &_newPoint) {
-        // Could be used to overwrite a figure, but normally we would use addToBluePrint(...)
-        if (_index<MAX_NUM_POINTS) bluePrintArray[_index] = _newPoint;
     }
 
     // ======= RENDERING with CURRENT POSE TRANSFORMATION =====================================
@@ -50,16 +43,30 @@ namespace Renderer2D {
         // Draw the figure with proper translation, rotation and scale on the "hidden" buffer:
         for (uint16_t i = 0; i < sizeBlueprint; i++) {
             P2 point(bluePrintArray[i]);
-            // In order: resize, rotate and then translate (resize and rotate are commutative)
+
+            // 1) The true render: in order: resize, rotate and then translate (resize and rotate are commutative)
             point.scale(scaleFactor);
             point.rotate(angle);
             point.translate(center);
-            //point.constrainPos(); won't do that - prefer to compute with floats outside range, but the Scanner setMirrorsTo method
-            // will take care of the contrain.
-            DisplayScan::writeOnHiddenBuffer(i, point); // the "bridge" method between the renderer and the displaying engine!
+
+            // 2) The viewport transform [could be in another namespace/method]);
+            // Map to the galvo limits [ROI parameters are passed here
+            // because these do not belong to the Hardware namespace]:
+            Hardware::Scanner::mapViewport(point, minX, maxX, minY, maxY);
+
+            // 3) And finally, before saving the "framebuffer", do the "vieport/clip transform:
+            Hardware::Scanner::clipLimits(point);  // constrain to the galvo limits
+
+            //4) Finally, the "bridge" method between the renderer and the displaying engine
+            // [TODO: save in an intermediate "framebuffer" to pass to setDisplayBuffer method]
+            // DisplayScan::writeOnHiddenBuffer(i, point);
+            frameBuffer[i] = point;
         }
 
-        DisplayScan::setDisplayBuffer(bluePrintArray, sizeBlueprint);
+        // * NOTE: the "frameBuffer" is the buffer of rendered, projected, viewported and clipped points,
+        // and it is made of uint16_t points! (for the itme being, still floats, but use a TEMPLATE and a typedef...)
+        // * NOTE 2 : this method will fill the current "hidden" buffer, and indicate the need to swap buffers:
+        DisplayScan::setDisplayBuffer(frameBuffer, sizeBlueprint);
     }
 
     void clearBlueprint() {

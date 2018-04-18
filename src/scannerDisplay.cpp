@@ -98,14 +98,12 @@ namespace DisplayScan {
         (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
     }
 
-    extern void setDisplayBuffer(const P2 *ptrBlueprint, uint16_t _sizeBlueprint) {
-
-        // NOTE: for the time being, the ptr to the blueprint is not used:
-        // the renderer already "send" the points one by one to the
-        // display engine. This also happens in openGL [there are two
-        // modes: point by point, or send a vertex array - for the
-        // time being, I only doing the first thing, so the parameter
-        // is not used (yet).
+    void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {
+        // note: can I use memcpy with size(P2)?? probably yes and much faster... TP TRY!!
+        for (uint16_t k=0; k<_size; k++) {
+            ptrHiddenDisplayBuffer[k].x=_ptrFrameBuffer[k].x;
+            ptrHiddenDisplayBuffer[k].y=_ptrFrameBuffer[k].y;
+        }
 
         needSwapFlag = true;
         // The following is a critical piece of code and must be ATOMIC, otherwise
@@ -115,7 +113,7 @@ namespace DisplayScan {
         // of the buffer is only done at the end of a rendering figure: not very often.
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
             //noInterrupts();
-            newSizeBufferDisplay = _sizeBlueprint;
+            newSizeBufferDisplay = _size;
             //interrupts();
         }
     }
@@ -135,14 +133,13 @@ namespace DisplayScan {
         }
 
         // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
-        int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
-        int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
+        int16_t adcX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
+        int16_t adcY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
 
-        // PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
+        // PRINT(adcX);PRINT(" ");PRINTLN(adcY);
 
         // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
-        Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
-
+        Hardware::Scanner::setPosRaw(adcX, adcY);
 
         // After setting, advance the readingHead on the round-robin buffer:
         // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
@@ -176,7 +173,8 @@ namespace DisplayScan {
 
             // * NOTE : The following variables are volatile - they
             //need to be, because they are modified in the ISR:
-            sizeBufferDisplay = newSizeBufferDisplay;
+            sizeBufferDisplay = newSizeBufferDisplay; //necessary in case the number of
+            // points of the scene has changed [including clearing it]
             volatile P2 *ptrAux = ptrCurrentDisplayBuffer;
             ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
             ptrHiddenDisplayBuffer = ptrAux;

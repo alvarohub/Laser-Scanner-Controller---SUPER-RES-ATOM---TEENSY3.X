@@ -47,9 +47,9 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern void setBlankingRed(bool _val);
 
 	extern void writeOnHiddenBuffer(uint16_t _absIndex, const P2& _point);
-	// NOTE: to go faster, we could direcly access the buffers and not use this
-	// method, but it will be only called when rendering a figure by the renderer,
-	// which will not happen too fast. This is safer!
+
+    extern void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size);
+
 
 	// * NOTE: Even if this is not a class, I can make variables or methods
  	// "private" by using an anonymous namespace:

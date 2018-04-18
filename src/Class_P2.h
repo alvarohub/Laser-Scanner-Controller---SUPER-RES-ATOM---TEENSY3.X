@@ -53,18 +53,18 @@ class P2 {
       y *= _factor;
     }
 
-    // Constrain position? no, better to let it go outside range, but constrain only on displaying.
-    // static void constrainPos(P2& point) {
-    //   Utils::constrainPos(point.x, point.y);
-    // }
-    // inline void constrainPos() { // code repeated for faster excecution (although this is not called at each display)
+    // inline void constrainPos() { // inline? not repeated during display thought
     //   if (x > MAX_MIRRORS_ADX) x = MAX_MIRRORS_ADX;
     //   else if (x < MIN_MIRRORS_ADX) x = MIN_MIRRORS_ADX;
     //   if (y > MAX_MIRRORS_ADY) y = MAX_MIRRORS_ADY;
     //   else if (y < MIN_MIRRORS_ADY) y = MIN_MIRRORS_ADY;
     // }
+    //
+    // static void constrainPos(P2& point) {
+    //   Utils::constrainPos(point.x, point.y);
+    // }
 
- // private:
+ // private?:
     float x, y;
 };
 

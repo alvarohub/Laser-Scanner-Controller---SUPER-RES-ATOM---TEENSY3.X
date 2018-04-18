@@ -72,7 +72,7 @@ namespace Hardware {
 
 			void init() {
 				// RENCENTER mirror and fill BOTH buffers with the central position too:
-				recenterMirrors();
+				recenterPosRaw();
 				PRINTLN(">> SCANNERS READY");
 			}
 
@@ -128,7 +128,7 @@ namespace Hardware {
 						x-=stepX;
 						while (usec < 100); usec = 0;// wait 100us
 					} while (x> MIN_MIRRORS_ADX);
-					recenterMirrors();
+					recenterPosRaw();
 					// restart the ISR?
 					if (previousState) DisplayScan::startDisplay();
 				}
