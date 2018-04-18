@@ -57,9 +57,6 @@ openGL like renderer.
 
 namespace Graphics {
 
-	// When set to true, the previous scene is deleted before rendering:
-	extern bool clearModeFlag;
-
 	// (1) Setter for OPENGL-like pose ("modelview matrix") ==========
 	// * NOTE: figure is recomputed from its (unchanged, stored) blueprint to
 	// avoid approximation drift.
@@ -72,6 +69,7 @@ namespace Graphics {
 	extern void clearScene(); // force clear scene
 	extern void updateScene();
 	extern void setClearMode(bool _clearModeFlag);
+	extern bool getClearMode() ;
 	//extern void renderFigure(); // unnecessary wrapper, and less clear than
 	//calling the Renderer2D (we could then change the rendering engine easily)
 
@@ -121,13 +119,15 @@ namespace Graphics {
 	extern void drawZigZag(
 		const P2 &_fromPoint,
 		const float _lenX, const float _lenY,
-		const uint16_t _nx = 10, const uint16_t _ny = 10
+		const uint16_t _nx, const uint16_t _ny
 	);
 	extern void drawZigZag(
 		const P2 &_fromPoint, const P2 &_toPoint,
-		const uint16_t _nx = 10, const uint16_t _nuy = 10
+		const uint16_t _nx, const uint16_t _nuy
 	);
 	extern void drawZigZag(const uint16_t _x, const uint16_t _ny);
+
+	extern bool clearModeFlag;
 
 } // end namespace
 

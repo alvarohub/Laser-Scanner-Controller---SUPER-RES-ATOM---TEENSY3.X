@@ -26,12 +26,14 @@ namespace Graphics {
 		// that clearScene and clearBlueprint do the same, but
 		// in the future we will have separate blueprints for each object.
 		Renderer2D::clearBlueprint(); // clear blueprint is just like drawing an
-		// object with... zero points [and not added to the others]
+		// object with... zero points (and not added to the others)
 	}
 	void setClearMode(bool _clearModeFlag) {
 		clearModeFlag = _clearModeFlag;
 	}
-	void updateScene() {
+	bool getClearMode() {return(clearModeFlag);}
+
+	void updateScene() { // internally called ("private")
 		if (clearModeFlag) clearScene();
 	}
 
@@ -56,10 +58,10 @@ namespace Graphics {
 	void drawLine(const P2 &_fromPoint, const P2 &_toPoint, const uint16_t _numPoints) {
 		drawLine(_fromPoint, _toPoint.x-_fromPoint.x, _toPoint.y-_fromPoint.y, _numPoints);
 	}
-	void drawLine(uint16_t const _numPoints) {
-		// horizontal, "centered", unit length
-		drawLine( P2(-0.5,0.0), P2(0.5, 0.0), _numPoints );
+	void drawLine(uint16_t const _numPoints) {// horizontal, "centered", unit length
+		drawLine(P2(-0.5,0.0), P2(0.5, 0.0), _numPoints);
 	}
+
 	void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints) {
 		for (uint16_t i = 0; i < _numPoints; i++) {
 			float phi = 2.0*PI/_numPoints*i;
@@ -72,16 +74,22 @@ namespace Graphics {
 	void drawCircle(const float _radius, const uint16_t _numPoints) {
 		drawCircle(P2(0.0,0.0), _radius, _numPoints);
 	}
+
 	void drawCircle(const uint16_t _numPoints) {
 		drawCircle(1.0, _numPoints);
 	}
 
-	void drawRectangle(const P2 &_fromBottomLeftCornerPoint, const float _lenX, const float _lenY, const uint16_t _nx, const uint16_t _ny) {
+	void drawRectangle(
+		const P2 &_fromBottomLeftCornerPoint,
+		const float _lenX, const float _lenY,
+		const uint16_t _nx, const uint16_t _ny
+	) {
 		drawLine(_fromBottomLeftCornerPoint,  _lenX,      0,  _nx);
 		drawLine(Renderer2D::getLastPoint(),      0,  _lenY,  _ny);
 		drawLine(Renderer2D::getLastPoint(), -_lenX,      0,  _nx);
 		drawLine(Renderer2D::getLastPoint(),      0, -_lenX,  _ny);
-	}
+		}
+
 	void drawRectangle(const P2 &_lowerLeftCorner, const P2 &_upperRightCorner, const uint16_t _nx, const uint16_t _ny) {
 		P2 auxPoint(_upperRightCorner.x, _lowerLeftCorner.y);
 		drawLine(_lowerLeftCorner, auxPoint, _nx);
@@ -92,19 +100,31 @@ namespace Graphics {
 	}
 
 	void drawSquare(const P2 &_lowerLeftCorner, const float _sideLength, const uint16_t _numPointsSide) {
-		float step = _sideLength/_numPointsSide;
-		float x = _lowerLeftCorner.x, y = _lowerLeftCorner.y;
-		for (uint16_t k = 0; k<4; k++) {
-			for (uint16_t i = 0; i < _numPointsSide; i++) {
-				if (k%2) x += (k<1? 1.0 : -1.0)*step*i;
-				else y += (k<1? 1.0 : -1.0)*step*i;
-				addVertex(P2(x, y));
-			}
-		}
+
+		drawLine(_lowerLeftCorner,  _sideLength,      0,  _numPointsSide);
+		P2 lowerRightPoint(_lowerLeftCorner.x+_sideLength, _lowerLeftCorner.y);
+		drawLine(lowerRightPoint,      0,  _sideLength,  _numPointsSide);
+		P2 upperRightPoint(_lowerLeftCorner.x+_sideLength, _lowerLeftCorner.y+_sideLength);
+		drawLine(upperRightPoint, -_sideLength,      0,  _numPointsSide);
+		P2 upperLeftPoint(_lowerLeftCorner.x, _lowerLeftCorner.y+_sideLength);
+		drawLine(upperLeftPoint,      0, -_sideLength,  _numPointsSide);
+
+		// float step = _sideLength/_numPointsSide;
+		// float x = _lowerLeftCorner.x, y = _lowerLeftCorner.y;
+		// for (uint16_t k = 0; k<4; k++) {
+		// 	for (uint16_t i = 0; i < _numPointsSide; i++) {
+		// 		if (k%2) x += (k<1? 1.0 : -1.0)*step*i;
+		// 		else y += (k<1? 1.0 : -1.0)*step*i;
+		// 		addVertex(P2(x, y));
+		// 	}
+		// }
+
 	}
+
 	void drawSquare(const P2 &_center, const uint16_t _numPointsSide) {
 		drawRectangle(P2(_center.x-0.5, _center.y-0.5), P2(_center.x+0.5, _center.y+0.5), _numPointsSide, _numPointsSide);
 	}
+
 	void drawSquare(const uint16_t _numPointsSide) {
 		drawRectangle(P2(-0.5, -0.5), P2(0.5, 0.5), _numPointsSide, _numPointsSide);
 	}
@@ -115,22 +135,12 @@ namespace Graphics {
 		const float _lenX, const float _lenY,
 		const uint16_t _nx, const uint16_t _ny
 	) {
-		float stepX = _lenX/_nx, stepY = _lenY/_ny;
-		float x = _fromPoint.x, y = _fromPoint.y;
-		for (uint8_t i=0; i<_ny; i++) {
-			for (uint8_t j=0; j<_nx; j++) {
-				addVertex(P2(x, y));
-				x += (i%2? 1.0 : -1.0)*stepX;
-			}
-			y += stepY;
-		}
-	}
 
+	}
 	void drawZigZag(
 		const P2 &_fromPoint, const P2 &_toPoint,
-		const uint16_t _nx, const uint16_t _ny
+		const uint16_t _nx, const uint16_t _nuy
 	) {
-		drawZigZag(_fromPoint, _toPoint.x-_fromPoint.x, _toPoint.y-_fromPoint.y, _nx, _ny);
 
 	}
 	void drawZigZag(const uint16_t _x, const uint16_t _ny) {

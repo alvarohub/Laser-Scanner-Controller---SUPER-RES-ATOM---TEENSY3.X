@@ -208,12 +208,22 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else if ((_cmdString == DISPLAY_STATUS)&&(_numArgs == 0))    {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
 
-        if (DisplayScan::getRunningState())
-        PRINTLN(">>   STATUS: ON");
+        PRINT(">>   CLEAR SCENE MODE:");
+        if (Graphics:: getClearMode())
+        PRINTLN(" ON");
         else
-        PRINTLN(">>   STATUS: OFF");
+        PRINTLN(" OFF");
 
-        PRINT(">>   NUM FIGURE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+        PRINT(">>   NUM SCENE POINTS:");
+        PRINTLN(DisplayScan::getBufferSize());
+
+        if (DisplayScan::getRunningState())
+        PRINTLN(">>   DISPLAYING ISR ON");
+        else
+        PRINTLN(">>   DISPLAYING ISR OFF");
+
+        PRINT(">>   NUM CURRENT DISPLAY POINTS:");
+        PRINTLN(Renderer2D::getSizeBlueprint());
     }
 
     // ================== LASERS =======================================
@@ -314,7 +324,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
             case 1: // num point [unit radius, centered]
             Graphics::drawCircle(argStack[0].toInt());
             break;
-            case 5:
+            case 4:
             { // center point, radius, num points
                 P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
                 Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
@@ -352,37 +362,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
             { // center point, radius, num points
                 P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
                 Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
-        Renderer2D::renderFigure();
-    }
-
-    // == MAKE ZIGZAG ==========================================
-    else if (_cmdString == MAKE_ZIGZAG) {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::updateScene();
-        switch(_numArgs) {
-            case 6: // full info: start point, lenx, leny, num points x, numpoints y;
-            { // center point, radius, num points
-                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawZigZag(
-                    fromP2,
-                    argStack[2].toFloat(), argStack[3].toFloat(),
-                    argStack[4].toInt(), argStack[5].toInt()
-                );
-            }
-            break;
-            case 4: // numpoints: 10x10
-            {
-                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawZigZag(
-                    fromP2,
-                    argStack[2].toFloat(), argStack[3].toFloat()
-                );
             }
             break;
             default:
@@ -461,8 +440,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     }
 
     if (parseOk) {
-        PRINTLN("END SUCCESSFUL EXECUTION");
+        PRINTLN(">> END SUCCESSFUL EXECUTION");
         Hardware::blinkLedMessage(2);
+    } else {
+        PRINTLN(">> BAD COMMAND/PARAMETERS");
     }
 
     return parseOk;

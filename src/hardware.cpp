@@ -11,8 +11,6 @@ namespace Hardware {
 			pinMode(PIN_LED_DEBUG, OUTPUT);   digitalWrite(PIN_LED_DEBUG, LOW);     // for debug, etc
 			pinMode(PIN_LED_MESSAGE, OUTPUT); digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
-			//bool blankingLaser[5] = {true, true, true, true, true};
-
 			// ========= Configure PWM frequency and resolution
 			// Resolution [available on Teensy LC, 3.0 - 3.6]
 			analogWriteResolution(12); // 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
@@ -34,7 +32,7 @@ namespace Hardware {
 		// Set frequency in HZ on pins 5, 6, 9, 10, 20, 21, 22, 23
 		//[works on 3.1 to 3.6]
 		void setPWMFreq(uint16_t _freq) {
-			analogWriteFrequency(2, _freq);
+			analogWriteFrequency(5, _freq);
 		}
 	}
 
@@ -74,7 +72,7 @@ namespace Hardware {
 
 		void init() {
 			// RENCENTER mirror and fill BOTH buffers with the central position too:
-			recenterPosRaw();
+			recenterMirrors();
 			PRINTLN(">> SCANNERS READY");
 		}
 
@@ -130,7 +128,7 @@ namespace Hardware {
 					x-=stepX;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (x> MIN_MIRRORS_ADX);
-				recenterPosRaw();
+				recenterMirrors();
 				// restart the ISR?
 				if (previousState) DisplayScan::startDisplay();
 			}
@@ -156,6 +154,7 @@ namespace Hardware {
 					usec = 0;
 				}
 			}
+			recenterMirrors();
 			// restart the ISR?
 			if (previousState) DisplayScan::startDisplay();
 		}

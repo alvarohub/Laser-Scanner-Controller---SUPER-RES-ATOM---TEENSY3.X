@@ -5,7 +5,7 @@
 #include "Definitions.h"
 #include "Utils.h"
 #include "scannerDisplay.h"
-#include "Class_P2.h"
+
 
 // ============ LOW LEVEL HARDWARE METHODS ================================
 // * NOTE 1: make the critic code inline!
@@ -48,21 +48,18 @@ namespace Hardware {
 		#define NUM_LASERS 5
 
 		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve the value of current power;
-		const uint8_t pinPowerLaser[5] = {2, 3, 4, 5, 6};  // PWM capable:
+		const uint8_t pinPowerLaser[5] = {5, 6, 7, 8, 9};//2, 3, 4, 5, 6};  // PWM capable:
 		const uint8_t pinSwitchLaser[5] = {14, 15, 16, 17, 18};
-		//bool blankingLaser[5];// = {true, true, true, true, true};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
 		enum {RED=0, GREEN = 1, BLUE = 2, YELLOW =3, MAGENTA = 4};
 
 		extern void init();
 		extern void test();
-
 		void switchOffAll();
 		void switchOnAll();
 		void setPowerAll( uint16_t _power );
 
-		// Other methods for low level, more explicit control:
 		inline void setSwitchRed(bool _state) {digitalWrite(pinSwitchLaser[RED], _state);}
 		inline void setPowerRed(uint16_t _power) {analogWrite(pinPowerLaser[RED], _power);}
 
@@ -85,8 +82,19 @@ namespace Hardware {
 	namespace Scanner {
 		extern void init();
 
-		//Set mirrors - no constrain, no viewport transform [we assume the "renderer" did that already]:
-		inline void setPosRaw(int16_t _posX, int16_t _posY) {
+
+		inline void setMirrorsTo(int16_t _posX, int16_t _posY) {
+
+			// ATTENTION : (0,0) corresponds to the middle position of the mirrors!
+			_posX += CENTER_MIRROR_ADX;
+			_posY += CENTER_MIRROR_ADY;
+
+			// constrainPos(_posx, _posy); // not using a function call is
+			// better [use a MACRO, an inlined function or write the code here]:
+			if (_posX > MAX_MIRRORS_ADX) _posX = MAX_MIRRORS_ADX;
+			else if (_posX < MIN_MIRRORS_ADX) _posX = MIN_MIRRORS_ADX;
+			if (_posY > MAX_MIRRORS_ADY) _posY = MAX_MIRRORS_ADY;
+			else if (_posY < MIN_MIRRORS_ADY) _posY = MIN_MIRRORS_ADY;
 
 			// NOTE: using alogWrite is far from optimal! in the future go more barebones!!
 			analogWrite( PIN_ADCX, (uint16_t)_posX );
@@ -95,8 +103,9 @@ namespace Hardware {
 			#endif
 		}
 
-		inline void recenterPosRaw() {
-			setPosRaw(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
+		inline void recenterMirrors() {
+			setMirrorsTo(0,0);
+			//setMirrorsTo(CENTER_MIRROR_ADX, CENTER_MIRROR_ADY);
 		}
 
 		// Low level ADC test (also visual scanner range check).
@@ -107,17 +116,8 @@ namespace Hardware {
 		extern void testMirrorRange(uint16_t _durationSec);
 		extern void testCircleRange(uint16_t _durationSec);
 
-		inline void mapViewport(P2 &_point, float _minX, float _maxX, float _minY, float _maxY) {
-			_point.x=map(_point.x, _minX, _maxX, MIN_MIRRORS_ADX, MAX_MIRRORS_ADX);
-			_point.y=map(_point.y, _minY, _maxY, MIN_MIRRORS_ADY, MAX_MIRRORS_ADY);
-		}
-
-		inline void clipLimits(P2 &_point) {
-			if (_point.x > MAX_MIRRORS_ADX) _point.x = MAX_MIRRORS_ADX;
-			else if (_point.x < MIN_MIRRORS_ADX) _point.x = MIN_MIRRORS_ADX;
-			if (_point.y > MAX_MIRRORS_ADY) _point.y = MAX_MIRRORS_ADY;
-			else if (_point.y < MIN_MIRRORS_ADY) _point.y = MIN_MIRRORS_ADY;
-		}
 	}
+
 }
+
 #endif

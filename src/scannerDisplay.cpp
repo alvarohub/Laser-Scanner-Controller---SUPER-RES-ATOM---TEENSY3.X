@@ -98,102 +98,84 @@ namespace DisplayScan {
         (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
     }
 
-    void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {
-        // note: can I use memcpy with size(P2)?? probably yes and much faster... TP TRY!!
-        //memcpy (ptrHiddenDisplayBuffer, _ptrFrameBuffer, _size*sizeof(P2));
+    void requestBufferSwap() {needSwapFlag = true;}
 
-        for (uint16_t k=0; k<_size; k++) {
-            ptrHiddenDisplayBuffer[k].x=_ptrFrameBuffer[k].x;
-            ptrHiddenDisplayBuffer[k].y=_ptrFrameBuffer[k].y;
-        }
-
-        needSwapFlag = true;
-        // The following is a critical piece of code and must be ATOMIC, otherwise
-        // the flag may be reset
+    void resizeBuffer(uint16_t _newSize) {
+        //PRINT("NEW SIZE BUFFER: "); PRINTLN(_newSize);
+        // The following is a critical piece of code and must be ATOMIC, otherwise the flag may be reset
         // by the ISR before newSizeBufferDisplay is set. Now, this means the displaying
         // engine will briefly stop - but really briefly, and moreover the resizing
         // of the buffer is only done at the end of a rendering figure: not very often.
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
             //noInterrupts();
-            newSizeBufferDisplay = _size;
+            newSizeBufferDisplay = _newSize;
             //interrupts();
-        }
-    }
-
-    // =================================================================
-    // =========== Mirror-psitioning ISR that is called every dt =======
-    //==================================================================
-    // * NOTE 1 : this is perhaps the most critical method. And it has to be
-    // as fast as possible!! in the future, do NOT use analogWrite() !!
-    // * NOTE 2 : general guideline is to keep your function short and avoid
-    // calling other functions if possible.
-    void displayISR() {
-
-        // Check blanking flag for each laser:
-        //Hardware::Lasers::blankUpdateAll();
-        // void blankUpdateAll() {
-        //     for (uint8_t l=0; j<NUM_LASERS; l++) {
-        //         if blankingLa
-        //     }
-        // }
-
-
-        if (blankingFlag) {
-            Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)
-            // TODO: also add delay for laser off? (TODO)
+            }
         }
 
-        // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
-        int16_t adcX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
-        int16_t adcY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
+        // =================================================================
+        // =========== Mirror-psitioning ISR that is called every dt =======
+        //==================================================================
+        // * NOTE 1 : this is perhaps the most critical method. And it has to be
+        // as fast as possible!! (in the future, do NOT use analogWrite() !!)
+        // * NOTE 2 : general guideline is to keep your function short and avoid
+        // calling other functions if possible.
+        void displayISR() {
 
-        // PRINT(adcX);PRINT(" ");PRINTLN(adcY);
+            if (blankingFlag) {
+                Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)
+                // TODO: also add delay for laser off? (TODO)
+            }
 
-        // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
-        Hardware::Scanner::setPosRaw(adcX, adcY);
+            // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
+            int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
+            int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
 
-        // After setting, advance the readingHead on the round-robin buffer:
-        // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
-        // hence the condition on sizeBuffer size:
-        if (sizeBufferDisplay) readingHead = (readingHead + 1) % sizeBufferDisplay; // no need to qualify it as volatile
-        // since only the ISR will use it.
+          // PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
+
+            // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
+            Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
 
 
-        if (blankingFlag) {
-            // TODO: non-blocking delay for mirror positioning before switching
-            // the laser on? ...for the time being: blocking (for tests)
-            elapsedMicros pause = 0;
-            while ( pause < DELAY_POSITIONING_MIRRORS_US );
+            // After setting, advance the readingHead on the round-robin buffer:
+            // ATTN: if the second operand of / or % is zero the behavior is undefined in C++,
+            // hence the condition on sizeBuffer size:
+            if (sizeBufferDisplay) readingHead = (readingHead + 1) % sizeBufferDisplay; // no need to qualify it as volatile
+            // since only the ISR will use it.
 
-            Hardware::Lasers::setSwitchRed(HIGH);
 
-        }
+            if (blankingFlag) {
+                // TODO: non-blocking delay for mirror positioning before switching
+                // the laser on? ...for the time being: blocking (for tests)
+                elapsedMicros pause = 0;
+                while (pause<DELAY_POSITIONING_MIRRORS_US);
 
-        // Exchange buffers when finishing displaying the current buffer
-        // AND needSwapFlag is true - meaning the rendering engine finished drawing a
-        // new figure on the hidden buffer [check renderFigure() method]:
-        if ( needSwapFlag && !readingHead ) {
-            // i.e. if we need to swap and we are in the start of buffer
-            // * NOTE : the second condition is optional: we could start displaying from
-            // the current readingHead - but this will deform the figure when
-            // rendering too fast.
+                Hardware::Lasers::setSwitchRed(HIGH); // avoid calling a function here if possible (TODO)
 
-            // NOTE: resizing may or may not have taken place while rendering a
-            // new scene/figure, but instead of having a flag, let's just use
-            // the value of newSizeBufferDisplay which is set in the renderer method.
+            }
 
-            // * NOTE : The following variables are volatile - they
-            //need to be, because they are modified in the ISR:
-            sizeBufferDisplay = newSizeBufferDisplay; //necessary in case the number of
-            // points of the scene has changed [including clearing it]
-            volatile P2 *ptrAux = ptrCurrentDisplayBuffer;
-            ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
-            ptrHiddenDisplayBuffer = ptrAux;
+            // Exchange buffers when finishing displaying the current buffer
+            // AND needSwapFlag is true - meaning the rendering engine finished drawing a
+            // new figure on the hidden buffer [check renderFigure() method]:
+            if ( needSwapFlag && !readingHead ) {
+                // i.e. if we need to swap and we are in the start of buffer
+                // * NOTE : the second condition is optional: we could start displaying from
+                // the current readingHead - but this will deform the figure when
+                // rendering too fast.
 
-            // AND VERY IMPORTANT:
-            needSwapFlag = false;
+                // NOTE: resizing may or may not have taken place while rendering a
+                // new scene/figure, but instead of having a flag, let's just use
+                // the value of newSizeBufferDisplay which is set in the renderer method.
+
+                // * NOTE : The following variables are volatile - they
+                //need to be, because they are modified in the ISR:
+                sizeBufferDisplay = newSizeBufferDisplay;
+                volatile P2 *ptrAux = ptrCurrentDisplayBuffer;
+                ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
+                ptrHiddenDisplayBuffer = ptrAux;
+                needSwapFlag = false;
+            }
+
         }
 
     }
-
-}

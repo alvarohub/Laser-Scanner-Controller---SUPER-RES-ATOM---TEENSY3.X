@@ -27,19 +27,8 @@
 
 namespace Renderer2D {
 
-	// ======== STATE VARIABLES  ================
+	// ======== STATE VARIABLES  ======================================================
 	// a) Simplified OpenGL-like "state variables":
-	//  1)  Simplified, orthographic projection transformation:
-	// * Note 1: The following parameters define the "region of interest" and
-	// will be used to map the values from the added vertices to the
-	// mirror coordinates (using Arduino "map" method or a custom one).
-	// * NOTE 2: for the time being, these parameters are fixed;
-	const float minX = -100.0;
-	const float maxX = 100.0;
-	const float minY = -100.0;
-	const float maxY = 100.0;
-
-	// 2) the "modelview" matrix (translation, rotation and scaling):
 	extern P2 center;
 	extern float angle;
 	extern float scaleFactor;
@@ -58,6 +47,8 @@ namespace Renderer2D {
 	extern const P2 getLastPoint();
 
 	extern void addToBlueprint(const P2 &_newPoint);
+	extern void writeInBluePrintArray(uint16_t _index, const P2 &_newPoint);
+
 	extern void renderFigure(); // render with current pose transformation
 
 	//namespace { // "private"

@@ -52,8 +52,8 @@
 // On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22); on the
 // Teensy 3.1/3.2 there is only one DAC on pin A14, same than LC on pin A12
 #if defined TEENSY_35_36
-#define PIN_ADCX	 A21 // DAC0 
-#define PIN_ADCY 	 A22 // DAC1
+#define PIN_ADCX	A21
+#define PIN_ADCY 	A22
 #elif defined TEENSY_31_32
 #define PIN_ADCX	A14
 #define PIN_ADCY 	3
