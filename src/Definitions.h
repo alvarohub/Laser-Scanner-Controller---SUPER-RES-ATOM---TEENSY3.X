@@ -37,7 +37,7 @@
 // ========================= RENDERER ==========================================
 // IMPORTANT: for the time being, we will NOT use a vector<> array, so we need
 // to set maximum number of points (P2) larger than any figure size. If this is too large, compile will fail.
-#define MAX_NUM_POINTS 1000
+#define MAX_NUM_POINTS 5000
 
 // ========================= WHICH HARDWAARE WE USING?  ========================
 // * NOTE ATTN: This code is only for the Teensy 3.x and up.

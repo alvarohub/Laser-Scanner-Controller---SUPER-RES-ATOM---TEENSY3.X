@@ -371,6 +371,18 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Renderer2D::renderFigure();
     }
 
+    else if ((_cmdString == MAKE_ZIGZAG)&&(_numArgs == 6))     {
+        PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+        Graphics::updateScene();
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawZigZag(
+            fromP2,
+            argStack[2].toFloat(), argStack[3].toFloat(),
+            argStack[4].toInt(), argStack[5].toInt()
+        );
+        Renderer2D::renderFigure();
+    }
+
     // ....
 
     // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
