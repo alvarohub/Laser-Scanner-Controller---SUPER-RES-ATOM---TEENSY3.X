@@ -43,6 +43,7 @@
 #define MAKE_ZIGZAG         "ZIGZAG"
 
 // 6) TEST FIGURES:
+#define COMPOSITE_TEST      "TEST"
 #define CIRCLE_TEST         "CITEST"
 #define SQUARE_TEST         "SQTEST"
 
@@ -55,14 +56,14 @@
 
 // =============================================================================
 String messageString;
-#define MAX_LENGTH_STACK 5
+#define MAX_LENGTH_STACK 20
 String argStack[MAX_LENGTH_STACK];// number stack storing numeric parameters for commands (for RPN-like parser). Note that the data is saved as a String - it will be converted to int, float or whatever by the specific method associated with the correnspondant command.
 String cmd; // we will parse one command at a time
 
 // Initialization:
 void initSerialCom() {
     Serial.begin(SERIAL_BAUDRATE);
-    messageString.reserve(100);
+    messageString.reserve(200);
     messageString = "";
 }
 
@@ -293,11 +294,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::updateScene();
         switch(_numArgs) {
-            case 1: // num point [unit length, "centered" and horizontal]
-            Graphics::drawLine(argStack[0].toInt());
+            case 3:  //centered
+            Graphics::drawLine(
+                argStack[0].toFloat(), argStack[2].toFloat(),
+                argStack[4].toInt()
+            );
             break;
             case 5:
-            { // from point, lenX, lenY, num points
+            {
+                // from point, lenX, lenY, num points
                 P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
                 Graphics::drawLine(
                     startP2,
@@ -321,8 +326,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::updateScene();
         switch(_numArgs) {
-            case 1: // num point [unit radius, centered]
-            Graphics::drawCircle(argStack[0].toInt());
+            case 2: // radius + num points [centered]
+            Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
             break;
             case 4:
             { // center point, radius, num points
@@ -338,15 +343,30 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     }
 
     // == MAKE RECTANGLE ==========================================
-    else if ((_cmdString == MAKE_RECTANGLE)&&(_numArgs == 6))     {
+    else if (_cmdString == MAKE_RECTANGLE)     {
         PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
         Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawRectangle(
-            fromP2,
-            argStack[2].toFloat(), argStack[3].toFloat(),
-            argStack[4].toInt(), argStack[5].toInt()
-        );
+        switch(_numArgs) {
+            case 4: // [centered]
+            Graphics::drawRectangle(
+                argStack[0].toFloat(), argStack[1].toFloat(),
+                argStack[2].toInt(), argStack[3].toInt()
+            );
+            break;
+            case 6:
+            {   // From lower left corner:
+                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawRectangle(
+                    fromP2,
+                    argStack[2].toFloat(), argStack[3].toFloat(),
+                    argStack[4].toInt(), argStack[5].toInt()
+                );
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
         Renderer2D::renderFigure();
     }
 
@@ -355,8 +375,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::updateScene();
         switch(_numArgs) {
-            case 1: // num point [unit side, centered]
-            Graphics::drawSquare(argStack[0].toInt());
+            case 2: // side, num point [centered]
+            Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
             break;
             case 4:
             { // center point, radius, num points
@@ -371,15 +391,30 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         Renderer2D::renderFigure();
     }
 
-    else if ((_cmdString == MAKE_ZIGZAG)&&(_numArgs == 6))     {
+    else if (_cmdString == MAKE_ZIGZAG)     {
         PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
         Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawZigZag(
-            fromP2,
-            argStack[2].toFloat(), argStack[3].toFloat(),
-            argStack[4].toInt(), argStack[5].toInt()
-        );
+        switch(_numArgs) {
+            case 4: // Centered on [0,0]
+            Graphics::drawZigZag(
+                argStack[0].toFloat(), argStack[1].toFloat(),
+                argStack[2].toInt(), argStack[3].toInt()
+            );
+            break;
+            case 6:
+            { // from left bottom corner:
+                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+                Graphics::drawZigZag(
+                    fromP2,
+                    argStack[2].toFloat(), argStack[3].toFloat(),
+                    argStack[4].toInt(), argStack[5].toInt()
+                );
+            }
+            break;
+            default:
+            parseOk = false;
+            break;
+        }
         Renderer2D::renderFigure();
     }
 
@@ -387,21 +422,33 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
     // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
     // and displaying is STARTED whatever the previous state]
-    // a) CIRCLE, NO PARAMETERS (500 ADC units radius circle, centered, 100 points)
+    // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
     else if ((_cmdString == CIRCLE_TEST) &&(_numArgs == 0))     {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();
-        Graphics::drawCircle(P2(0,0), 500.0, 100);
+        Graphics::drawCircle(1024.0, 360);
         // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
         Renderer2D::renderFigure();
         // THIS IS A TEST: Force display whatever the previous state:
-        DisplayScan::startDisplay(); // start engine (whatever the previous state)
+        DisplayScan::startDisplay(); // start engine, whatever the previous state
     }
-    // b) : SQUARE, NO PARAMETERS (500 ADC units side, centered, 10 points/side)
+    // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
     else if ((_cmdString == SQUARE_TEST)&&(_numArgs == 0))  {
         PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
         Graphics::clearScene();
-        Graphics::drawRectangle(P2(-250,-250), P2(250, 250), 20.0, 30.0);
+        Graphics::drawSquare(2048, 50.0);
+        Renderer2D::renderFigure();
+        DisplayScan::startDisplay();
+    }
+    // c) : SQUARE + CIRCLE TEST
+    else if ((_cmdString == COMPOSITE_TEST)&&(_numArgs == 0))  {
+        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+        Graphics::clearScene();
+        Graphics::drawSquare(3000, 30.0);
+        Graphics::drawCircle(1500, 60.0);
+        Graphics::drawSquare(2120, 30.0);
+        Graphics::drawLine(P2(-1500, 0), 3000, 0, 30.0);
+        Graphics::drawLine(P2(0, -1500), 0, 3000, 30.0);
         Renderer2D::renderFigure();
         DisplayScan::startDisplay();
     }

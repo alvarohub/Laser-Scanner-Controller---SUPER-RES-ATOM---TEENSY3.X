@@ -85,19 +85,19 @@ namespace Hardware {
 			// but using it internally. ISR priority: 32
 			elapsedMillis msec = 0;
 
-			uint16_t stepX = (MAX_MIRRORS_ADX-MIN_MIRRORS_ADX)/50;
-			uint16_t stepY = (MAX_MIRRORS_ADY-MIN_MIRRORS_ADY)/50;
-			uint16_t x=MIN_MIRRORS_ADX, y=MIN_MIRRORS_ADY;
-
 			// First, stop the ISR whatever its state:
 			bool previousState = DisplayScan::getRunningState();
 			if (previousState) DisplayScan::stopDisplay();
 
+			uint16_t stepX = (MAX_MIRRORS_ADX-MIN_MIRRORS_ADX)/50;
+			uint16_t stepY = (MAX_MIRRORS_ADY-MIN_MIRRORS_ADY)/50;
+			uint16_t x=MIN_MIRRORS_ADX, y=MIN_MIRRORS_ADY;
+
 			// Prepare initial position (wait a little more)
+			analogWrite( PIN_ADCX, x );
 			#ifdef TEENSY_35_36
 			analogWrite( PIN_ADCY, y );
 			#endif
-			analogWrite( PIN_ADCX, x );
 			while (usec < 300); usec = 0;
 
 			while (msec < (_durationSec*1000)) {
@@ -111,11 +111,13 @@ namespace Hardware {
 					y+=stepY;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (y< MAX_MIRRORS_ADY);
+				y-=stepY;
 				do  {
 					analogWrite( PIN_ADCX, x );
 					x+=stepX;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (x< MAX_MIRRORS_ADX);
+				x-=stepX;
 				do  {
 					#ifdef TEENSY_35_36
 					analogWrite( PIN_ADCY, y );
@@ -123,15 +125,17 @@ namespace Hardware {
 					y-=stepY;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (y>MIN_MIRRORS_ADY);
+				y+=stepY;
 				do  {
 					analogWrite( PIN_ADCX, x );
 					x-=stepX;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (x> MIN_MIRRORS_ADX);
+				x+=stepX;
+			}
 				recenterMirrors();
 				// restart the ISR?
 				if (previousState) DisplayScan::startDisplay();
-			}
 		}
 
 		void testCircleRange(uint16_t _durationSec) {

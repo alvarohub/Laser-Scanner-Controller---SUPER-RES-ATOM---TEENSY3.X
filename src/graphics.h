@@ -87,24 +87,24 @@ namespace Graphics {
 		const float _lenX, const float _lenY,
 		const uint16_t _numPoints
 	);
+	// Centered:
 	extern void drawLine(
-		const P2 &_fromPoint, const P2 &_toPoint,
-		const uint16_t _numPoints
+		const float _lenX, const float _lenY,
+		uint16_t const _numPoints
 	);
-	extern void drawLine(uint16_t const _numPoints);// center on (0,0),
-	// unitary length
 
 	extern void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints);
+	// Centered:
 	extern void drawCircle(const float _radius, const uint16_t _numPoints);
-	extern void drawCircle(const uint16_t _numPoints); // center on (0,0), unitary radius.
 
 	extern void drawRectangle(
 		const P2 &_fromBottomLeftCornerPoint,
 		const float _lenX, const float _lenY,
 		const uint16_t _nx, const uint16_t _ny
 	);
+	// Centered:
 	extern void drawRectangle(
-		const P2 &_lowerLeftCorner, const P2 &_upperRightCorner,
+		const float _lenX, const float _lenY,
 		const uint16_t _nx, const uint16_t _ny
 	);
 
@@ -113,19 +113,22 @@ namespace Graphics {
 		const float sideLength,
 		const uint16_t _numPointsSide
 	);
-	extern void drawSquare(const P2 &_center, const uint16_t _numPointsSide);
-	extern void drawSquare(const uint16_t _numPointsSide); // center on (0,0), unitary sides
+	//Centered:
+	extern void drawSquare(
+		const float _sideLength,
+		const uint16_t _numPointsSide
+	);
 
 	extern void drawZigZag(
 		const P2 &_fromPoint,
 		const float _lenX, const float _lenY,
 		const uint16_t _nx, const uint16_t _ny
 	);
+	//Centered:
 	extern void drawZigZag(
-		const P2 &_fromPoint, const P2 &_toPoint,
-		const uint16_t _nx, const uint16_t _nuy
+		const float _lenX, const float _lenY,
+		const uint16_t _nx, const uint16_t _ny
 	);
-	extern void drawZigZag(const uint16_t _x, const uint16_t _ny);
 
 	extern bool clearModeFlag;
 
