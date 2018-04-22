@@ -11,9 +11,14 @@
 // ==================== SPEED COMMUNICATION:
 #define SERIAL_BAUDRATE 38400
 
+// ==================== PARSER SETTINGS:
+// Uncomment the following if you want the parser to continue parsing after a bad character (better not to do that)
+//#define CONTINUE_PARSING
+
 // ==================== PACKET ENCAPSULATION:
 #define NUMBER_SEPARATOR    ','
-#define END_PACKET          '\n' // newline (ASCII value 10)
+#define END_PACKET          '\n' // newline (ASCII value 10). NOTE: without anything else, this repeat GOOD command.
+#define LINE_FEED_IGNORE    13   // line feed: must be ignored (sometimes added in terminal input)
 
 // ==================== COMMANDS:
 // 1) Laser commands:
@@ -23,6 +28,7 @@
 // 2) Hardware::Scan commands:
 #define START_DISPLAY       "START"
 #define STOP_DISPLAY        "STOP"
+#define SET_INTERVAL        "DT" // parameter: inter-point time in us
 #define DISPLAY_STATUS      "STATUS"
 
 // 3) Figures and pose:
@@ -62,119 +68,158 @@ String cmd; // we will parse one command at a time
 
 // Initialization:
 void initSerialCom() {
-    Serial.begin(SERIAL_BAUDRATE);
-    messageString.reserve(200);
-    messageString = "";
+  Serial.begin(SERIAL_BAUDRATE);
+  messageString.reserve(200);
+  messageString = "";
 }
 
 // ====== GATHER BYTES FROM SERIAL PORT ========================================
 // * NOTE: This will fill the messageString until finding a packet terminator
 void serialEvent() {
-    // SerialEvent occurs whenever a new data comes in the hardware serial RX.
-    // It is NOT an interrupt routine: the function gets called at the end of each loop()
-    // iteration if there is something in the serial buffer - in others
-    // words, it is equivalent to a call using "if (Serial.available()) ...".
-    // This means we have to avoid saturating the buffer during the loop... this won't happen
-    // unless the PC gets really crazy or you use an (horrible) delay in the loop.
-    // It won't happen as I use an ISR for the mirror, and the commands are very short).
+  // SerialEvent occurs whenever a new data comes in the hardware serial RX.
+  // It is NOT an interrupt routine: the function gets called at the end of each loop()
+  // iteration if there is something in the serial buffer - in others
+  // words, it is equivalent to a call using "if (Serial.available()) ...".
+  // This means we have to avoid saturating the buffer during the loop... this won't happen
+  // unless the PC gets really crazy or you use an (horrible) delay in the loop.
+  // It won't happen as I use an ISR for the mirror, and the commands are very short).
 
-    // VERY TECHNICAL NOTE: the following will try to read everything in the buffer here as
-    // multiple bytes may be available? If we do so, and since during parsing MORE bytes from
-    // a new packet may be arriving we will not get outside the While loop if we send packets
-    // continuously! This is ok since this means we are executing many commands.
-    // Since there is nothing in the loop (ISR), everything is ok. However, in the future
-    // it may be better to have a separate THREAD for this using an RTOS [something the
-    // Arduino basic framework cannot do, but MBED and probably Teensy-Arduino can]
-    while (Serial.available()) {
-        char inChar = (char)Serial.read();
-        messageString += inChar;
-        // * If the incoming character is a packet terminator, proceed to parse the data.
-        // The advantages of doing this instead of parsing for EACH command, is that we can
-        // have a generic string parser [we can then use ANY other protocol to form the
-        // message string, say: OSC, Lora, TCP/IP, etc]. This effectively separates the
-        // serial receiver from the parser, and it simplifies debugging.
-        if (inChar == END_PACKET) {
-            parseStringMessage(messageString); //parse AND calls the appropiate functions
-            messageString = "";
-        }
+  // VERY TECHNICAL NOTE: the following will try to read everything in the buffer here as
+  // multiple bytes may be available? If we do so, and since during parsing MORE bytes from
+  // a new packet may be arriving we will not get outside the While loop if we send packets
+  // continuously! This is ok since this means we are executing many commands.
+  // Since there is nothing in the loop (ISR), everything is ok. However, in the future
+  // it may be better to have a separate THREAD for this using an RTOS [something the
+  // Arduino basic framework cannot do, but MBED and probably Teensy-Arduino can]
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    messageString += inChar;
+    // * If the incoming character is a packet terminator, proceed to parse the data.
+    // The advantages of doing this instead of parsing for EACH command, is that we can
+    // have a generic string parser [we can then use ANY other protocol to form the
+    // message string, say: OSC, Lora, TCP/IP, etc]. This effectively separates the
+    // serial receiver from the parser, and it simplifies debugging.
+    if (inChar == END_PACKET) {
+      parseStringMessage(messageString); //parse AND calls the appropiate functions
+      messageString = "";
     }
+  }
 }
 
 
 // ======== PARSE THE MESSAGE ==================================================
 // NOTE: I tested this throughly and it seems to work faultlessly as for 5.April.2018
-bool parseStringMessage(const String & _messageString) {
-    //Set some special led to signal a received complete message, or send back
-    // some notification? (handshake)
-    digitalWrite(PIN_LED_MESSAGE, HIGH);
-    //PRINTLN("* STRING RECEIVED: "); PRINTLN(_messageString);
+String cmdString = "";
+uint8_t numArgs = 0;
 
-    String cmdString = "";
-    bool cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
+void resetParsedData() { // without changing the parsing index [in the for loop]:
+  numArgs = 0;
+  cmdString = "";
+}
 
-    // clean stack:
-    for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
-    uint8_t numArgs = 0;
+bool parseStringMessage(const String &_messageString) {
+  static String oldMessageString =""; // oldMessageString is for repeating last command
+  String messageString = _messageString;
 
-    for (uint8_t i = 0; i < _messageString.length(); i++)
+  //Set some special led to signal a received complete message, or send back
+  // some notification? (handshake)
+  digitalWrite(PIN_LED_MESSAGE, HIGH);
+  //PRINTLN("* STRING RECEIVED: "); PRINTLN(_messageString);
+
+  bool cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
+  for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
+
+  resetParsedData();
+
+  for (uint8_t i = 0; i < messageString.length(); i++)
+  {
+    char val = _messageString[i];
+
+    //PRINT(">"); PRINT((char)val);PRINT(" : "); PRINTLN((uint8_t)val);
+
+    // Put numeric ASCII characters in numString:
+    if ((val >= '-') && (val <= '9') && (val != '/')) //this is '0' to '9' plus '-' and '.' to form floats and negative numbers
     {
-        char val = _messageString[i];
-
-        // PRINT(">"); PRINT((char)val);
-
-        // Put numeric ASCII characters in numString:
-        if ((val >= '-') && (val <= '9') && (val != '/')) //this is '0' to '9' plus '-' and '.' to form floats and negative numbers
-        {
-            argStack[numArgs] += val;
-            //  PRINTLN(" (data)");
-        }
-        // Put letter ('A' to 'Z') in cmdString:
-        else if ( ( (val >= 'A') && (val <= 'Z') ) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
-        {
-            cmdString += val;
-            //  PRINTLN(" (command)");
-        }
-
-        // Store argument:
-        else if (val == NUMBER_SEPARATOR) {
-            if (argStack[numArgs].length() > 0) {
-                //PRINTLN(" (separator)");
-                PRINT(">> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
-                numArgs++;
-            }
-            else { // ignore the separator
-                // ...signal the mistake?
-            }
-        }
-
-        else if (val == END_PACKET) {
-            if (cmdString.length() > 0) {
-                //PRINTLN(" (terminator)");
-                PRINT(">> COMMAND: "); PRINT(cmdString);
-                PRINT("  / NUM ARG: "); PRINTLN(numArgs);
-
-                //PRINT(">> trying execution... ");
-                // *********************************************************
-                cmdExecuted = interpretCommand(cmdString, numArgs, argStack);
-                // *********************************************************
-
-                //if (cmdExecuted) PRINTLN(">> END SUCCESSFUL EXECUTION");
-                //else PRINTLN(">>FAIL");
-
-                // Even if "cmdExecuted" is false, reset the number of stack arguments
-                numArgs = 0;
-            }
-            else { // an end of packet was received WITHOUT a command: ignore everything
-
-            }
-        }
-
-        else {
-            // this means we received anything else (not a number, not a letter from A-Z, not a number or packet terminator):
-            // ignore and signal the problem?
-        }
+      argStack[numArgs] += val;
+      //  PRINTLN(" (data)");
     }
-    return (cmdExecuted);
+    // Put letter ('A' to 'Z') in cmdString:
+    else if ( ( (val >= 'A') && (val <= 'Z') ) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
+    {
+      cmdString += val;
+      //   PRINTLN(" (command)");
+    }
+
+    // Store argument:
+    else if (val == NUMBER_SEPARATOR) {
+      if (argStack[numArgs].length() > 0) {
+        //PRINTLN(" (separator)");
+        //PRINT(">> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
+        numArgs++;
+      }
+      else {
+        PRINTLN(">> BAD FORMED ARG LIST");
+        // Restart parser from next character or continue parsing. Otherwise the parsing will be aborted.
+        #ifdef CONTINUE_PARSING
+        // do nothing, which will continue parsing
+        #else
+        break; // abort parsing (we could also restart it from here with resetParsedData())
+        #endif
+      }
+    }
+
+    else if (val == END_PACKET) {
+      if (cmdString.length() > 0) {
+
+        // REPEAT FORMATED command?
+        // PRINT(">> ");
+        // for (uint8_t k=0; k<numArgs; k++) {
+        //   PRINT(argStack[k]); PRINT(",");
+        // }
+        // PRINTLN(cmdString);
+
+        //PRINT(">> trying execution... ");
+        // *********************************************************
+        cmdExecuted = interpretCommand(cmdString, numArgs, argStack);
+        // *********************************************************
+
+        if (cmdExecuted) { // save well executed command string:
+          oldMessageString = messageString;
+          PRINTLN(">> END SUCCESSFUL EXECUTION");
+          PRINT(">> ");
+          Hardware::blinkLedMessage(2);
+        } else {
+          PRINTLN(">> BAD COMMAND");
+        }
+
+        // NOTE: commands can be concatenated AFTER and END_PACKET in case of input from something else than a terminal,
+        // so we need to restart parsing from here (will only happen when input string is stored in memory or sent from OSC, etc)
+        resetParsedData();
+      }
+      else { // END of packet received WITHOUT a command: repeat command IF there was a previous good command:
+        // NOTE: for the time being, this discards the rest of the message (in case it came from something else than a terminal of course)
+        parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent call here.. but this "RETURN" based repeat will
+        // only be used while using command line input, so there is no risk of deep nested calls.
+        // A safer alternative would be to do the following (but something is wrong):
+        // resetParsedData();
+        // messageString = oldMessageString;
+        // i = 0;
+      }
+
+    } else if (val == LINE_FEED_IGNORE) {
+      // do nothing with this
+    } else {
+      // this means we received something else (not a number, not a letter from A-Z, not a number or packet terminator):
+      // ignore or abort?
+      PRINTLN(">> BAD PACKET");
+      #ifdef CONTINUE_PARSING
+      // do nothing
+      #else
+      break;
+      #endif
+    }
+  }
+  return (cmdExecuted);
 }
 
 // =============================================================================
@@ -183,327 +228,429 @@ bool parseStringMessage(const String & _messageString) {
 // proper command dictionnary so as to simplify the way you write the new ones.
 // =============================================================================
 bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
-    bool parseOk = true;
+  bool execFlag = false;
 
-    //==========================================================================
-    // A) ====== LASER COMMANDS ================================================
-    //==========================================================================
-    if ((_cmdString == SET_POWER)&&(_numArgs == 1)) {     // Parameters: 0 to 4096 (12 bit res).
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, 4095));
+  //==========================================================================
+  // A) ====== LASER COMMANDS ================================================
+  //==========================================================================
+  if (_cmdString == SET_POWER) {     // Parameters: 0 to 4096 (12 bit res).
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, 4095));
+      execFlag = true;
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    //==========================================================================
-    // B) ====== SCANNER COMMANDS  =============================================
-    //==========================================================================
-    else if ((_cmdString == START_DISPLAY)&&(_numArgs == 0)) {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        DisplayScan::startDisplay();
+  else if (_cmdString == SET_BLANKING) {
+    // for the time being, this is a "DisplayScan"
+    // method [in the future, a per-laser method]
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      DisplayScan::setBlankingRed((argStack[0].toInt()>0? 1 : 0));
+      execFlag = true;
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    else if ((_cmdString == STOP_DISPLAY)&&(_numArgs == 0)) {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        DisplayScan::stopDisplay();
+  //==========================================================================
+  // B) ====== SCANNER COMMANDS  =============================================
+  //==========================================================================
+  else if (_cmdString == START_DISPLAY) {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      DisplayScan::startDisplay();
+      execFlag = true;
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    else if ((_cmdString == DISPLAY_STATUS)&&(_numArgs == 0))    {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-
-        PRINT(">>   CLEAR SCENE MODE:");
-        if (Graphics:: getClearMode())
-        PRINTLN(" ON");
-        else
-        PRINTLN(" OFF");
-
-        PRINT(">>   NUM SCENE POINTS:");
-        PRINTLN(DisplayScan::getBufferSize());
-
-        if (DisplayScan::getRunningState())
-        PRINTLN(">>   DISPLAYING ISR ON");
-        else
-        PRINTLN(">>   DISPLAYING ISR OFF");
-
-        PRINT(">>   NUM CURRENT DISPLAY POINTS:");
-        PRINTLN(Renderer2D::getSizeBlueprint());
+  else if (_cmdString == STOP_DISPLAY) {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      DisplayScan::stopDisplay();
+      execFlag = true;
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    // ================== LASERS =======================================
-    else if ((_cmdString == SET_BLANKING)&&(_numArgs == 1))   {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        DisplayScan::setBlankingRed( (argStack[0].toInt() > 0 ? 1 : 0 ) );
+  else if (_cmdString == SET_INTERVAL) {
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str())); // convert c-string to long, then cast to unsigned int
+      // the method strtoul needs a c-string, so we need to convert the String to that:
+      //DisplayScan::setInterPointTime(strtoul(argStack[0].c_str(),NULL,10); // base 10
+      execFlag = true;
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    //==========================================================================
-    // C) ======= POSE PARAMETERS ("OpenGL"-like state machine) ================
-    //==========================================================================
-    //  * NOTE 1 : This is a very simplified "open-gl" like rendering engine, but
-    //    should be handy anyway. It works as follows: the pose parameters are applied
-    //    whenever we draw a figure; that's why it is interesting to have parameters-less,
-    //    normalized primitives: when modifying the angle, center and scale, EVERYTHING
-    //    being displayed is rescaled, rotated and/or translated.
-    //  * NOTE 2 : In the future, use a MODELVIEW MATRIX instead, and make some
-    //    methods to set "passive transforms" (as in my laserSensingDisplay code)
-    //  * NOTE 3 : Instead of doing Graphics::... we could just do:
-    //                     using namespace Graphics;
-    //    However, I prefer the suffix for clariry (my Object Oriented biais...)
-    //==========================================================================
-    else if ((_cmdString == RESET_POSE_GLOBAL)&&(_numArgs == 0))       {     // Parameters: none
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::setCenter(0.0,0.0);
-        Graphics::setAngle(0.0);
-        Graphics::setScaleFactor(1.0);
-        // As explained above, we need to RE-RENDER the display buffer:
-        Renderer2D::renderFigure();
-    }
-    else if ((_cmdString == SET_ANGLE_GLOBAL)&&(_numArgs == 1))  {     // Parameters: angle in deg
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::setAngle(argStack[0].toFloat());
-        Renderer2D::renderFigure();
-    }
-    else if ((_cmdString == SET_CENTER_GLOBAL)&&(_numArgs == 2))     {  // Parameters: x,y
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
-        Renderer2D::renderFigure();
-    }
-    else if ((_cmdString == SET_FACTOR_GLOBAL)&&(_numArgs == 1))     {  // Parameters: scale
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::setScaleFactor(argStack[0].toFloat());
-        Renderer2D::renderFigure();
-    }
+  else if (_cmdString == DISPLAY_STATUS)    {
+    if (_numArgs == 0) {
+      PRINTLN(">> EXECUTING... ");
 
-    //==========================================================================
-    // D) ============ FIGURES (check Graphics namespace) ======================
-    // * NOTE 1 : after all the figure composition, it is
-    // imperative to call to the method Renderer2D::renderFigure().
-    // * NOTE 2 : The pose parameters are COMPOSED with the global ones.
-    // * NOTE 3 : Depending on the number of arguments, different pre-sets are used
-    //==========================================================================
+      PRINT("   1) CLEAR SCENE MODE:");
+      if (Graphics:: getClearMode()) PRINTLN(" ON");
+      else PRINTLN(" OFF");
 
-    // == CLEAR SCENE and CLEAR MODE ==========================================
-    else if ((_cmdString == CLEAR_SCENE)&&(_numArgs == 0))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();
-    }
-    else if ((_cmdString == CLEAR_MODE)&&(_numArgs == 1))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::setClearMode(argStack[0].toInt());
-    }
+      PRINT("   2) NUM SCENE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
 
-    // == MAKE LINE ==========================================
-    else if (_cmdString == MAKE_LINE) {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+      if (DisplayScan::getRunningState()) PRINTLN("   3) DISPLAYING ISR ON");
+      else PRINTLN("   4) DISPLAYING ISR OFF");
+
+      PRINT("   5) NUM CURRENT DISPLAY POINTS:"); PRINTLN(Renderer2D::getSizeBlueprint());
+
+      execFlag = true;
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+
+
+  //==========================================================================
+  // C) ======= POSE PARAMETERS ("OpenGL"-like state machine) ================
+  //==========================================================================
+  //  * NOTE 1 : This is a very simplified "open-gl" like rendering engine, but
+  //    should be handy anyway. It works as follows: the pose parameters are applied
+  //    whenever we draw a figure; that's why it is interesting to have parameters-less,
+  //    normalized primitives: when modifying the angle, center and scale, EVERYTHING
+  //    being displayed is rescaled, rotated and/or translated.
+  //  * NOTE 2 : In the future, use a MODELVIEW MATRIX instead, and make some
+  //    methods to set "passive transforms" (as in my laserSensingDisplay code)
+  //  * NOTE 3 : Instead of doing Graphics::... we could just do:
+  //                     using namespace Graphics;
+  //    However, I prefer the suffix for clariry (my Object Oriented biais...)
+  //==========================================================================
+  else if (_cmdString == RESET_POSE_GLOBAL)       {     // Parameters: none
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      Graphics::resetGlobalPose();
+      // As explained above, we need to RE-RENDER the display buffer:
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_ANGLE_GLOBAL)  {     // Parameters: angle in DEG (float)
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      Graphics::setAngle(argStack[0].toFloat());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_CENTER_GLOBAL)    {  // Parameters: x,y
+    if (_numArgs == 2) {
+      PRINT(">> EXECUTING... ");
+      Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_FACTOR_GLOBAL)    {  // Parameters: scale
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      Graphics::setScaleFactor(argStack[0].toFloat());
+      Renderer2D::renderFigure();
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  //==========================================================================
+  // D) ============ FIGURES (check Graphics namespace) ======================
+  // * NOTE 1 : after all the figure composition, it is
+  // imperative to call to the method Renderer2D::renderFigure().
+  // * NOTE 2 : The pose parameters are COMPOSED with the global ones.
+  // * NOTE 3 : Depending on the number of arguments, different pre-sets are used
+  //==========================================================================
+
+  // == CLEAR SCENE and CLEAR MODE ==========================================
+  else if (_cmdString == CLEAR_SCENE)     {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      Graphics::clearScene();
+      // clear also the pose parameters - otherwise there is a lot of confusion:
+      Graphics::resetGlobalPose();
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == CLEAR_MODE)     {
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      Graphics::setClearMode((argStack[0].toInt()>0? 1 : 0));
+    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  // == MAKE LINE ==========================================
+  else if (_cmdString == MAKE_LINE) {
+    switch(_numArgs) {
+      case 3:  //centered
+      PRINT(">> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawLine(
+        argStack[0].toFloat(), argStack[2].toFloat(),
+        argStack[4].toInt()
+      );
+      Renderer2D::renderFigure();
+      break;
+      case 5:
+      {
+        PRINT(">> EXECUTING... ");
         Graphics::updateScene();
-        switch(_numArgs) {
-            case 3:  //centered
-            Graphics::drawLine(
-                argStack[0].toFloat(), argStack[2].toFloat(),
-                argStack[4].toInt()
-            );
-            break;
-            case 5:
-            {
-                // from point, lenX, lenY, num points
-                P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawLine(
-                    startP2,
-                    argStack[2].toFloat(), argStack[3].toFloat(),
-                    argStack[4].toInt()
-                );
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
+        // from point, lenX, lenY, num points
+        P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawLine(
+          startP2,
+          argStack[2].toFloat(), argStack[3].toFloat(),
+          argStack[4].toInt()
+        );
         Renderer2D::renderFigure();
+      }
+      break;
+      default:
+      PRINTLN(">> BAD PARAMETERS");
+       execFlag = false;
+      break;
     }
 
-    // == MAKE CIRCLE ==========================================
-    // a) Depending on the number of arguments, we do something different:
-    //    - with one parameter (nb points), we draw a circle in (0,0) with unit radius
-    //      [of course, the radius is multiplied by the currrent scaling factor]
-    else if (_cmdString == MAKE_CIRCLE)     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+  }
+
+  // == MAKE CIRCLE ==========================================
+  // a) Depending on the number of arguments, we do something different:
+  //    - with one parameter (nb points), we draw a circle in (0,0) with unit radius
+  //      [of course, the radius is multiplied by the currrent scaling factor]
+  else if (_cmdString == MAKE_CIRCLE)     {
+    PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+
+    switch(_numArgs) {
+      case 2: // radius + num points [centered]
+      PRINT(">> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
+      Renderer2D::renderFigure();
+      break;
+      case 4:
+      { // center point, radius, num points
+        PRINT(">> EXECUTING... ");
         Graphics::updateScene();
-        switch(_numArgs) {
-            case 2: // radius + num points [centered]
-            Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
-            break;
-            case 4:
-            { // center point, radius, num points
-                P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
+        P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
         Renderer2D::renderFigure();
+      }
+      break;
+      default:
+      PRINTLN(">> BAD PARAMETERS");
+      execFlag = false;
+      break;
     }
+  }
 
-    // == MAKE RECTANGLE ==========================================
-    else if (_cmdString == MAKE_RECTANGLE)     {
-        PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+  // == MAKE RECTANGLE ==========================================
+  else if (_cmdString == MAKE_RECTANGLE)     {
+    PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+    switch(_numArgs) {
+      case 4: // [centered]
+      PRINT(">> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawRectangle(
+        argStack[0].toFloat(), argStack[1].toFloat(),
+        argStack[2].toInt(), argStack[3].toInt()
+      );
+      Renderer2D::renderFigure();
+      break;
+      case 6:
+      {   // From lower left corner:
+        PRINT(">> EXECUTING... ");
         Graphics::updateScene();
-        switch(_numArgs) {
-            case 4: // [centered]
-            Graphics::drawRectangle(
-                argStack[0].toFloat(), argStack[1].toFloat(),
-                argStack[2].toInt(), argStack[3].toInt()
-            );
-            break;
-            case 6:
-            {   // From lower left corner:
-                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawRectangle(
-                    fromP2,
-                    argStack[2].toFloat(), argStack[3].toFloat(),
-                    argStack[4].toInt(), argStack[5].toInt()
-                );
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawRectangle(
+          fromP2,
+          argStack[2].toFloat(), argStack[3].toFloat(),
+          argStack[4].toInt(), argStack[5].toInt()
+        );
         Renderer2D::renderFigure();
+      }
+      break;
+      default:
+      PRINTLN(">> BAD PARAMETERS");
+      execFlag = false;
+      break;
     }
+  }
 
-    // == MAKE SQUARE ==========================================
-    else if (_cmdString == MAKE_SQUARE) {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+  // == MAKE SQUARE ==========================================
+  else if (_cmdString == MAKE_SQUARE) {
+    PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
+    switch(_numArgs) {
+      case 2: // side, num point [centered]
+      PRINT(">> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
+      Renderer2D::renderFigure();
+      break;
+      case 4:
+      { // center point, radius, num points
+        PRINT(">> EXECUTING... ");
         Graphics::updateScene();
-        switch(_numArgs) {
-            case 2: // side, num point [centered]
-            Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
-            break;
-            case 4:
-            { // center point, radius, num points
-                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
         Renderer2D::renderFigure();
+      }
+      break;
+      default:
+      PRINTLN(">> BAD PARAMETERS");
+      execFlag = false;
+      break;
     }
+  }
 
-    else if (_cmdString == MAKE_ZIGZAG)     {
-        PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+  else if (_cmdString == MAKE_ZIGZAG)     {
+    PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
+    switch(_numArgs) {
+      case 4: // Centered on [0,0]
+      PRINT(">> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawZigZag(
+        argStack[0].toFloat(), argStack[1].toFloat(),
+        argStack[2].toInt(), argStack[3].toInt()
+      );
+      Renderer2D::renderFigure();
+      break;
+      case 6:
+      { // from left bottom corner:
+        PRINT(">> EXECUTING... ");
         Graphics::updateScene();
-        switch(_numArgs) {
-            case 4: // Centered on [0,0]
-            Graphics::drawZigZag(
-                argStack[0].toFloat(), argStack[1].toFloat(),
-                argStack[2].toInt(), argStack[3].toInt()
-            );
-            break;
-            case 6:
-            { // from left bottom corner:
-                P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-                Graphics::drawZigZag(
-                    fromP2,
-                    argStack[2].toFloat(), argStack[3].toFloat(),
-                    argStack[4].toInt(), argStack[5].toInt()
-                );
-            }
-            break;
-            default:
-            parseOk = false;
-            break;
-        }
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawZigZag(
+          fromP2,
+          argStack[2].toFloat(), argStack[3].toFloat(),
+          argStack[4].toInt(), argStack[5].toInt()
+        );
         Renderer2D::renderFigure();
+      }
+      break;
+      default:
+      PRINTLN(">> BAD PARAMETERS");
+      execFlag = false;
+      break;
     }
+  }
 
-    // ....
+  // ....
 
-    // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
-    // and displaying is STARTED whatever the previous state]
-    // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
-    else if ((_cmdString == CIRCLE_TEST) &&(_numArgs == 0))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();
-        Graphics::drawCircle(1024.0, 360);
-        // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
-        Renderer2D::renderFigure();
-        // THIS IS A TEST: Force display whatever the previous state:
-        DisplayScan::startDisplay(); // start engine, whatever the previous state
+  // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
+  // and displaying is STARTED whatever the previous state]
+  // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
+  else if (_cmdString == CIRCLE_TEST)     {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      Graphics::clearScene();
+      Graphics::drawCircle(50.0, 360); // fisrt argument is the radius
+      // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
+      Renderer2D::renderFigure();
+      // THIS IS A TEST: Force display whatever the previous state:
+      DisplayScan::startDisplay(); // start engine, whatever the previous state
     }
-    // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
-    else if ((_cmdString == SQUARE_TEST)&&(_numArgs == 0))  {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();
-        Graphics::drawSquare(2048, 50.0);
-        Renderer2D::renderFigure();
-        DisplayScan::startDisplay();
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
+  else if (_cmdString == SQUARE_TEST)  {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      Graphics::clearScene();
+      Graphics::drawSquare(100, 50.0); // first argument is the length of the side
+      Renderer2D::renderFigure();
+      DisplayScan::startDisplay();
     }
-    // c) : SQUARE + CIRCLE TEST
-    else if ((_cmdString == COMPOSITE_TEST)&&(_numArgs == 0))  {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Graphics::clearScene();
-        Graphics::drawSquare(3000, 30.0);
-        Graphics::drawCircle(1500, 60.0);
-        Graphics::drawSquare(2120, 30.0);
-        Graphics::drawLine(P2(-1500, 0), 3000, 0, 30.0);
-        Graphics::drawLine(P2(0, -1500), 0, 3000, 30.0);
-        Renderer2D::renderFigure();
-        DisplayScan::startDisplay();
+    else PRINTLN(">> BAD PARAMETERS");
+  }
+
+  // c) : SQUARE + CIRCLE TEST
+  else if (_cmdString == COMPOSITE_TEST)  {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      float radius = 75;
+      Graphics::clearScene();
+      Graphics::drawSquare(2*radius, 30.0);
+      Graphics::drawCircle(radius, 60.0);
+      Graphics::drawSquare(1.414*radius, 30.0);
+      Graphics::drawLine(P2(-90, 0), 180, 0, 30.0);
+      Graphics::drawLine(P2(0, -90), 0, 180, 30.0);
+      Renderer2D::renderFigure();
+      DisplayScan::startDisplay();
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    // .........................................................................
-    // ... BUILD HERE WHAT YOU NEED
-    // .........................................................................
+  // .........................................................................
+  // ... BUILD HERE WHAT YOU NEED
+  // .........................................................................
 
 
-    //==========================================================================
-    // E) ============  LOW LEVEL COMMANDS ===========================
-    //==========================================================================
+  //==========================================================================
+  // E) ============  LOW LEVEL COMMANDS ===========================
+  //==========================================================================
 
-    else if ((_cmdString == SET_DIGITAL_PIN)&&(_numArgs == 2))    {     // Parameters:pin, sate
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+  else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, sate
+    if (_numArgs == 2) {
+      PRINT(">> EXECUTING... ");
+      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    else if ((_cmdString == BLINK_LED_DEBUG )&&(_numArgs == 1))    {     // Parameters: number of times
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        Hardware::blinkLedDebug(argStack[0].toInt());
+  else if (_cmdString == BLINK_LED_DEBUG )    {     // Parameters: number of times
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
     }
+    else PRINTLN(">> BAD PARAMETERS");
+    Hardware::blinkLedDebug(argStack[0].toInt());
+  }
 
-    else if ((_cmdString == RESET_BOARD)&&(_numArgs == 0))     {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        delay(1000);
-        Hardware::resetBoard();
+  else if (_cmdString == RESET_BOARD)    {
+    if (_numArgs == 0) {
+      PRINT(">> EXECUTING... ");
+      delay(500);
+      Hardware::resetBoard();
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    else if ((_cmdString == TEST_MIRRORS_RANGE)&&(_numArgs == 1))    {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        bool previousState = DisplayScan::getRunningState();
-        DisplayScan::stopDisplay();
-        Hardware::Scanner::testMirrorRange(argStack[0].toInt());
-        if (previousState) DisplayScan::startDisplay();
+  else if (_cmdString == TEST_MIRRORS_RANGE)   {
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      bool previousState = DisplayScan::getRunningState();
+      DisplayScan::stopDisplay();
+      Hardware::Scanner::testMirrorRange(argStack[0].toInt());
+      if (previousState) DisplayScan::startDisplay();
     }
-    else if ((_cmdString == TEST_CIRCLE_RANGE)&&(_numArgs == 1))    {
-        PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
-        bool previousState = DisplayScan::getRunningState();
-        DisplayScan::stopDisplay();
-        Hardware::Scanner::testCircleRange(argStack[0].toInt());
-        if (previousState) DisplayScan::startDisplay();
-    }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    else { // unkown command!
-        PRINTLN(">> UNKOWN COMMAND.");
-        parseOk = false;
-    }
+  else if (_cmdString == TEST_CIRCLE_RANGE)   {
 
-    if (parseOk) {
-        PRINTLN(">> END SUCCESSFUL EXECUTION");
-        Hardware::blinkLedMessage(2);
-    } else {
-        PRINTLN(">> BAD COMMAND/PARAMETERS");
+    if (_numArgs == 1) {
+      PRINT(">> EXECUTING... ");
+      bool previousState = DisplayScan::getRunningState();
+      DisplayScan::stopDisplay();
+      Hardware::Scanner::testCircleRange(argStack[0].toInt());
+      if (previousState) DisplayScan::startDisplay();
     }
+    else PRINTLN(">> BAD PARAMETERS");
+  }
 
-    return parseOk;
+  else { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
+    execFlag = false;
+  }
+
+  return execFlag;
 }

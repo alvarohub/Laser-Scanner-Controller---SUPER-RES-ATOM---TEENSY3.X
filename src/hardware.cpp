@@ -52,7 +52,28 @@ namespace Hardware {
 			PRINTLN(">> LASERS READY");
 		}
 
-		void test() {
+		extern void test() { // Switch lasers one by one and try a power ramp on each of these:
+			// TODO: have a state variable for current color (in graphics.h), with a push/pop method
+			switchOffAll();
+			setPowerAll(0);
+			elapsedMillis msTime =0;
+
+			for (uint8_t i=0; i<NUM_LASERS; i++) {
+				setSwitchLaser(pinSwitchLaser[i], true);
+
+				for (uint16_t p=0; p<MAX_LASER_POWER; p+=100) {
+					while (msTime < 100);
+					msTime =0;
+				}
+				for (uint16_t p=MAX_LASER_POWER; p>=0; p-=100) {
+					while (msTime < 100);
+					msTime =0;
+				}
+
+				while (msTime < 500);
+				msTime =0;
+				setSwitchLaser(pinSwitchLaser[i], false);
+			}
 
 		}
 
@@ -72,7 +93,7 @@ namespace Hardware {
 
 		void init() {
 			// RENCENTER mirror and fill BOTH buffers with the central position too:
-			recenterMirrors();
+			recenterPosRaw();
 			PRINTLN(">> SCANNERS READY");
 		}
 
@@ -89,8 +110,8 @@ namespace Hardware {
 			bool previousState = DisplayScan::getRunningState();
 			if (previousState) DisplayScan::stopDisplay();
 
-			uint16_t stepX = (MAX_MIRRORS_ADX-MIN_MIRRORS_ADX)/50;
-			uint16_t stepY = (MAX_MIRRORS_ADY-MIN_MIRRORS_ADY)/50;
+			uint16_t stepX = (MAX_MIRRORS_ADX-MIN_MIRRORS_ADX)/100;
+			uint16_t stepY = (MAX_MIRRORS_ADY-MIN_MIRRORS_ADY)/100;
 			uint16_t x=MIN_MIRRORS_ADX, y=MIN_MIRRORS_ADY;
 
 			// Prepare initial position (wait a little more)
@@ -103,7 +124,6 @@ namespace Hardware {
 			while (msec < (_durationSec*1000)) {
 
 				// Make a square 50x50 points side:
-				//analogWrite( PIN_ADCX, x );
 				do  {
 					#ifdef TEENSY_35_36
 					analogWrite( PIN_ADCY, y );
@@ -119,23 +139,24 @@ namespace Hardware {
 				} while (x< MAX_MIRRORS_ADX);
 				x-=stepX;
 				do  {
+					y-=stepY;
 					#ifdef TEENSY_35_36
 					analogWrite( PIN_ADCY, y );
 					#endif
-					y-=stepY;
 					while (usec < 100); usec = 0;// wait 100us
 				} while (y>MIN_MIRRORS_ADY);
-				y+=stepY;
+				//y=MIN_MIRRORS_ADY;
 				do  {
-					analogWrite( PIN_ADCX, x );
 					x-=stepX;
+					analogWrite( PIN_ADCX, x );
 					while (usec < 100); usec = 0;// wait 100us
 				} while (x> MIN_MIRRORS_ADX);
-				x+=stepX;
+				//x=MIN_MIRRORS_ADX;
+
 			}
-				recenterMirrors();
-				// restart the ISR?
-				if (previousState) DisplayScan::startDisplay();
+			recenterPosRaw();
+			// restart the ISR?
+			if (previousState) DisplayScan::startDisplay();
 		}
 
 		void testCircleRange(uint16_t _durationSec) {
@@ -158,7 +179,7 @@ namespace Hardware {
 					usec = 0;
 				}
 			}
-			recenterMirrors();
+			recenterPosRaw();
 			// restart the ISR?
 			if (previousState) DisplayScan::startDisplay();
 		}

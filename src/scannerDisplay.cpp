@@ -98,20 +98,28 @@ namespace DisplayScan {
         (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
     }
 
-    void requestBufferSwap() {needSwapFlag = true;}
+    void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {
+          // note: can I use memcpy with size(P2)?? probably yes and much faster... TP TRY!!
+          //memcpy (ptrHiddenDisplayBuffer, _ptrFrameBuffer, _size*sizeof(P2));
 
-    void resizeBuffer(uint16_t _newSize) {
-        //PRINT("NEW SIZE BUFFER: "); PRINTLN(_newSize);
-        // The following is a critical piece of code and must be ATOMIC, otherwise the flag may be reset
-        // by the ISR before newSizeBufferDisplay is set. Now, this means the displaying
-        // engine will briefly stop - but really briefly, and moreover the resizing
-        // of the buffer is only done at the end of a rendering figure: not very often.
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
-            //noInterrupts();
-            newSizeBufferDisplay = _newSize;
-            //interrupts();
-        }
-    }
+          for (uint16_t k=0; k<_size; k++) {
+              ptrHiddenDisplayBuffer[k].x=_ptrFrameBuffer[k].x;
+              ptrHiddenDisplayBuffer[k].y=_ptrFrameBuffer[k].y;
+          }
+
+          needSwapFlag = true;
+          // The following is a critical piece of code and must be ATOMIC, otherwise
+          // the flag may be reset
+          // by the ISR before newSizeBufferDisplay is set. Now, this means the displaying
+          // engine will briefly stop - but really briefly, and moreover the resizing
+          // of the buffer is only done at the end of a rendering figure: not very often.
+          ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
+              //noInterrupts();
+              newSizeBufferDisplay = _size;
+              //interrupts();
+          }
+      }
+
 
     // =================================================================
     // =========== Mirror-psitioning ISR that is called every dt =======
@@ -158,13 +166,13 @@ namespace DisplayScan {
         if (sizeBufferDisplay) {
 
             // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
-            int16_t ADCX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
-            int16_t ADCY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
+            int16_t adcX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
+            int16_t adcY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
 
             // PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
 
             // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
-            Hardware::Scanner::setMirrorsTo(ADCX, ADCY);
+            Hardware::Scanner::setPosRaw(adcX, adcY);
 
             // After setting, advance the readingHead on the round-robin buffer:
             // * NOTE 1 : no need to qualify readingHead it as volatile
@@ -178,7 +186,7 @@ namespace DisplayScan {
             // Force recentering after finishing figure and no points in the
             // blueprint? there is a difference between STOPPING the
             // display engine and CLEARING the blueprint!!
-            Hardware::Scanner::recenterMirrors();
+            Hardware::Scanner::recenterPosRaw();
         }
 
         if (blankingFlag) {

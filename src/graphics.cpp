@@ -22,6 +22,12 @@ namespace Graphics {
 		Renderer2D::scaleFactor = _scaleFactor;
 	}
 
+	void resetGlobalPose() { // this can be done without rendering [~openGL set identity modelview]
+		setCenter(0.0,0.0);
+	setAngle(0.0);
+	setScaleFactor(1.0);
+	}
+
 	// ======================== SCENE SETTING METHODS =====================
 	void clearScene() {
 		// NOTE: for now we just clear the "whole" blueprint, meaning
@@ -32,8 +38,8 @@ namespace Graphics {
 
 		// NOTE: this does not STOPS the display engine if it was working!
 
-		// Goes to center position (not by loading the blueprint)? Yes:
-		Hardware::Scanner::recenterMirrors();
+		// Goes to center position (not by loading the blueprint):
+		Hardware::Scanner::recenterPosRaw();
 	}
 
 	void setClearMode(bool _clearModeFlag) {

@@ -37,23 +37,14 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern void stopDisplay();
 	extern bool getRunningState();
 
-	extern void requestBufferSwap();
-
-	// IMPORTANT: if, in Renderer2D, the number of points change, you may want
-	// to stop the displaying engine. This is ok, as it will be done automatically
-	// in the ISR by NOT exchanging buffers until finishing the change [actually it
-	// will be extremely fast, so it may not even stop once].
-	void resizeBuffer(uint16_t _newSize); // this is delicate (check implementation)
+  // The following corresponds in OpenGL to the sending of the "rendered" vertex array
+    // to the framebuffer...
+    extern void setDisplayBuffer(const P2 *ptrBlueprint, uint16_t _sizeBlueprint);
 
 	extern uint16_t getBufferSize();
 
 	extern void setInterPointTime(uint16_t _dt);
 	extern void setBlankingRed(bool _val);
-
-	extern void writeOnHiddenBuffer(uint16_t _absIndex, const P2& _point);
-	// NOTE: to go faster, we could direcly access the buffers and not use this
-	// method, but it will be only called when rendering a figure by the renderer,
-	// which will not happen too fast. This is safer!
 
 	// * NOTE: Even if this is not a class, I can make variables or methods
  	// "private" by using an anonymous namespace:

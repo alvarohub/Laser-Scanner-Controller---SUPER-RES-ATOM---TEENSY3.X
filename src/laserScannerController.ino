@@ -49,6 +49,7 @@ void setup() {
     //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
 
     PRINTLN(">> SYSTEM READY!");
+    PRINT(">> ");
 }
 
 // ================== MAIN LOOP ==================

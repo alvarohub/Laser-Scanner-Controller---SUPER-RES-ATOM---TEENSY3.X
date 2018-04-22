@@ -64,6 +64,7 @@ namespace Graphics {
 	extern void setCenter(const float &_x, const float &_y);
 	extern void setAngle(const float _angle);
 	extern void setScaleFactor(const float _scaleFactor);
+	extern void resetGlobalPose(); // this can be done without rendering [~openGL set identity modelview]
 
 	// (2) "Scene" setting methods and rendering wrappers:
 	extern void clearScene(); // force clear scene
