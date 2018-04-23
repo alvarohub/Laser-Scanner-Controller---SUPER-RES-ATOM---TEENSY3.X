@@ -39,11 +39,11 @@ void setup() {
     // 2] INIT HARDWARE
     Hardware::init();
 
-    // 3] Blink led (needs to be called after setting pin modes)
-    Hardware::blinkLedDebug(4);
-
-    // 4] INIT DISPLAY ENGINE (default is stand by)
+    // 3] INIT DISPLAY ENGINE (default is stand by)
     DisplayScan::init();
+
+    // 4] Blink led (needs to be called after setting pin modes)
+    Hardware::blinkLedDebug(2);
 
     // Check FREE RAM in DEBUG mode:
     //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");

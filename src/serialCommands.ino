@@ -189,7 +189,8 @@ bool parseStringMessage(const String &_messageString) {
           PRINT(">> ");
           Hardware::blinkLedMessage(2);
         } else {
-          PRINTLN(">> BAD COMMAND");
+          PRINTLN(">> EXECUTION FAILED");
+          PRINT(">> ");
         }
 
         // NOTE: commands can be concatenated AFTER and END_PACKET in case of input from something else than a terminal,
@@ -198,6 +199,7 @@ bool parseStringMessage(const String &_messageString) {
       }
       else { // END of packet received WITHOUT a command: repeat command IF there was a previous good command:
         // NOTE: for the time being, this discards the rest of the message (in case it came from something else than a terminal of course)
+        PRINTLN(oldMessageString);
         parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent call here.. but this "RETURN" based repeat will
         // only be used while using command line input, so there is no risk of deep nested calls.
         // A safer alternative would be to do the following (but something is wrong):
@@ -212,6 +214,7 @@ bool parseStringMessage(const String &_messageString) {
       // this means we received something else (not a number, not a letter from A-Z, not a number or packet terminator):
       // ignore or abort?
       PRINTLN(">> BAD PACKET");
+        PRINT(">> ");
       #ifdef CONTINUE_PARSING
       // do nothing
       #else
@@ -235,7 +238,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
   if (_cmdString == SET_POWER) {     // Parameters: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, 4095));
       execFlag = true;
     }
@@ -246,7 +249,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     // for the time being, this is a "DisplayScan"
     // method [in the future, a per-laser method]
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       DisplayScan::setBlankingRed((argStack[0].toInt()>0? 1 : 0));
       execFlag = true;
     }
@@ -258,7 +261,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
   else if (_cmdString == START_DISPLAY) {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       DisplayScan::startDisplay();
       execFlag = true;
     }
@@ -267,7 +270,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == STOP_DISPLAY) {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       DisplayScan::stopDisplay();
       execFlag = true;
     }
@@ -276,7 +279,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == SET_INTERVAL) {
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str())); // convert c-string to long, then cast to unsigned int
       // the method strtoul needs a c-string, so we need to convert the String to that:
       //DisplayScan::setInterPointTime(strtoul(argStack[0].c_str(),NULL,10); // base 10
@@ -289,16 +292,23 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     if (_numArgs == 0) {
       PRINTLN(">> EXECUTING... ");
 
-      PRINT("   1) CLEAR SCENE MODE:");
-      if (Graphics:: getClearMode()) PRINTLN(" ON");
-      else PRINTLN(" OFF");
+      PRINT("   1) CLEAR SCENE MODE: ");
+      if (Graphics:: getClearMode())
+      PRINTLN("ON");
+      else
+      PRINTLN("OFF");
 
-      PRINT("   2) NUM SCENE POINTS:"); PRINTLN(DisplayScan::getBufferSize());
+      PRINT("   2) NUM SCENE POINTS: ");
+      PRINTLN(DisplayScan::getBufferSize());
 
-      if (DisplayScan::getRunningState()) PRINTLN("   3) DISPLAYING ISR ON");
-      else PRINTLN("   4) DISPLAYING ISR OFF");
+      PRINT("   3) DISPLAYING ISR: ");
+      if (DisplayScan::getRunningState())
+      PRINTLN("ON");
+      else
+      PRINTLN("OFF");
 
-      PRINT("   5) NUM CURRENT DISPLAY POINTS:"); PRINTLN(Renderer2D::getSizeBlueprint());
+      PRINT("   5) NUM CURRENT DISPLAY POINTS: ");
+      PRINTLN(Renderer2D::getSizeBlueprint());
 
       execFlag = true;
     }
@@ -323,7 +333,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
   else if (_cmdString == RESET_POSE_GLOBAL)       {     // Parameters: none
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::resetGlobalPose();
       // As explained above, we need to RE-RENDER the display buffer:
       Renderer2D::renderFigure();
@@ -334,7 +344,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == SET_ANGLE_GLOBAL)  {     // Parameters: angle in DEG (float)
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::setAngle(argStack[0].toFloat());
       Renderer2D::renderFigure();
       execFlag = true;
@@ -344,7 +354,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == SET_CENTER_GLOBAL)    {  // Parameters: x,y
     if (_numArgs == 2) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
       Renderer2D::renderFigure();
       execFlag = true;
@@ -354,9 +364,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == SET_FACTOR_GLOBAL)    {  // Parameters: scale
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::setScaleFactor(argStack[0].toFloat());
       Renderer2D::renderFigure();
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -372,18 +383,20 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // == CLEAR SCENE and CLEAR MODE ==========================================
   else if (_cmdString == CLEAR_SCENE)     {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::clearScene();
       // clear also the pose parameters - otherwise there is a lot of confusion:
       Graphics::resetGlobalPose();
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
 
   else if (_cmdString == CLEAR_MODE)     {
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::setClearMode((argStack[0].toInt()>0? 1 : 0));
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -392,17 +405,18 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   else if (_cmdString == MAKE_LINE) {
     switch(_numArgs) {
       case 3:  //centered
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawLine(
         argStack[0].toFloat(), argStack[2].toFloat(),
         argStack[4].toInt()
       );
       Renderer2D::renderFigure();
+        execFlag = true;
       break;
       case 5:
       {
-        PRINT(">> EXECUTING... ");
+        PRINTLN(">> EXECUTING... ");
         Graphics::updateScene();
         // from point, lenX, lenY, num points
         P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
@@ -413,10 +427,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
         );
         Renderer2D::renderFigure();
       }
+        execFlag = true;
       break;
       default:
       PRINTLN(">> BAD PARAMETERS");
-       execFlag = false;
       break;
     }
 
@@ -427,47 +441,47 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //    - with one parameter (nb points), we draw a circle in (0,0) with unit radius
   //      [of course, the radius is multiplied by the currrent scaling factor]
   else if (_cmdString == MAKE_CIRCLE)     {
-    PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
 
     switch(_numArgs) {
       case 2: // radius + num points [centered]
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
       Renderer2D::renderFigure();
+        execFlag = true;
       break;
       case 4:
       { // center point, radius, num points
-        PRINT(">> EXECUTING... ");
+        PRINTLN(">> EXECUTING... ");
         Graphics::updateScene();
         P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
         Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
         Renderer2D::renderFigure();
+  execFlag = true;
       }
       break;
       default:
       PRINTLN(">> BAD PARAMETERS");
-      execFlag = false;
       break;
     }
   }
 
   // == MAKE RECTANGLE ==========================================
   else if (_cmdString == MAKE_RECTANGLE)     {
-    PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
     switch(_numArgs) {
       case 4: // [centered]
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawRectangle(
         argStack[0].toFloat(), argStack[1].toFloat(),
         argStack[2].toInt(), argStack[3].toInt()
       );
       Renderer2D::renderFigure();
+        execFlag = true;
       break;
       case 6:
       {   // From lower left corner:
-        PRINT(">> EXECUTING... ");
+        PRINTLN(">> EXECUTING... ");
         Graphics::updateScene();
         P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
         Graphics::drawRectangle(
@@ -476,56 +490,56 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
           argStack[4].toInt(), argStack[5].toInt()
         );
         Renderer2D::renderFigure();
+          execFlag = true;
       }
       break;
       default:
       PRINTLN(">> BAD PARAMETERS");
-      execFlag = false;
       break;
     }
   }
 
   // == MAKE SQUARE ==========================================
   else if (_cmdString == MAKE_SQUARE) {
-    PRINTLN(">> COMMAND AVAILABLE - EXECUTING...");
     switch(_numArgs) {
       case 2: // side, num point [centered]
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
       Renderer2D::renderFigure();
+        execFlag = true;
       break;
       case 4:
       { // center point, radius, num points
-        PRINT(">> EXECUTING... ");
+        PRINTLN(">> EXECUTING... ");
         Graphics::updateScene();
         P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
         Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
         Renderer2D::renderFigure();
+  execFlag = true;
       }
       break;
       default:
       PRINTLN(">> BAD PARAMETERS");
-      execFlag = false;
       break;
     }
   }
 
   else if (_cmdString == MAKE_ZIGZAG)     {
-    PRINTLN(">> COMMAND AVAILABLE: EXECUTING...");
     switch(_numArgs) {
       case 4: // Centered on [0,0]
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawZigZag(
         argStack[0].toFloat(), argStack[1].toFloat(),
         argStack[2].toInt(), argStack[3].toInt()
       );
       Renderer2D::renderFigure();
+        execFlag = true;
       break;
       case 6:
       { // from left bottom corner:
-        PRINT(">> EXECUTING... ");
+        PRINTLN(">> EXECUTING... ");
         Graphics::updateScene();
         P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
         Graphics::drawZigZag(
@@ -534,11 +548,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
           argStack[4].toInt(), argStack[5].toInt()
         );
         Renderer2D::renderFigure();
+          execFlag = true;
       }
       break;
       default:
       PRINTLN(">> BAD PARAMETERS");
-      execFlag = false;
       break;
     }
   }
@@ -550,13 +564,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
   else if (_cmdString == CIRCLE_TEST)     {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::clearScene();
       Graphics::drawCircle(50.0, 360); // fisrt argument is the radius
       // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
       Renderer2D::renderFigure();
       // THIS IS A TEST: Force display whatever the previous state:
       DisplayScan::startDisplay(); // start engine, whatever the previous state
+        execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -564,11 +579,12 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
   else if (_cmdString == SQUARE_TEST)  {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Graphics::clearScene();
       Graphics::drawSquare(100, 50.0); // first argument is the length of the side
       Renderer2D::renderFigure();
       DisplayScan::startDisplay();
+        execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -576,7 +592,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // c) : SQUARE + CIRCLE TEST
   else if (_cmdString == COMPOSITE_TEST)  {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       float radius = 75;
       Graphics::clearScene();
       Graphics::drawSquare(2*radius, 30.0);
@@ -586,6 +602,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Graphics::drawLine(P2(0, -90), 0, 180, 30.0);
       Renderer2D::renderFigure();
       DisplayScan::startDisplay();
+        execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -599,18 +616,20 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // E) ============  LOW LEVEL COMMANDS ===========================
   //==========================================================================
 
-  else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, sate
+  else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, state
     if (_numArgs == 2) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
 
   else if (_cmdString == BLINK_LED_DEBUG )    {     // Parameters: number of times
-    if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+    if (_numArgs == 2) {
+      PRINTLN(">> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
     Hardware::blinkLedDebug(argStack[0].toInt());
@@ -618,7 +637,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == RESET_BOARD)    {
     if (_numArgs == 0) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       delay(500);
       Hardware::resetBoard();
     }
@@ -627,11 +646,12 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == TEST_MIRRORS_RANGE)   {
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       bool previousState = DisplayScan::getRunningState();
       DisplayScan::stopDisplay();
       Hardware::Scanner::testMirrorRange(argStack[0].toInt());
       if (previousState) DisplayScan::startDisplay();
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
@@ -639,16 +659,18 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   else if (_cmdString == TEST_CIRCLE_RANGE)   {
 
     if (_numArgs == 1) {
-      PRINT(">> EXECUTING... ");
+      PRINTLN(">> EXECUTING... ");
       bool previousState = DisplayScan::getRunningState();
       DisplayScan::stopDisplay();
       Hardware::Scanner::testCircleRange(argStack[0].toInt());
       if (previousState) DisplayScan::startDisplay();
+      execFlag = true;
     }
     else PRINTLN(">> BAD PARAMETERS");
   }
 
   else { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
+    PRINTLN(">> BAD COMMAND");
     execFlag = false;
   }
 
