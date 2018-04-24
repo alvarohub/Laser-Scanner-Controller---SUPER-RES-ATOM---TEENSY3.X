@@ -56,7 +56,7 @@ namespace Renderer2D {
       // * NOTE : we can choose here to either clip the points AND show them clipped, or
       // just NOT put them in the display buffer. I will use the second option here:
       if ( !Hardware::Scanner::clipLimits(point) ) {  // constrain to the galvo limits
-        frameBuffer[i] = point;
+        frameBuffer[numframeBufferPoints] = point;
         numframeBufferPoints++;
       }
 

@@ -57,6 +57,8 @@ openGL like renderer.
 
 namespace Graphics {
 
+	extern bool clearModeFlag;
+
 	// (1) Setter for OPENGL-like pose ("modelview matrix") ==========
 	// * NOTE: figure is recomputed from its (unchanged, stored) blueprint to
 	// avoid approximation drift.
@@ -131,7 +133,16 @@ namespace Graphics {
 		const uint16_t _nx, const uint16_t _ny
 	);
 
-	extern bool clearModeFlag;
+	extern void drawSpiral(const P2 &_center,
+		const float _radiusArm, // r = _radiusArm * theta
+		const float _numTours,
+		const uint16_t _numPoints);
+	//centered:
+	extern void drawSpiral(
+			const float _radiusArm, // r = _radiusArm * theta
+			const float _numTours,
+			const uint16_t _numPoints
+		);
 
 } // end namespace
 

@@ -6,13 +6,16 @@
 #include "Utils.h"
 #include "scannerDisplay.h"
 
-#include <Wire.h>
+#ifdef DEBUG_MODE_LCD
+#include "Wire.h"
 #include "rgb_lcd.h"
+#endif
 
+#ifdef DEBUG_MODE_TFT
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library
 #include <SPI.h>
-
+#endif
 
 // ============ LOW LEVEL HARDWARE METHODS ================================
 // * NOTE 1: make the critic code inline!
@@ -120,8 +123,9 @@ namespace Hardware {
 		}
 
 		inline void mapViewport(P2 &_point, float _minX, float _maxX, float _minY, float _maxY) {
-			_point.x=map(_point.x, _minX, _maxX, MIN_MIRRORS_ADX, MAX_MIRRORS_ADX);
-			_point.y=map(_point.y, _minY, _maxY, MIN_MIRRORS_ADY, MAX_MIRRORS_ADY);
+			_point.x=(_point.x - _minX) * (MAX_MIRRORS_ADX - MIN_MIRRORS_ADX) / (_maxX - _minX )  + MIN_MIRRORS_ADX;
+			// NOTE: the map function in arduno uses long(s), not floats!!
+			_point.y=(_point.y - _minY) * (MAX_MIRRORS_ADY - MIN_MIRRORS_ADY) / (_maxY - _minY )  + MIN_MIRRORS_ADY;
 		}
 
 		inline bool clipLimits(P2 &_point) {
@@ -145,25 +149,25 @@ namespace Hardware {
 
 
 	namespace Lcd {
+		#ifdef DEBUG_MODE_LCD
 
 		extern rgb_lcd lcd;
-
 		extern void init();
-
 		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
 		extern void print(String text);
 		extern void println(String text);
 
+		#endif
 	}
 
 	namespace Tft {
+#ifdef DEBUG_MODE_TFT
 
 		extern void init();
-
-		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
 		extern void print(String text);
 		extern void println(String text);
 
+#endif
 	}
 
 }

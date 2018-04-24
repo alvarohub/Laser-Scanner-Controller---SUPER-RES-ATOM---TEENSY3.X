@@ -24,8 +24,8 @@ namespace Graphics {
 
 	void resetGlobalPose() { // this can be done without rendering [~openGL set identity modelview]
 		setCenter(0.0,0.0);
-	setAngle(0.0);
-	setScaleFactor(1.0);
+		setAngle(0.0);
+		setScaleFactor(1.0);
 	}
 
 	// ======================== SCENE SETTING METHODS =====================
@@ -186,6 +186,43 @@ namespace Graphics {
 			_lenX, _lenY,
 			_nx, _ny
 		);
+	}
+
+
+// Draw a spiral (equal steph length, not constant angle step!)
+	void drawSpiral(const P2 &_center,
+		const float _radiusArm, // r = _radiusArm * theta
+		const float _numTours,
+		const uint16_t _numPoints
+	)	{
+		float phi = 2.0*PI*_numTours;
+		float length = _radiusArm/(4.0*PI)*( phi*sqrt(1+phi*phi) + log(phi+sqrt(1+phi*phi)) );
+		float stepLength = 1.0*length/_numPoints;
+
+		Serial.println(length);
+
+		float theta = 0, stepTheta;
+		while (theta<phi) {
+			float r = _radiusArm * theta;
+			P2 point( _center.x + r*cos(theta), _center.y + r*sin(theta) );
+			addVertex(point);
+
+			// Use dicotomy to find the stephTheta such that the length increase is equal to stepLength:
+			// float stepTheta = 1.0*phi/_numPoints; // the step should be smaller than that
+			// ... OR, for large number of points, we have the approximation:
+			stepTheta = stepLength/(_radiusArm*sqrt(1+theta*theta));
+
+			theta+=stepTheta;
+		}
+	}
+
+	// centered:
+	void drawSpiral(
+		const float _radiusArm, // r = _radiusArm * theta
+		const float _numTours,
+		const uint16_t _numPoints
+	) {
+		drawSpiral(P2(0,0),_radiusArm, _numTours, _numPoints);
 	}
 
 } // end namespace

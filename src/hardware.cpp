@@ -59,8 +59,15 @@ namespace Hardware {
 
 	void init() {
 		//initSerial(); // make a namespace for serial? TODO
+
+		#ifdef DEBUG_MODE_LCD
 		Lcd::init();
+		#endif
+		
+		#ifdef DEBUG_MODE_TFT
 		Tft::init();
+		#endif
+
 		Gpio::init();
 		Lasers::init();
 		Scanner::init();
@@ -258,6 +265,7 @@ namespace Hardware {
 	}
 
 	namespace Lcd {
+		#ifdef DEBUG_MODE_LCD
 
 		rgb_lcd lcd;
 
@@ -287,11 +295,13 @@ namespace Hardware {
 			lcd.setCursor(0,row);
 			lcd.print(text);
 		}
-
+		#endif
 	}
 
 
 	namespace Tft {
+		#ifdef DEBUG_MODE_TFT
+
 		//uint8_t row=0, col=0;
 		// extern Adafruit_ST7735 *tft = new Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
@@ -334,6 +344,7 @@ namespace Hardware {
 		void setPixel(uint16_t x, uint16_t y) {
 			tft.drawPixel(x, y, ST7735_GREEN);
 		}
-
+		#endif
 	}
+
 }

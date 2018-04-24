@@ -29,12 +29,6 @@ PWM frequencies on the other pins either interfere with the dacs or don't work p
 #include "hardware.h"
 #include "scannerDisplay.h"
 
-#include "Wire.h"
-#include "rgb_lcd.h"
-
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library
-#include <SPI.h>
 
 //#include "renderer2D.h"
 
