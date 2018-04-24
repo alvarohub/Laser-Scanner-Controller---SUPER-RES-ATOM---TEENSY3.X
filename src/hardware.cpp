@@ -2,6 +2,77 @@
 
 namespace Hardware {
 
+
+	void print(String _string) {
+		#if defined DEBUG_MODE_SERIAL
+		Serial.print(_string);
+		#endif
+
+		#if defined DEBUG_MODE_LCD
+		Lcd::print(_string);
+		#endif
+
+		#if defined DEBUG_MODE_TFT
+		Tft::print(_string);
+		#endif
+	}
+
+	extern void println(String _string) {
+		#if defined DEBUG_MODE_SERIAL
+		Serial.println(_string);
+		#endif
+
+		#if defined DEBUG_MODE_LCD
+		Lcd::println(_string);
+		#endif
+
+		#if defined DEBUG_MODE_TFT
+		Tft::println(_string);
+		#endif
+	}
+
+	// Basic Harware namespace methods
+	void blinkLed(uint8_t _pinLed, uint8_t _times) {
+		// Non blocking blink! Avoid to use delay() too
+		elapsedMicros usec = 0;
+		for (uint8_t i=0; i<_times; i++) {
+
+			// Use a loop, or elapsedMicros [see: https://www.pjrc.com/teensy/teensy31.html]
+			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
+			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
+
+			digitalWrite(_pinLed, HIGH);
+			while (usec<500000) {} // half a second
+			usec = 0;
+			digitalWrite(_pinLed, LOW);
+			while (usec<500000) {} // half a second
+			usec = 0;
+		}
+	}
+
+	void blinkLedDebug(uint8_t _times) {
+		blinkLed(PIN_LED_DEBUG, _times);
+	}
+	void blinkLedMessage(uint8_t _times) {
+		blinkLed(PIN_LED_MESSAGE, _times);
+	}
+
+	void init() {
+		//initSerial(); // make a namespace for serial? TODO
+		Lcd::init();
+		Tft::init();
+		Gpio::init();
+		Lasers::init();
+		Scanner::init();
+
+	}
+
+	//Software reset: better than using the RST pin (noisy?)
+	void resetBoard() {
+		SCB_AIRCR = 0x05FA0004; // software reset on Teensy 3.X
+	}
+
+
 	namespace Gpio {
 
 		void init() { // set default modes, output values, etc of pins, other that the laser and scanner:
@@ -26,10 +97,10 @@ namespace Hardware {
 			// On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22), A14 on the
 			// Teensy 3.1/3.2, and A12 on the Teensy LC.
 
-			PRINTLN(">> GPIOs READY");
+			PRINTLN("> GPIOs READY");
 		}
 
-		// Set frequency in HZ on pins 5, 6, 9, 10, 20, 21, 22, 23
+		// When setting analogWriteFrequency on pin 5, it affects pins 5, 6, 9, 10, 20, 21, 22, 23
 		//[works on 3.1 to 3.6]
 		void setPWMFreq(uint16_t _freq) {
 			analogWriteFrequency(5, _freq);
@@ -49,7 +120,7 @@ namespace Hardware {
 			setPowerAll(0);
 			switchOffAll();
 
-			PRINTLN(">> LASERS READY");
+			PRINTLN("> LASERS READY");
 		}
 
 		extern void test() { // Switch lasers one by one and try a power ramp on each of these:
@@ -94,7 +165,7 @@ namespace Hardware {
 		void init() {
 			// RENCENTER mirror and fill BOTH buffers with the central position too:
 			recenterPosRaw();
-			PRINTLN(">> SCANNERS READY");
+			PRINTLN("> SCANNERS READY");
 		}
 
 		//inline void setMirrorsTo(uint16_t _posX, uint16_t _posY);
@@ -186,43 +257,83 @@ namespace Hardware {
 
 	}
 
-	// ======== OTHERS GENERIC HARWARE ROUTINES:
-	void blinkLed(uint8_t _pinLed, uint8_t _times) {
-		// Non blocking blink! Avoid to use delay() too
-		elapsedMicros usec = 0;
-		for (uint8_t i=0; i<_times; i++) {
+	namespace Lcd {
 
-			// Use a loop, or elapsedMicros [see: https://www.pjrc.com/teensy/teensy31.html]
-			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
-			// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
+		rgb_lcd lcd;
 
-			digitalWrite(_pinLed, HIGH);
-			while (usec<500000) {} // half a second
-			usec = 0;
-			digitalWrite(_pinLed, LOW);
-			while (usec<500000) {} // half a second
-			usec = 0;
+		void init() {
+			// set up the LCD's number of columns and rows:
+			lcd.begin(16, 2);
+			//lcd.clear();
+			lcd.setRGB(0,200,0);
+			// lcd.setPWM(REG_GREEN, i);
 		}
+
+		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
+		void print(String text) {
+			//lcd.clear();
+			lcd.print(text);
+		}
+
+		void println(String text) {
+			static uint8_t row =0;
+			//lcd.clear();
+			//lcd.print("\n");
+			row++;
+			if (row==2) {
+				row = 0;
+				lcd.clear();
+			}
+			lcd.setCursor(0,row);
+			lcd.print(text);
+		}
+
 	}
 
-	void blinkLedDebug(uint8_t _times) {
-		blinkLed(PIN_LED_DEBUG, _times);
-	}
-	void blinkLedMessage(uint8_t _times) {
-		blinkLed(PIN_LED_MESSAGE, _times);
-	}
 
-	void init() {
-		//initSerial(); // make a namespace for serial? TODO
-		Gpio::init();
-		Lasers::init();
-		Scanner::init();
+	namespace Tft {
+		//uint8_t row=0, col=0;
+		// extern Adafruit_ST7735 *tft = new Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+
+		uint8_t row=0, col=0;
+
+		//Adafruit_ST7735 tft;
+		//	Adafruit_ST7735 *tft = new Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+		Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+
+		void init() {
+			// Use this initializer if you're using a 1.8" TFT
+			tft.initR(INITR_BLACKTAB);   // initialize a ST7735S chip, black tab
+
+			// Use this initializer (uncomment) if you're using a 1.44" TFT
+			//tft.initR(INITR_144GREENTAB);   // initialize a ST7735S chip, black tab
+
+			tft.fillScreen(ST7735_BLACK);
+			tft.setCursor(0, 5);
+			tft.setTextColor(ST7735_WHITE);
+			tft.setTextWrap(true);
+			tft.setTextSize(0.8);
+		}
+
+		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
+		void print(String text) {
+			//tft.setCursor(row, 0);// on the current row
+			tft.print(text);
+		}
+
+		void println(String text) {
+			row = (row+1)%16;
+			if (!row) {
+				tft.fillScreen(ST7735_BLACK);
+				tft.setCursor(0, 5);
+			}
+			tft.print(text);
+			tft.print("\n");
+		}
+
+		void setPixel(uint16_t x, uint16_t y) {
+			tft.drawPixel(x, y, ST7735_GREEN);
+		}
+
 	}
-
-	//Software reset: better than using the RST pin (noisy?)
-	void resetBoard() {
-		SCB_AIRCR = 0x05FA0004; // software reset on Teensy 3.X
-	}
-
-
 }

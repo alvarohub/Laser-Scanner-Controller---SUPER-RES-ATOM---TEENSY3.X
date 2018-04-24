@@ -28,6 +28,14 @@ PWM frequencies on the other pins either interfere with the dacs or don't work p
 #include "Class_P2.h"
 #include "hardware.h"
 #include "scannerDisplay.h"
+
+#include "Wire.h"
+#include "rgb_lcd.h"
+
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library
+#include <SPI.h>
+
 //#include "renderer2D.h"
 
 //  ================== SETUP ==================
@@ -48,8 +56,9 @@ void setup() {
     // Check FREE RAM in DEBUG mode:
     //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
 
-    PRINTLN(">> SYSTEM READY!");
-    PRINT(">> ");
+    delay(2000);
+    PRINTLN("==SYSTEM READY==");
+    //PRINT(">> ");
 }
 
 // ================== MAIN LOOP ==================

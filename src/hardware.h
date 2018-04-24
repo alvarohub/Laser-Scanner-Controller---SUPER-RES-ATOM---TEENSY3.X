@@ -6,6 +6,13 @@
 #include "Utils.h"
 #include "scannerDisplay.h"
 
+#include <Wire.h>
+#include "rgb_lcd.h"
+
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library
+#include <SPI.h>
+
 
 // ============ LOW LEVEL HARDWARE METHODS ================================
 // * NOTE 1: make the critic code inline!
@@ -21,6 +28,9 @@ namespace Hardware {
 	extern void blinkLed(uint8_t _pinLed, uint8_t _times);
 	extern void blinkLedDebug(uint8_t _times);
 	extern void blinkLedMessage(uint8_t _times);
+
+	extern void print(String _string);
+	extern void println(String _string);
 
 	namespace Gpio {
 
@@ -47,12 +57,14 @@ namespace Hardware {
 		// ============== Laser pin declaration and #defines ========
 		#define NUM_LASERS 5
 
-		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve the value of current power;
-		const uint8_t pinPowerLaser[5] = {5, 6, 7, 8, 9};//2, 3, 4, 5, 6};  // PWM capable:
-		const uint8_t pinSwitchLaser[5] = {14, 15, 16, 17, 18};
+		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve
+		// the value of current power.
+		// * NOTE 2 : pwm frequency change in Gpio init affects PWM capable pins: 5, 6, 9, 10, 20, 21, 22, 23
+		const uint8_t pinPowerLaser[5] = {5, 6, 9, 10, 20};
+		const uint8_t pinSwitchLaser[5] = {33,34,35,36,37};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
-		enum Laser {RED=0, GREEN = 1, BLUE = 2, YELLOW =3, MAGENTA = 4};
+		enum Laser {RED_LASER=0, GREEN_LASER = 1, BLUE_LASER = 2, YELLOW_LASER =3, MAGENTA_LASER = 4};
 
 		extern void init();
 		extern void test();
@@ -73,20 +85,20 @@ namespace Hardware {
 		// TODO: extern void setColor();
 
 		// Other methods for low level, more explicit control:
-		inline void setSwitchRed(bool _state) {digitalWrite(pinSwitchLaser[RED], _state);}
-		inline void setPowerRed(uint16_t _power) {analogWrite(pinPowerLaser[RED], _power);}
+		inline void setSwitchRed(bool _state) {digitalWrite(pinSwitchLaser[RED_LASER], _state);}
+		inline void setPowerRed(uint16_t _power) {analogWrite(pinPowerLaser[RED_LASER], _power);}
 
-		inline void setSwitchGreen(bool _state) {digitalWrite(pinSwitchLaser[GREEN], _state);}
-		inline void setPowerGreen(uint16_t _power) {analogWrite(pinPowerLaser[GREEN], _power);}
+		inline void setSwitchGreen(bool _state) {digitalWrite(pinSwitchLaser[GREEN_LASER], _state);}
+		inline void setPowerGreen(uint16_t _power) {analogWrite(pinPowerLaser[GREEN_LASER], _power);}
 
-		inline void setSwitchBlue(bool _state) {digitalWrite(pinSwitchLaser[BLUE], _state);}
-		inline void setPowerBlue(uint16_t _power) {analogWrite(pinPowerLaser[BLUE], _power);}
+		inline void setSwitchBlue(bool _state) {digitalWrite(pinSwitchLaser[BLUE_LASER], _state);}
+		inline void setPowerBlue(uint16_t _power) {analogWrite(pinPowerLaser[BLUE_LASER], _power);}
 
-		inline void setSwitchYellow(bool _state) {digitalWrite(pinSwitchLaser[YELLOW], _state);}
-		inline void setPowerYellow(uint16_t _power) {analogWrite(pinPowerLaser[YELLOW], _power);}
+		inline void setSwitchYellow(bool _state) {digitalWrite(pinSwitchLaser[YELLOW_LASER], _state);}
+		inline void setPowerYellow(uint16_t _power) {analogWrite(pinPowerLaser[YELLOW_LASER], _power);}
 
-		inline void setSwitchMagenta(bool _state) {digitalWrite(pinSwitchLaser[MAGENTA], _state);}
-		inline void setPowerMagenta(uint16_t _power) {analogWrite(pinPowerLaser[MAGENTA], _power);}
+		inline void setSwitchMagenta(bool _state) {digitalWrite(pinSwitchLaser[MAGENTA_LASER], _state);}
+		inline void setPowerMagenta(uint16_t _power) {analogWrite(pinPowerLaser[MAGENTA_LASER], _power);}
 
 
 	}
@@ -128,6 +140,29 @@ namespace Hardware {
 		// of the galvano mirrors:
 		extern void testMirrorRange(uint16_t _durationSec);
 		extern void testCircleRange(uint16_t _durationSec);
+
+	}
+
+
+	namespace Lcd {
+
+		extern rgb_lcd lcd;
+
+		extern void init();
+
+		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
+		extern void print(String text);
+		extern void println(String text);
+
+	}
+
+	namespace Tft {
+
+		extern void init();
+
+		// wrappers for LCD display - could do more than just wrap the lcd methods, i.e, vertical scroll with interruption, etc.
+		extern void print(String text);
+		extern void println(String text);
 
 	}
 

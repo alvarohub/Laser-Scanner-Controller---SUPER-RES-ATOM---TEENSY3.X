@@ -8,17 +8,26 @@
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
-#define DEBUG_MODE// by defining this, we can debug on the serial port
+#define DEBUG_MODE_SERIAL// by defining this, we can debug on the serial port
+#define DEBUG_MODE_LCD   // for using the LCD panel
+#define DEBUG_MODE_TFT   // for using the TFT panel
 
-#ifdef DEBUG_MODE
-#define PRINT(...)      Serial.print(__VA_ARGS__)
-#define PRINTLN(...)    Serial.println(__VA_ARGS__)
-#define PRINT_CSTRING(...) for (uint8_t i=0; i<strlen(__VA_ARGS__); i++) Serial.print(__VA_ARGS__[i]); Serial.println()
-#else
-# define PRINT(...)
-# define PRINTLN(...)
-#define PRINT_CSTRING(...)
-#endif
+#define PRINT(...)      (Hardware::print(__VA_ARGS__))
+#define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
+
+//
+// #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
+// #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
+// #define PRINTLN(...)    ({Serial.println(__VA_ARGS__); Hardware::Lcd::println(__VA_ARGS__);})
+//
+// #if defined DEBUG_MODE_SERIAL && !defined(DEBUG_MODE_LCD)
+// #define PRINT(...)      Serial.print(__VA_ARGS__)
+// #define PRINTLN(...)    Serial.println(__VA_ARGS__)
+//
+// #if !defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
+// # define PRINT(...)     (Hardware::Lcd::print(__VA_ARGS__))
+// # define PRINTLN(...)   (Hardware::Lcd::println(__VA_ARGS__))
+// #endif
 
 /*
 #define PI 3.14159265889
@@ -88,5 +97,18 @@
 // code corresponds to setting OFFSETADX/Y to 0).
 #define CENTER_MIRROR_ADX  2047
 #define CENTER_MIRROR_ADY  2047
+
+// ======================== SIMPLE I/O INTERFACE (LCD, buttons)
+// 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
+//NOTE: these pins are listed here for reference, but they are the
+//d efault pins using in Wire.h.
+#define LCD_SDA 18
+#define LCD_SCL 19
+// 2] TFT display (Adafruit_ST7735)
+#define TFT_CS     10
+#define TFT_RST    24 // not used for now, the RST is connected to 3.3V
+#define TFT_DC     9
+#define TFT_SCLK   14   // set these to be whatever pins you like!
+#define TFT_MOSI   15   // set these to be whatever pins you like!
 
 #endif
