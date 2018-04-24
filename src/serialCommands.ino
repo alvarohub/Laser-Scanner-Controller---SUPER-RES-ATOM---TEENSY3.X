@@ -101,7 +101,16 @@ void serialEvent() {
     // message string, say: OSC, Lora, TCP/IP, etc]. This effectively separates the
     // serial receiver from the parser, and it simplifies debugging.
     if (inChar == END_PACKET) {
+
+      //Set some special led to signal a received complete message, or send back
+      // some notification? (handshake)
+      digitalWrite(PIN_LED_MESSAGE, HIGH);
+
+      delay(10);
+
       parseStringMessage(messageString); //parse AND calls the appropiate functions
+
+      digitalWrite(PIN_LED_MESSAGE, LOW);
       messageString = "";
     }
   }
@@ -121,11 +130,6 @@ void resetParsedData() { // without changing the parsing index [in the for loop]
 bool parseStringMessage(const String &_messageString) {
   static String oldMessageString =""; // oldMessageString is for repeating last command
   String messageString = _messageString;
-
-  //Set some special led to signal a received complete message, or send back
-  // some notification? (handshake)
-  digitalWrite(PIN_LED_MESSAGE, HIGH);
-  //PRINTLN("* STRING RECEIVED: "); PRINTLN(_messageString);
 
   bool cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
   for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
@@ -189,7 +193,7 @@ bool parseStringMessage(const String &_messageString) {
           oldMessageString = messageString;
           PRINTLN("> OK");
           //PRINT("> ");
-          Hardware::blinkLedMessage(2);
+          //Hardware::blinkLedMessage(2);
         } else {
           PRINTLN("> FAIL");
           //PRINT("> ");
@@ -201,8 +205,10 @@ bool parseStringMessage(const String &_messageString) {
       }
       else { // END of packet received WITHOUT a command: repeat command IF there was a previous good command:
         // NOTE: for the time being, this discards the rest of the message (in case it came from something else than a terminal of course)
+
         PRINTLN(oldMessageString);
         parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent call here.. but this "RETURN" based repeat will
+
         // only be used while using command line input, so there is no risk of deep nested calls.
         // A safer alternative would be to do the following (but something is wrong):
         // resetParsedData();

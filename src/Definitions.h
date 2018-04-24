@@ -82,8 +82,8 @@
 
 
 //3) ============== LED indicators (digital) ==================
-#define PIN_LED_DEBUG   13
-#define PIN_LED_MESSAGE 14
+#define PIN_LED_DEBUG   13 // 13 is the buil-in led
+#define PIN_LED_MESSAGE 16
 
 // ************************* CONSTANT HARDWARE PARAMETERS ******************************
 #define MAX_MIRRORS_ADX	4095

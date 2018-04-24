@@ -58,6 +58,6 @@ void setup() {
 // ================== MAIN LOOP ==================
 void loop() {
 
-    //updateSerialCom(); //no need, we are using a serial event handler!
+  //  updateSerialCom(); //no need if using a serial event handler!
 
 }
