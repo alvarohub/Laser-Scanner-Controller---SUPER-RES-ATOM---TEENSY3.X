@@ -63,7 +63,7 @@ namespace Hardware {
 		#ifdef DEBUG_MODE_LCD
 		Lcd::init();
 		#endif
-		
+
 		#ifdef DEBUG_MODE_TFT
 		Tft::init();
 		#endif

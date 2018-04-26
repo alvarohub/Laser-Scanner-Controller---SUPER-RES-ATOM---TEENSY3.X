@@ -29,8 +29,9 @@ PWM frequencies on the other pins either interfere with the dacs or don't work p
 #include "hardware.h"
 #include "scannerDisplay.h"
 
-
-//#include "renderer2D.h"
+// for tests in the loop:
+#include "renderer2D.h"
+#include "graphics.h"
 
 //  ================== SETUP ==================
 void setup() {
@@ -59,5 +60,15 @@ void setup() {
 void loop() {
 
   //  updateSerialCom(); //no need if using a serial event handler!
+
+  // TEST:
+  float t= 1.0*millis()/1000;
+  Graphics::setAngle(90.0*t); // in deg (10 deg/sec)
+  Graphics::setCenter(10*cos(3*t), 20*sin(5*t));
+
+  Graphics::setScaleFactor(0.2+.4*(1.0+cos(0.5*t)));
+  Renderer2D::renderFigure();
+
+  delay(10);
 
 }

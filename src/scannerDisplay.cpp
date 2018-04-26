@@ -83,22 +83,16 @@ namespace DisplayScan {
   uint16_t getBufferSize() {return(sizeBufferDisplay);}
 
   void setInterPointTime(uint16_t _dt) {
-    dt=_dt;
+    if (_dt>=20) {
+      dt=_dt; // the ISR may last more than that... too small and it can hang the program!
+                       // I found a limit of 15us; the ADC takes about 10us anyway...
     // NOTE: there is a difference between "update" and "start", check PJRC page. myTimer.update(microseconds);
     scannerTimer.update(dt);
+  }
   }
 
   void setBlankingRed(bool _newBlankState) {
     blankingFlag = _newBlankState;
-  }
-
-  void writeOnHiddenBuffer(uint16_t _absIndex, const P2& _point) {
-    // NOTE: in the future, the display buffer should contain ints,
-    // but the blueprint floats to make the transformations and rendering.
-
-    //(*ptrHiddenDisplayBuffer)[_absIndex].set(_point); // better not to make a call
-    ptrHiddenDisplayBuffer[_absIndex].x=_point.x; // note: *(ptr+i) = ptr[i]
-    (ptrHiddenDisplayBuffer+_absIndex)->y=_point.y;
   }
 
   void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {

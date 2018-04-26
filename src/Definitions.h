@@ -9,8 +9,8 @@
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
 #define DEBUG_MODE_SERIAL// by defining this, we can debug on the serial port
-//#define DEBUG_MODE_LCD   // for using the LCD panel
-//#define DEBUG_MODE_TFT   // for using the TFT panel
+#define DEBUG_MODE_LCD   // for using the LCD panel
+#define DEBUG_MODE_TFT   // for using the TFT panel
 
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
 #define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
@@ -78,12 +78,12 @@
 // Min and max: (in ADC units):
 #define MAX_LASER_POWER 4095 // 12 bit PWM res; maybe not used for now
 // min laser power is 0.
-#define FREQ_PWM 40000  // This will set the PWM pins frequency to 40kHz, resulting in an 11 bit resolution
+#define FREQ_PWM 65000  // This will set the PWM pins frequency [attn: resolution can be limited if this is too large]
 
 
 //3) ============== LED indicators (digital) ==================
 #define PIN_LED_DEBUG   13 // 13 is the buil-in led
-#define PIN_LED_MESSAGE 16
+#define PIN_LED_MESSAGE 24
 
 // ************************* CONSTANT HARDWARE PARAMETERS ******************************
 #define MAX_MIRRORS_ADX	4095
@@ -105,10 +105,10 @@
 #define LCD_SDA 18
 #define LCD_SCL 19
 // 2] TFT display (Adafruit_ST7735)
-#define TFT_CS     10
-#define TFT_RST    24 // not used for now, the RST is connected to 3.3V
-#define TFT_DC     9
-#define TFT_SCLK   14   // set these to be whatever pins you like!
-#define TFT_MOSI   15   // set these to be whatever pins you like!
+#define TFT_CS     25
+#define TFT_RST    26 // not used for now, the RST is connected to 3.3V
+#define TFT_DC     27
+#define TFT_SCLK   28   // set these to be whatever pins you like!
+#define TFT_MOSI   29   // set these to be whatever pins you like!
 
 #endif
