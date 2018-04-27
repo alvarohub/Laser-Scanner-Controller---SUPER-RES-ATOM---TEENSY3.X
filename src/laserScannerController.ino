@@ -45,15 +45,14 @@ void setup() {
     // 3] INIT DISPLAY ENGINE (default is stand by)
     DisplayScan::init();
 
+    PRINTLN("==SYSTEM READY==");
+    //PRINT(">> ");
+
     // 4] Blink led (needs to be called after setting pin modes)
     Hardware::blinkLedDebug(2);
 
     // Check FREE RAM in DEBUG mode:
     //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
-
-    delay(2000);
-    PRINTLN("==SYSTEM READY==");
-    //PRINT(">> ");
 }
 
 // ================== MAIN LOOP ==================
@@ -61,14 +60,13 @@ void loop() {
 
   //  updateSerialCom(); //no need if using a serial event handler!
 
-  // TEST:
-  float t= 1.0*millis()/1000;
-  Graphics::setAngle(90.0*t); // in deg (10 deg/sec)
-  Graphics::setCenter(10*cos(3*t), 20*sin(5*t));
+  //TEST:
+  //float t= 1.0*millis()/1000;
+  //Graphics::setAngle(90.0*t); // in deg (10 deg/sec)
+  //Graphics::setCenter(20.0*cos(3.0*t), 30.0*sin(5.0*t));
+  //Graphics::setScaleFactor(0.2+.4*(1.0+cos(0.5*t)));
+  //Renderer2D::renderFigure();
 
-  Graphics::setScaleFactor(0.2+.4*(1.0+cos(0.5*t)));
-  Renderer2D::renderFigure();
-
-  delay(10);
+  //delay(200);
 
 }

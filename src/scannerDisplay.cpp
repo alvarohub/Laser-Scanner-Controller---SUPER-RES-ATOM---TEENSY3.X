@@ -83,12 +83,12 @@ namespace DisplayScan {
   uint16_t getBufferSize() {return(sizeBufferDisplay);}
 
   void setInterPointTime(uint16_t _dt) {
-    if (_dt>=20) {
+    if ( _dt>= 20+DELAY_POSITIONING_MIRRORS_US ) {
       dt=_dt; // the ISR may last more than that... too small and it can hang the program!
-                       // I found a limit of 15us; the ADC takes about 10us anyway...
-    // NOTE: there is a difference between "update" and "start", check PJRC page. myTimer.update(microseconds);
-    scannerTimer.update(dt);
-  }
+      // I found a limit of 15us; the ADC takes about 10us anyway...
+      // NOTE: there is a difference between "update" and "start", check PJRC page. myTimer.update(microseconds);
+      scannerTimer.update(dt);
+    }
   }
 
   void setBlankingRed(bool _newBlankState) {
@@ -96,10 +96,10 @@ namespace DisplayScan {
   }
 
   void setDisplayBuffer(const P2 *_ptrFrameBuffer, uint16_t _size) {
+
     // note: can I use memcpy with size(P2)?? probably yes and much faster... TP TRY!!
     //memcpy (ptrHiddenDisplayBuffer, _ptrFrameBuffer, _size*sizeof(P2));
-
-    for (uint16_t k=0; k<_size; k++) {
+  for (uint16_t k=0; k<_size; k++) {
       ptrHiddenDisplayBuffer[k].x=_ptrFrameBuffer[k].x;
       ptrHiddenDisplayBuffer[k].y=_ptrFrameBuffer[k].y;
     }
@@ -107,10 +107,11 @@ namespace DisplayScan {
     needSwapFlag = true;
     // The following is a critical piece of code and must be ATOMIC, otherwise
     // the flag may be reset
-    // by the ISR before newSizeBufferDisplay is set. Now, this means the displaying
-    // engine will briefly stop - but really briefly, and moreover the resizing
-    // of the buffer is only done at the end of a rendering figure: not very often.
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // <-- NOT FOR ARDUINO DUE
+    // by the ISR before newSizeBufferDisplay is set.
+    // Now, this means the displaying engine will briefly stop,
+    // but really briefly, and moreover the resizing of the buffer is
+    // only done at the end of a rendering figure: not very often...
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
       //noInterrupts();
       newSizeBufferDisplay = _size;
       //interrupts();
@@ -121,40 +122,48 @@ namespace DisplayScan {
   // =================================================================
   // =========== Mirror-psitioning ISR that is called every dt =======
   //==================================================================
-  // * NOTE 1 : this is perhaps the most critical method. And it has to be
+  // * NOTE 1 : the ISR set and display ONE point at each entry
+  // * NOTE 2 : this is perhaps the most critical method. And it has to be
   // as fast as possible!! (in the future, do NOT use analogWrite() !!)
-  // * NOTE 2 : general guideline is to keep your function short and avoid
+  // * NOTE 3 : general guideline is to keep your function short and avoid
   // calling other functions if possible.
   void displayISR() {
+  //  static uint8_t multiDisplay = 0;
+  //  if (!readingHead) multiDisplay = (multiDisplay+1)%3;
 
-    // Exchange buffers when finishing displaying the current buffer
+    // Double buffering: exchange buffers when finishing displaying the current buffer
     // AND needSwapFlag is true - meaning the rendering engine finished drawing a
     // new figure on the hidden buffer [check renderFigure() method]:
-    if ( needSwapFlag && !readingHead ) {
-      // i.e. if we need to swap and we are in the start of buffer
+    if ( needSwapFlag ) {//}&& !readingHead ) {// need to swap AND we are in the start of buffer
       // * NOTE : the second condition is optional: we could start displaying from
       // the current readingHead - but this will deform the figure when
-      // rendering too fast.
+      // rendering too fast, basically rendering double buffering obsolete.
 
-      // NOTE: resizing may or may not have taken place while rendering a
-      // new scene/figure, but instead of having a flag, let's just use
-      // the value of newSizeBufferDisplay which is set in the renderer method.
+      // Now, IF we still want that [to smooth the *perceptual illusion* of deformation],
+      // we also need to check readingHead is in the new range:
+      readingHead = (readingHead % newSizeBufferDisplay);
 
       // * NOTE : The following variables are volatile - they
-      //need to be, because they are modified in the ISR:
+      //   need to be, because they are modified in the ISR:
       sizeBufferDisplay = newSizeBufferDisplay;
+
       volatile P2 *ptrAux = ptrCurrentDisplayBuffer;
       ptrCurrentDisplayBuffer = ptrHiddenDisplayBuffer;
       ptrHiddenDisplayBuffer = ptrAux;
+
       needSwapFlag = false;
     }
 
+    // switch lasers off before moving to next position:
     if (blankingFlag) {
-      Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible... (TODO)
-      // TODO: also add delay for laser off? (TODO)
+      Hardware::Lasers::setPowerRed(0);
+      Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible...
+      // TODO: also add delay for making sure the laser is off before moving? This is
+      // in particular important if we don't use the digital switches but only the
+      // power control (which is a filtered PWM signal)
     }
 
-    // DISPLAY point by point at each ISR ENTRY
+
     // * NOTE 1: it is a detail, but in case there are no points
     // in the buffer [after clear for instance] we need to recenter
     // the mirrors for instance.
@@ -187,11 +196,12 @@ namespace DisplayScan {
     }
 
     if (blankingFlag) {
-      // TODO: non-blocking delay for mirror positioning before switching
-      // the laser on? ...for the time being: blocking (for tests)
+      // TODO: a non-blocking delay for mirror positioning before switching
+      // the laser on? ...for the time being: blocking! (for tests)
       elapsedMicros pause = 0;
       while (pause<DELAY_POSITIONING_MIRRORS_US);
 
+      Hardware::Lasers::setPowerRed(1000);
       Hardware::Lasers::setSwitchRed(HIGH); // avoid calling a function here if possible (TODO)
 
     }

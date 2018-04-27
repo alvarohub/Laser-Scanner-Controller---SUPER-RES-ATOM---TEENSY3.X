@@ -22,10 +22,10 @@
 // NOTE: analogWrite - for the ADC - takes ~10us? (is it blocking?)
 
 // ISR timer interval for rendering each point [non-blocking of course]
-#define DEFAULT_RENDERING_INTERVAL 100 // in microseconds
+#define DEFAULT_RENDERING_INTERVAL 80 // in microseconds
 
 //  Delay after sending a position to the ADC, in order to account for mirror inertia.
-#define DELAY_POSITIONING_MIRRORS_US 10  // in us.
+#define DELAY_POSITIONING_MIRRORS_US 5  // in us.
 
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
 	// mirrors: it is actually the diaplaying engine!

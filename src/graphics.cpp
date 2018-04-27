@@ -96,7 +96,7 @@ namespace Graphics {
 		const float _radius,
 		const uint16_t _numPoints
 	) {
-		for (uint16_t i = 0; i < _numPoints; i++) {
+		for (uint16_t i = 0; i < _numPoints+1; i++) {
 			float phi = 2.0*PI/_numPoints*i;
 			P2 auxPoint(_radius*cos(phi), _radius*sin(phi));
 			auxPoint.x += _center.x; auxPoint.y += _center.y;

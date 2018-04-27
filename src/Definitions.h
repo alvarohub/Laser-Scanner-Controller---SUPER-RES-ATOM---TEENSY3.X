@@ -80,6 +80,10 @@
 // min laser power is 0.
 #define FREQ_PWM 65000  // This will set the PWM pins frequency [attn: resolution can be limited if this is too large]
 
+// PWM pins to control the laser power:
+const uint8_t pinPowerLaser[5] = {5,6,9,10,20};
+// Digital pins to open/close each laser channel very fast [independent color blanking]:
+const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
 
 //3) ============== LED indicators (digital) ==================
 #define PIN_LED_DEBUG   13 // 13 is the buil-in led

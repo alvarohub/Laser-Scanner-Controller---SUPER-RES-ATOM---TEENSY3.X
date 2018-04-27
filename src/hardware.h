@@ -63,8 +63,8 @@ namespace Hardware {
 		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve
 		// the value of current power.
 		// * NOTE 2 : pwm frequency change in Gpio init affects PWM capable pins: 5, 6, 9, 10, 20, 21, 22, 23
-		const uint8_t pinPowerLaser[5] = {5,6,9,10,20};
-		const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
+		//const uint8_t pinPowerLaser[5] = {5,6,9,10,20};
+		//const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
 		enum Laser {RED_LASER=0, GREEN_LASER = 1, BLUE_LASER = 2, YELLOW_LASER =3, MAGENTA_LASER = 4};
