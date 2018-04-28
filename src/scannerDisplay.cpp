@@ -14,9 +14,8 @@ namespace DisplayScan {
   bool blankingFlag;
 
   IntervalTimer scannerTimer;
-  uint32_t dt, mt;
+  uint32_t dt;
   bool running;
-  elapsedMicros delayMirrorsMicros;
 
   void init() {
 
@@ -44,8 +43,6 @@ namespace DisplayScan {
     // 3) Default scan parameters:
     blankingFlag = true;
     dt = DEFAULT_RENDERING_INTERVAL;
-    mt = DEFAULT_MIRROR_WAIT; // inter-figure...
-    delayMirrorsMicros = 0;
 
     // 3) Start interrupt routine by default? No.
     //scannerTimer.begin(displayISR, dt);
@@ -86,19 +83,11 @@ namespace DisplayScan {
   uint16_t getBufferSize() {return(sizeBufferDisplay);}
 
   void setInterPointTime(uint16_t _dt) {
-    if ( _dt>= 20+DEFAULT_MIRROR_WAIT ) {
       dt=_dt; // the ISR may last more than that... too small and it can hang the program!
       // I found a limit of 15us; the ADC takes about 10us anyway...
       // NOTE: there is a difference between "update" and "start", check PJRC page. myTimer.update(microseconds);
       scannerTimer.update(dt);
-    }
   }
-
-  void setMirrorWaitTime(uint16_t _mt) {
-     if (_mt < dt ) mt = _mt;
-     // note: if mt > dt, AND if each ISR call sets a new point, then the
-     // effect would be weird [(]blanking is extended for several points - useful? not sure]
-   }
 
   void setBlankingRed(bool _newBlankState) {
     blankingFlag = _newBlankState;
@@ -183,11 +172,11 @@ namespace DisplayScan {
       // Position mirrors  [ATTN: (0,0) is the center of the mirrors]
       int16_t adcX = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->x ) ;
       int16_t adcY = static_cast<int16_t> ( (ptrCurrentDisplayBuffer + readingHead)->y );
-
-      // PRINT(ADCX);PRINT(" ");PRINTLN(ADCY);
-
       // NOTE:  avoid calling a function here if possible. It is okay if it is inline though!
       Hardware::Scanner::setPosRaw(adcX, adcY);
+
+      // Color?
+      //Hardware::Lasers::setSwitchRed((ptrCurrentDisplayBuffer + readingHead)->color > 0 ? true : false);
 
       // After setting, advance the readingHead on the round-robin buffer:
       // * NOTE 1 : no need to qualify readingHead it as volatile

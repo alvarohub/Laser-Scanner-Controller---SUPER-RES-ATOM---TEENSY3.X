@@ -29,7 +29,6 @@
 #define START_DISPLAY       "START"
 #define STOP_DISPLAY        "STOP"
 #define SET_INTERVAL        "DT" // parameter: inter-point time in us
-#define SET_MIRROR_WAIT     "MT" // wait time for mirror setling in us
 #define DISPLAY_STATUS      "STATUS"
 
 // 3) Figures and pose:
@@ -37,6 +36,7 @@
 #define SET_ANGLE_GLOBAL    "ANGLE"
 #define SET_CENTER_GLOBAL   "CENTER"
 #define SET_FACTOR_GLOBAL   "FACTOR"
+#define SET_COLOR_GLOBAL    "COLOR"
 
 //4) Scene clearing mode [clear scene or not]
 #define CLEAR_SCENE   "CLEAR"
@@ -297,15 +297,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_MIRROR_WAIT) {
-    if (_numArgs == 1) {
-      //PRINTLN("> EXECUTING... ");
-      DisplayScan::setMirrorWaitTime((uint16_t)atol(argStack[0].c_str()));
-      execFlag = true;
-    }
-    else PRINTLN("> BAD PARAMETERS");
-  }
-
   else if (_cmdString == DISPLAY_STATUS)    {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
@@ -390,6 +381,16 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
+  else if (_cmdString == SET_COLOR_GLOBAL)    {  // Parameters: color bool [TODO: real colors]
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Graphics::setColorRed(argStack[0].toInt());
+      Renderer2D::renderFigure(); // <<== this will really be useful soon, as we will have a per-point color
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
   //==========================================================================
   // D) ============ FIGURES (check Graphics namespace) ======================
   // * NOTE 1 : after all the figure composition, it is
@@ -412,7 +413,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       // Switch Off laser (power state is not affected):
       DisplayScan::stopDisplay(); // necessary before switching off the laser, because
       // blanking may be set to true (so the pin is toggled at eatch ISR call)
-      Hardware::Lasers::setSwitchRed(false);
+
+      Hardware::Lasers::setSwitchRed(true); //... not good to do this [will be ok when per-point color]
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
@@ -630,8 +632,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       // THIS IS A TEST: Force display whatever the previous state, and force
       // also the laser power and blanking state:
       // TODO: make a LIFO stack (push/pop) for the display engine attributes?
-      Hardware::Lasers::setPowerRed(2000);
-      DisplayScan::setBlankingRed(true);
+      Hardware::Lasers::setPowerRed(1000);
+      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay(); // start engine, whatever the previous state
 
       execFlag = true;
@@ -647,8 +649,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Graphics::drawSquare(100, 50.0); // first argument is the length of the side
       Renderer2D::renderFigure();
 
-      Hardware::Lasers::setPowerRed(2000);
-      DisplayScan::setBlankingRed(true);
+      Hardware::Lasers::setPowerRed(1000);
+      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay();
 
       execFlag = true;
@@ -669,8 +671,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Graphics::drawLine(P2(0, -90), 0, 180, 30.0);
       Renderer2D::renderFigure();
 
-      Hardware::Lasers::setPowerRed(2000);
-      DisplayScan::setBlankingRed(true);
+      Hardware::Lasers::setPowerRed(1000);
+        Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay();
 
       execFlag = true;
@@ -723,7 +725,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       DisplayScan::stopDisplay(); //meaning blanking is stopped too, we may need
       // to set manually the laser power digital switch to true:
       Hardware::Lasers::setSwitchRed(true);
-      Hardware::Lasers::setPowerRed(2000);
+      Hardware::Lasers::setPowerRed(1000);
 
       Hardware::Scanner::testMirrorRange(argStack[0].toInt());
       if (previousState) DisplayScan::startDisplay();
@@ -740,7 +742,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       DisplayScan::stopDisplay();
 
       Hardware::Lasers::setSwitchRed(true);
-      Hardware::Lasers::setPowerRed(2000);
+      Hardware::Lasers::setPowerRed(1000);
 
       Hardware::Scanner::testCircleRange(argStack[0].toInt());
       if (previousState) DisplayScan::startDisplay();

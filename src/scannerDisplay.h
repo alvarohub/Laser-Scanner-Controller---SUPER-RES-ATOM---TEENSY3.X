@@ -24,9 +24,6 @@
 // ISR timer interval for rendering each point [non-blocking of course]
 #define DEFAULT_RENDERING_INTERVAL 80 // in microseconds
 
-//  Delay after sending a position to the ADC, in order to account for mirror inertia.
-#define DEFAULT_MIRROR_WAIT 10  // in us.
-
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
 	// mirrors: it is actually the diaplaying engine!
 
@@ -44,7 +41,6 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern uint16_t getBufferSize();
 
 	extern void setInterPointTime(uint16_t _dt);
-  extern void setMirrorWaitTime(uint16_t _mt);
 
 	extern void setBlankingRed(bool _val);
 
@@ -90,7 +86,7 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         //       (Check Paul Stoffregen notes).
 		extern IntervalTimer scannerTimer; // check: https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
 		extern void displayISR();
-		extern uint32_t dt, mt;
+		extern uint32_t dt;
     extern elapsedMicros delayMirrorsMicros;
 		extern bool running;
 

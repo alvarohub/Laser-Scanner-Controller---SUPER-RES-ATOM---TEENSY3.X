@@ -8,6 +8,7 @@ namespace Renderer2D {
   P2 center(0,0); // note (0,0) in "renderer" coordinates is the center of mirrors.
   float angle = 0;
   float scaleFactor = 1.0;
+  bool colorRed = true;
 
   uint16_t sizeBlueprint = 0; // this would not be necessary if using an STL container. It is
   // just the size of the current bluepring array, modified and set when drawing a figure (see

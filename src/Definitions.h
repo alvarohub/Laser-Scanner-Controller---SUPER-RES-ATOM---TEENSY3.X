@@ -9,7 +9,7 @@
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
 #define DEBUG_MODE_SERIAL// by defining this, we can debug on the serial port
-#define DEBUG_MODE_LCD   // for using the LCD panel
+//#define DEBUG_MODE_LCD   // for using the LCD panel
 #define DEBUG_MODE_TFT   // for using the TFT panel
 
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
