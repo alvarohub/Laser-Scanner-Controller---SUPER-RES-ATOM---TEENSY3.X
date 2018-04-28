@@ -25,7 +25,7 @@
 #define DEFAULT_RENDERING_INTERVAL 80 // in microseconds
 
 //  Delay after sending a position to the ADC, in order to account for mirror inertia.
-#define DELAY_POSITIONING_MIRRORS_US 5  // in us.
+#define DEFAULT_MIRROR_WAIT 10  // in us.
 
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
 	// mirrors: it is actually the diaplaying engine!
@@ -44,6 +44,8 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 	extern uint16_t getBufferSize();
 
 	extern void setInterPointTime(uint16_t _dt);
+  extern void setMirrorWaitTime(uint16_t _mt);
+
 	extern void setBlankingRed(bool _val);
 
 	// * NOTE: Even if this is not a class, I can make variables or methods
@@ -60,7 +62,15 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         // pointer to objects of type P2)
         extern P2 displayBuffer2[MAX_NUM_POINTS]; // or P2 displayBuffer1* and use
         // dynamic allocation with displayBuffer1 = new P2[MAX_NUM_POINTS]
-		extern volatile bool needSwapFlag;
+
+        /* TODO: make the display buffers from Laser POINTS (LP), containing P2i and also color (and detected intensity?)
+        struct LP { // a laser point (for now, using a float P2, but in the future let's use uint16_t)
+          P2 point;
+
+        }
+        */
+
+    extern volatile bool needSwapFlag;
 		extern uint16_t newSizeBufferDisplay; // no need to be volatile
 		extern uint16_t readingHead;
 
@@ -80,7 +90,8 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         //       (Check Paul Stoffregen notes).
 		extern IntervalTimer scannerTimer; // check: https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
 		extern void displayISR();
-		extern uint32_t dt;
+		extern uint32_t dt, mt;
+    extern elapsedMicros delayMirrorsMicros;
 		extern bool running;
 
 		// ======================= OTHERS  =================================

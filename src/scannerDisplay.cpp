@@ -14,8 +14,9 @@ namespace DisplayScan {
   bool blankingFlag;
 
   IntervalTimer scannerTimer;
-  uint32_t dt;
+  uint32_t dt, mt;
   bool running;
+  elapsedMicros delayMirrorsMicros;
 
   void init() {
 
@@ -43,6 +44,8 @@ namespace DisplayScan {
     // 3) Default scan parameters:
     blankingFlag = true;
     dt = DEFAULT_RENDERING_INTERVAL;
+    mt = DEFAULT_MIRROR_WAIT; // inter-figure...
+    delayMirrorsMicros = 0;
 
     // 3) Start interrupt routine by default? No.
     //scannerTimer.begin(displayISR, dt);
@@ -83,13 +86,19 @@ namespace DisplayScan {
   uint16_t getBufferSize() {return(sizeBufferDisplay);}
 
   void setInterPointTime(uint16_t _dt) {
-    if ( _dt>= 20+DELAY_POSITIONING_MIRRORS_US ) {
+    if ( _dt>= 20+DEFAULT_MIRROR_WAIT ) {
       dt=_dt; // the ISR may last more than that... too small and it can hang the program!
       // I found a limit of 15us; the ADC takes about 10us anyway...
       // NOTE: there is a difference between "update" and "start", check PJRC page. myTimer.update(microseconds);
       scannerTimer.update(dt);
     }
   }
+
+  void setMirrorWaitTime(uint16_t _mt) {
+     if (_mt < dt ) mt = _mt;
+     // note: if mt > dt, AND if each ISR call sets a new point, then the
+     // effect would be weird [(]blanking is extended for several points - useful? not sure]
+   }
 
   void setBlankingRed(bool _newBlankState) {
     blankingFlag = _newBlankState;
@@ -154,14 +163,14 @@ namespace DisplayScan {
       needSwapFlag = false;
     }
 
-    // switch lasers off before moving to next position:
+    /* switch lasers off before moving to next position:
     if (blankingFlag) {
-      Hardware::Lasers::setPowerRed(0);
       Hardware::Lasers::setSwitchRed(LOW); // avoid calling a function here if possible...
       // TODO: also add delay for making sure the laser is off before moving? This is
       // in particular important if we don't use the digital switches but only the
       // power control (which is a filtered PWM signal)
     }
+    */
 
 
     // * NOTE 1: it is a detail, but in case there are no points
@@ -195,15 +204,16 @@ namespace DisplayScan {
       Hardware::Scanner::recenterPosRaw();
     }
 
-    if (blankingFlag) {
+/*
+    if (blankingFlag && (delayMirrorsMicros>mt) ) {
       // TODO: a non-blocking delay for mirror positioning before switching
       // the laser on? ...for the time being: blocking! (for tests)
-      elapsedMicros pause = 0;
-      while (pause<DELAY_POSITIONING_MIRRORS_US);
-
-      Hardware::Lasers::setPowerRed(1000);
+      // elapsedMicros pause = 0;
+      // while (pause<DEFAULT_MIRROR_WAIT);
       Hardware::Lasers::setSwitchRed(HIGH); // avoid calling a function here if possible (TODO)
-
+      delayMirrorsMicros = 0;
     }
+    */
+
   }
 }

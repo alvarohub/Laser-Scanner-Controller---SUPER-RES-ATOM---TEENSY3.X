@@ -43,6 +43,7 @@ const float maxY = 100.0;
 extern P2 center;
 extern float angle;
 extern float scaleFactor;
+extern bool colorRed; // TODO: make a proper color object/struct (not just on/off for the red)
 
 	// b) Number of points. In the future, it would be more interesting to have a
 	// "resolution" variable. The number of points should be always smaller

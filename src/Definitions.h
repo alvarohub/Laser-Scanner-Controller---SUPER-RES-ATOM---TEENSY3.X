@@ -109,10 +109,11 @@ const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
 #define LCD_SDA 18
 #define LCD_SCL 19
 // 2] TFT display (Adafruit_ST7735)
-#define TFT_CS     25
-#define TFT_RST    26 // not used for now, the RST is connected to 3.3V
-#define TFT_DC     27
-#define TFT_SCLK   28   // set these to be whatever pins you like!
-#define TFT_MOSI   29   // set these to be whatever pins you like!
+#define TFT_SCLK   25    // set these to be whatever pins you like, if using software SPI
+#define TFT_MOSI   26   // set these to be whatever pins you like, if using software SPI
+#define TFT_CS     27
+#define TFT_DC     28
+#define TFT_RST    0 // not used for now, the RST is connected to 5V (Vin)
+
 
 #endif

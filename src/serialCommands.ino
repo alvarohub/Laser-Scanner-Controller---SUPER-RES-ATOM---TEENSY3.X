@@ -29,6 +29,7 @@
 #define START_DISPLAY       "START"
 #define STOP_DISPLAY        "STOP"
 #define SET_INTERVAL        "DT" // parameter: inter-point time in us
+#define SET_MIRROR_WAIT     "MT" // wait time for mirror setling in us
 #define DISPLAY_STATUS      "STATUS"
 
 // 3) Figures and pose:
@@ -296,6 +297,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
+  else if (_cmdString == SET_MIRROR_WAIT) {
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      DisplayScan::setMirrorWaitTime((uint16_t)atol(argStack[0].c_str()));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
   else if (_cmdString == DISPLAY_STATUS)    {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
@@ -392,9 +402,17 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   else if (_cmdString == CLEAR_SCENE)     {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
+
+      // The sequence order and items is arbitrary:
+
       Graphics::clearScene();
       // clear also the pose parameters - otherwise there is a lot of confusion:
       Graphics::resetGlobalPose();
+
+      // Switch Off laser (power state is not affected):
+      DisplayScan::stopDisplay(); // necessary before switching off the laser, because
+      // blanking may be set to true (so the pin is toggled at eatch ISR call)
+      Hardware::Lasers::setSwitchRed(false);
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
@@ -568,17 +586,17 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   else if (_cmdString == MAKE_SPIRAL)     {
     switch(_numArgs) {
       case 5 : {
-      Graphics::updateScene();
-      P2 center(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawSpiral(
-        center,
-        argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
-        argStack[3].toFloat(), // num tours (float)
-        argStack[4].toInt()    // num points
-      );
-      Renderer2D::renderFigure();
-      execFlag = true;
-    }
+        Graphics::updateScene();
+        P2 center(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawSpiral(
+          center,
+          argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
+          argStack[3].toFloat(), // num tours (float)
+          argStack[4].toInt()    // num points
+        );
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
       break;
       case 3:
       Graphics::updateScene();
@@ -591,127 +609,150 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       execFlag = true;
       break;
       default:
-        PRINTLN("> BAD PARAMETERS");
+      PRINTLN("> BAD PARAMETERS");
       break;
     }
   }
 
-    // ....
+  // ....
 
-    // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
-    // and displaying is STARTED whatever the previous state]
-    // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
-    else if (_cmdString == CIRCLE_TEST)     {
-      if (_numArgs == 0) {
-        //PRINTLN("> EXECUTING... ");
-        Graphics::clearScene();
-        Graphics::drawCircle(50.0, 360); // fisrt argument is the radius
-        // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
-        Renderer2D::renderFigure();
-        // THIS IS A TEST: Force display whatever the previous state:
-        DisplayScan::startDisplay(); // start engine, whatever the previous state
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
+  // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
+  // and displaying is STARTED whatever the previous state]
+  // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
+  else if (_cmdString == CIRCLE_TEST)     {
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      Graphics::clearScene();
+      Graphics::drawCircle(50.0, 360); // fisrt argument is the radius
+      // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
+      Renderer2D::renderFigure();
+
+      // THIS IS A TEST: Force display whatever the previous state, and force
+      // also the laser power and blanking state:
+      // TODO: make a LIFO stack (push/pop) for the display engine attributes?
+      Hardware::Lasers::setPowerRed(2000);
+      DisplayScan::setBlankingRed(true);
+      DisplayScan::startDisplay(); // start engine, whatever the previous state
+
+      execFlag = true;
     }
-
-    // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
-    else if (_cmdString == SQUARE_TEST)  {
-      if (_numArgs == 0) {
-        //PRINTLN("> EXECUTING... ");
-        Graphics::clearScene();
-        Graphics::drawSquare(100, 50.0); // first argument is the length of the side
-        Renderer2D::renderFigure();
-        DisplayScan::startDisplay();
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    // c) : SQUARE + CIRCLE TEST
-    else if (_cmdString == COMPOSITE_TEST)  {
-      if (_numArgs == 0) {
-        //PRINTLN("> EXECUTING... ");
-        float radius = 75;
-        Graphics::clearScene();
-        Graphics::drawSquare(2*radius, 30.0);
-        Graphics::drawCircle(radius, 60.0);
-        Graphics::drawSquare(1.414*radius, 30.0);
-        Graphics::drawLine(P2(-90, 0), 180, 0, 30.0);
-        Graphics::drawLine(P2(0, -90), 0, 180, 30.0);
-        Renderer2D::renderFigure();
-        DisplayScan::startDisplay();
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    // .........................................................................
-    // ... BUILD HERE WHAT YOU NEED
-    // .........................................................................
-
-
-    //==========================================================================
-    // E) ============  LOW LEVEL COMMANDS ===========================
-    //==========================================================================
-
-    else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, state
-      if (_numArgs == 2) {
-        //PRINTLN("> EXECUTING... ");
-        Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    else if (_cmdString == BLINK_LED_DEBUG )    {     // Parameters: number of times
-      if (_numArgs == 2) {
-        //PRINTLN("> EXECUTING... ");
-        Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-      Hardware::blinkLedDebug(argStack[0].toInt());
-    }
-
-    else if (_cmdString == RESET_BOARD)    {
-      if (_numArgs == 0) {
-        //PRINTLN("> EXECUTING... ");
-        delay(500);
-        Hardware::resetBoard();
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    else if (_cmdString == TEST_MIRRORS_RANGE)   {
-      if (_numArgs == 1) {
-        //PRINTLN("> EXECUTING... ");
-        bool previousState = DisplayScan::getRunningState();
-        DisplayScan::stopDisplay();
-        Hardware::Scanner::testMirrorRange(argStack[0].toInt());
-        if (previousState) DisplayScan::startDisplay();
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    else if (_cmdString == TEST_CIRCLE_RANGE)   {
-
-      if (_numArgs == 1) {
-        //PRINTLN("> EXECUTING... ");
-        bool previousState = DisplayScan::getRunningState();
-        DisplayScan::stopDisplay();
-        Hardware::Scanner::testCircleRange(argStack[0].toInt());
-        if (previousState) DisplayScan::startDisplay();
-        execFlag = true;
-      }
-      else PRINTLN("> BAD PARAMETERS");
-    }
-
-    else { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
-      PRINTLN("> BAD COMMAND");
-      execFlag = false;
-    }
-
-    return execFlag;
+    else PRINTLN("> BAD PARAMETERS");
   }
+
+  // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
+  else if (_cmdString == SQUARE_TEST)  {
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      Graphics::clearScene();
+      Graphics::drawSquare(100, 50.0); // first argument is the length of the side
+      Renderer2D::renderFigure();
+
+      Hardware::Lasers::setPowerRed(2000);
+      DisplayScan::setBlankingRed(true);
+      DisplayScan::startDisplay();
+
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  // c) : SQUARE + CIRCLE TEST
+  else if (_cmdString == COMPOSITE_TEST)  {
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      float radius = 75;
+      Graphics::clearScene();
+      Graphics::drawSquare(2*radius, 30.0);
+      Graphics::drawCircle(radius, 60.0);
+      Graphics::drawSquare(1.414*radius, 30.0);
+      Graphics::drawLine(P2(-90, 0), 180, 0, 30.0);
+      Graphics::drawLine(P2(0, -90), 0, 180, 30.0);
+      Renderer2D::renderFigure();
+
+      Hardware::Lasers::setPowerRed(2000);
+      DisplayScan::setBlankingRed(true);
+      DisplayScan::startDisplay();
+
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  // .........................................................................
+  // ... BUILD HERE WHAT YOU NEED
+  // .........................................................................
+
+
+  //==========================================================================
+  // E) ============  LOW LEVEL COMMANDS ===========================
+  //==========================================================================
+
+  else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, state
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == BLINK_LED_DEBUG )    {     // Parameters: number of times
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+    Hardware::blinkLedDebug(argStack[0].toInt());
+  }
+
+  else if (_cmdString == RESET_BOARD)    {
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      delay(500);
+      Hardware::resetBoard();
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == TEST_MIRRORS_RANGE)   {
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      // ... TODO: here the LIFO stack for display engine arguemtns could come handy...
+      bool previousState = DisplayScan::getRunningState();
+      DisplayScan::stopDisplay(); //meaning blanking is stopped too, we may need
+      // to set manually the laser power digital switch to true:
+      Hardware::Lasers::setSwitchRed(true);
+      Hardware::Lasers::setPowerRed(2000);
+
+      Hardware::Scanner::testMirrorRange(argStack[0].toInt());
+      if (previousState) DisplayScan::startDisplay();
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == TEST_CIRCLE_RANGE)   {
+
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      bool previousState = DisplayScan::getRunningState();
+      DisplayScan::stopDisplay();
+
+      Hardware::Lasers::setSwitchRed(true);
+      Hardware::Lasers::setPowerRed(2000);
+
+      Hardware::Scanner::testCircleRange(argStack[0].toInt());
+      if (previousState) DisplayScan::startDisplay();
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
+    PRINTLN("> BAD COMMAND");
+    execFlag = false;
+  }
+
+  return execFlag;
+}

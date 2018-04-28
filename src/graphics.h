@@ -68,6 +68,8 @@ namespace Graphics {
 	extern void setScaleFactor(const float _scaleFactor);
 	extern void resetGlobalPose(); // this can be done without rendering [~openGL set identity modelview]
 
+	extern void setColorRed(bool _state);
+
 	// (2) "Scene" setting methods and rendering wrappers:
 	extern void clearScene(); // force clear scene
 	extern void updateScene();

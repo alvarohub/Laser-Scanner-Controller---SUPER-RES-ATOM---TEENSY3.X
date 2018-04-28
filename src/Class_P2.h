@@ -5,7 +5,7 @@
 #include "Definitions.h"
 #include "Utils.h"
 
-// Very simple 2D integer vector class:
+// Very simple 2D vector class:
 class P2 {
     public:
 
@@ -69,5 +69,26 @@ class P2 {
 };
 
 //typedef P2 PointBuffer[MAX_NUM_POINTS];
+
+
+struct LP { // a laser point (for now, using a float P2, but in the future let's use uint16_t)
+  P2 point;
+  bool redColor; // for test now (in the future we need to store 5 values from 0 to 4095)
+
+  inline void operator=( const LP& _laserPoint ) {
+    point = _laserPoint.point;
+    redColor = _laserPoint.redColor;
+  }
+
+  void setColorOn() {
+    redColor = true;
+  }
+  void setColorOff() {
+    redColor = false;
+  }
+  void setColor(bool _val) {
+    redColor = _val;
+  }
+};
 
 #endif

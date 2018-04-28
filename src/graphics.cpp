@@ -28,6 +28,10 @@ namespace Graphics {
 		setScaleFactor(1.0);
 	}
 
+ 	void setColorRed(bool _state) {
+	 	Renderer2D::colorRed = _state;
+ 	}
+
 	// ======================== SCENE SETTING METHODS =====================
 	void clearScene() {
 		// NOTE: for now we just clear the "whole" blueprint, meaning
