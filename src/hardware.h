@@ -67,7 +67,7 @@ namespace Hardware {
 		//const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
 
 		// Use an enum to identify lasers by a name [corresponds to array index]
-		enum Laser {RED_LASER=0, GREEN_LASER = 1, BLUE_LASER = 2, YELLOW_LASER =3, MAGENTA_LASER = 4};
+		enum Laser {RED_LASER=0, GREEN_LASER = 1, BLUE_LASER = 2, YELLOW_LASER =3, CYAN_LASER = 4};
 
 		extern void init();
 		extern void test();
@@ -100,8 +100,8 @@ namespace Hardware {
 		inline void setSwitchYellow(bool _state) {digitalWrite(pinSwitchLaser[YELLOW_LASER], _state);}
 		inline void setPowerYellow(uint16_t _power) {analogWrite(pinPowerLaser[YELLOW_LASER], _power);}
 
-		inline void setSwitchMagenta(bool _state) {digitalWrite(pinSwitchLaser[MAGENTA_LASER], _state);}
-		inline void setPowerMagenta(uint16_t _power) {analogWrite(pinPowerLaser[MAGENTA_LASER], _power);}
+		inline void setSwitchCyan(bool _state) {digitalWrite(pinSwitchLaser[CYAN_LASER], _state);}
+		inline void setPowerCyan(uint16_t _power) {analogWrite(pinPowerLaser[CYAN_LASER], _power);}
 
 
 	}

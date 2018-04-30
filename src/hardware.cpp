@@ -124,42 +124,60 @@ namespace Hardware {
 			// Switch: set as digital outputs:
 			for (uint8_t i=0; i<NUM_LASERS; i++) pinMode(pinSwitchLaser[i], OUTPUT);
 
-			setPowerAll(0);
-			switchOffAll();
+			setPowerAll(500);
+			switchOnAll();
 
 			PRINTLN("> LASERS READY");
 		}
 
 		extern void test() { // Switch lasers one by one and try a power ramp on each of these:
 			// TODO: have a state variable for current color (in graphics.h), with a push/pop method
+
+			//Stop scan and recenter, to be able to measure the power of the beam?
+			// or continue scanning the current figure?
+			// bool previousState = DisplayScan::getRunningState();
+			// if (previousState) DisplayScan::stopDisplay();
+			// Scanner::recenterPosRaw();
+
 			switchOffAll();
 			setPowerAll(0);
-			elapsedMillis msTime =0;
+			elapsedMillis msTime;
+
+	PRINTLN("TESTING LASERS: ");
 
 			for (uint8_t i=0; i<NUM_LASERS; i++) {
-				setSwitchLaser(pinSwitchLaser[i], true);
+				PRINT("TEST LASER: "); PRINTLN(i);
+				setSwitchLaser(i, true);
 
 				for (uint16_t p=0; p<MAX_LASER_POWER; p+=100) {
-					while (msTime < 100);
-					msTime =0;
+						setPowerLaser(i,p);
+						//	PRINT("power: "); PRINTLN(p);
+						msTime =0;
+						while (msTime < 50);
 				}
-				for (uint16_t p=MAX_LASER_POWER; p>=0; p-=100) {
-					while (msTime < 100);
+				for (int16_t p=MAX_LASER_POWER; p>=0; p-=100) { // attn with the >= on uint!!
+					setPowerLaser(i,p);
+				//	PRINT("power: "); PRINTLN(p);
 					msTime =0;
+					while (msTime < 50);
 				}
 
-				while (msTime < 500);
+				setSwitchLaser(i, false);
+
 				msTime =0;
-				setSwitchLaser(pinSwitchLaser[i], false);
+				while (msTime < 500);
 			}
+
+			// restart the ISR?
+		 //	if (previousState) DisplayScan::startDisplay();
 
 		}
 
 		extern void switchOffAll() {
 			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], LOW);
 		}
-		extern void swithOnAll() { // NOTE: power is set independently
-			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], LOW);
+		extern void switchOnAll() { // NOTE: power is set independently
+			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], HIGH);
 		}
 
 		extern void setPowerAll(uint16_t _power) {

@@ -19,12 +19,14 @@
 // 1) Laser commands:
 #define SET_BLANKING    "BLANK"  // Parameters: 0/1. It sets the boolean blankingFlag
 #define SET_POWER       "POWER"  // Parameters: 0 to 2047 (11 bit res).
+#define TEST_LASERS     "TEST_LASERS"
 
 // 2) Hardware::Scan commands:
 #define START_DISPLAY       "START"
 #define STOP_DISPLAY        "STOP"
 #define SET_INTERVAL        "DT" // parameter: inter-point time in us
 #define DISPLAY_STATUS      "STATUS"
+
 
 // 3) Figures and pose:
 #define RESET_POSE_GLOBAL   "RESET POSE"
@@ -316,10 +318,19 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   else if (_cmdString == SET_BLANKING) {
     // for the time being, this is a "DisplayScan"
-    // method [in the future, a per-laser method]
+    // method [in the future, a per-laser method?]
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::setBlankingRed((argStack[0].toInt()>0? 1 : 0));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == TEST_LASERS) {
+  if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::test();
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");

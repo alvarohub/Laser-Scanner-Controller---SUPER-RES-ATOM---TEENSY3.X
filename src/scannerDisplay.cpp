@@ -132,7 +132,7 @@ namespace DisplayScan {
     // Double buffering: exchange buffers when finishing displaying the current buffer
     // AND needSwapFlag is true - meaning the rendering engine finished drawing a
     // new figure on the hidden buffer [check renderFigure() method]:
-    if ( needSwapFlag ) {//}&& !readingHead ) {// need to swap AND we are in the start of buffer
+    if (needSwapFlag) {//&& (readingHead==0) ) {// need to swap AND we are in the start of buffer
       // * NOTE : the second condition is optional: we could start displaying from
       // the current readingHead - but this will deform the figure when
       // rendering too fast, basically rendering double buffering obsolete.
