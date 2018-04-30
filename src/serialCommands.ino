@@ -8,17 +8,12 @@
 #include "scannerDisplay.h"
 #include "graphics.h"
 
-// ==================== SPEED COMMUNICATION:
-#define SERIAL_BAUDRATE 38400
+
 
 // ==================== PARSER SETTINGS:
 // Uncomment the following if you want the parser to continue parsing after a bad character (better not to do that)
 //#define CONTINUE_PARSING
 
-// ==================== PACKET ENCAPSULATION:
-#define NUMBER_SEPARATOR    ','
-#define END_PACKET          '\n' // newline (ASCII value 10). NOTE: without anything else, this repeat GOOD command.
-#define LINE_FEED_IGNORE    13   // line feed: must be ignored (sometimes added in terminal input)
 
 // ==================== COMMANDS:
 // 1) Laser commands:
@@ -68,6 +63,17 @@ String messageString;
 String argStack[MAX_LENGTH_STACK];// number stack storing numeric parameters for commands (for RPN-like parser). Note that the data is saved as a String - it will be converted to int, float or whatever by the specific method associated with the correnspondant command.
 String cmd; // we will parse one command at a time
 
+enum stateParser
+{
+  START,
+  NUMBER,
+  SEPARATOR,
+  CMD
+} myState;
+//Note: the name of an unscoped enumeration may be omitted:
+// such declaration only introduces the enumerators into the enclosing scope.
+
+
 // Initialization:
 void initSerialCom() {
   Serial.begin(SERIAL_BAUDRATE);
@@ -102,16 +108,7 @@ void serialEvent() {
     // message string, say: OSC, Lora, TCP/IP, etc]. This effectively separates the
     // serial receiver from the parser, and it simplifies debugging.
     if (inChar == END_PACKET) {
-
-      //Set some special led to signal a received complete message, or send back
-      // some notification? (handshake)
-      digitalWrite(PIN_LED_MESSAGE, HIGH);
-
-      delay(10);
-
       parseStringMessage(messageString); //parse AND calls the appropiate functions
-
-      digitalWrite(PIN_LED_MESSAGE, LOW);
       messageString = "";
     }
   }
@@ -120,66 +117,131 @@ void serialEvent() {
 
 // ======== PARSE THE MESSAGE ==================================================
 // NOTE: I tested this throughly and it seems to work faultlessly as for 5.April.2018
-String cmdString = "";
-uint8_t numArgs = 0;
+String cmdString;
+uint8_t numArgs;
+bool cmdExecuted;
 
-void resetParsedData() { // without changing the parsing index [in the for loop]:
+void resetParser() { // without changing the parsing index [in the for loop]:
   numArgs = 0;
+  for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
   cmdString = "";
+  cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
+  myState = START;
 }
 
 bool parseStringMessage(const String &_messageString) {
-  static String oldMessageString =""; // oldMessageString is for repeating last command
+  static String oldMessageString =""; // oldMessageString is for repeating last GOOD string-command
+
   String messageString = _messageString;
 
-  bool cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
-  for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
+  resetParser();
 
-  resetParsedData();
-
+  // Note: messageString contains the END_PACKET char, otherwise we wouldn't be here;
+  // So, going through the for-loop with the condition i < messageString.length()
+  // is basically the same as using the condition: _messageString[i] != END_PACKET
   for (uint8_t i = 0; i < messageString.length(); i++)
   {
     char val = _messageString[i];
 
     //PRINT(">"); PRINT((char)val);PRINT(" : "); PRINTLN((uint8_t)val);
 
-    // Put numeric ASCII characters in numString:
+    // Put ASCII characters for a number (base 10) in the current argument in the stack.
+    // => Let's not permit to write a number AFTER a command.
     if ((val >= '-') && (val <= '9') && (val != '/')) //this is '0' to '9' plus '-' and '.' to form floats and negative numbers
     {
-      argStack[numArgs] += val;
-      //  PRINTLN(" (data)");
-    }
-    // Put letter ('A' to 'Z') in cmdString:
-    else if ( ( (val >= 'A') && (val <= 'Z') ) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
-    {
-      cmdString += val;
-      //   PRINTLN(" (command)");
-    }
-
-    // Store argument:
-    else if (val == NUMBER_SEPARATOR) {
-      if (argStack[numArgs].length() > 0) {
-        //PRINTLN(" (separator)");
-        //PRINT("> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
-        numArgs++;
-      }
-      else {
-        PRINTLN("> BAD ARG LIST");
-        //PRINT_LCD("> BAD FORMED ARG LIST");
-        // Restart parser from next character or continue parsing. Otherwise the parsing will be aborted.
+      if ((myState == START)||(myState == SEPARATOR)) myState = NUMBER;
+      if (myState == NUMBER) { // it could be in CMD state...
+        argStack[numArgs] += val;
+        //  PRINTLN(" (data)");
+      } else { // actually this just means myState == CMD
+        PRINTLN("> BAD FORMED PACKET");
         #ifdef CONTINUE_PARSING
-        // do nothing, which will continue parsing
+        resetParser(); // reset the parser, but continue from next string character.
         #else
-        break; // abort parsing (we could also restart it from here with resetParsedData())
+        break;
         #endif
       }
     }
 
-    else if (val == END_PACKET) {
-      if (cmdString.length() > 0) {
+    // Put letter ('A' to 'Z') in cmdString.
+    // => Let's not permit to start writing a command if we did not finish a number or
+    // nothing was written before.
+    else if ( ( (val >= 'A') && (val <= 'Z') ) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
+    {
 
-        // REPEAT FORMATED command?
-        PRINT("> ");
+      if ((myState == START)||(myState == SEPARATOR)) myState = CMD;
+      if (myState == CMD) { // Could be in NUMBER state
+        cmdString += val;
+        //   PRINTLN(" (command)");
+      }
+      else
+      {
+        PRINTLN("> BAD FORMED PACKET");
+        #ifdef CONTINUE_PARSING
+        resetParser(); // reset the parser, but continue from next string character.
+        #else
+        break; // abort parsing - we could also restart it from here with resetParser()
+        #endif
+      }
+    }
+
+    // Store numeric argument when receiving a NUMBER_SEPARATOR
+    else if (val == NUMBER_SEPARATOR) {
+      // NOTE: do not permit a number separator AFTER a command, another separator,
+      // or nothing: only a separator after a number is legit
+      if (myState == NUMBER) { // no need to test: }&&(argStack[numArgs].length() > 0)) {
+        //PRINTLN(" (separator)");
+        //PRINT("> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
+        numArgs++;
+        myState = SEPARATOR;
+      }
+      else { // number separator without previous data, another number separator or command
+        PRINTLN("> BAD FORMED PACKET");
+        //PRINT_LCD("> BAD FORMED ARG LIST");
+        #ifdef CONTINUE_PARSING
+        resetParser(); // reset parsing data, and continue from next character.
+        #else
+        break; // abort parsing (we could also restart it from here with resetParser())
+        #endif
+      }
+    }
+
+    else if ((val == END_PACKET)||(val == COMMAND_SEPARATOR)) { // or another CMD terminator code...
+      if (myState == START) { // implies cmdString.length() equal to zero
+        // END of packet received WITHOUT a command:
+        // repeat command IF there was a previous good command:
+        // NOTE: for the time being, this discards the rest of the message
+        // (in case it came from something else than a terminal of course)
+        if (val == END_PACKET) {
+          if (oldMessageString != "") {
+            PRINTLN(oldMessageString);
+            parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent
+            //  call here.. but when using in command line input, the END_PACKET is the
+            // last character, so there is no risk of deep nested calls (on return the parser
+            // will end in the next loop iteration)
+          }
+          else {
+            PRINTLN("> NO PREVIOUS COMMAND TO REPEAT");
+            #ifdef CONTINUE_PARSING
+            resetParser(); // reset parsing data, and continue from next character.
+            #else
+            break; // abort parsing (we could also restart it from here with resetParser())
+            #endif
+          }
+        } else { // concatenator without previous CMD
+          PRINTLN("> BAD FORMED PACKET");
+          #ifdef CONTINUE_PARSING
+          resetParser(); // reset parsing data, and continue from next character.
+          #else
+          break; // abort parsing (we could also restart it from here with resetParser())
+          #endif
+        }
+      }
+      else if (myState == CMD) { // anything else before means bad formed!
+        // * Note 1 : state == CMD here implies cmdString.length() > 0
+        // * Note 2 : we don't check argument number, can be anything including nothing.
+
+        PRINT("> EXEC: ");
         for (uint8_t k=0; k<numArgs; k++) {
           PRINT(argStack[k]); PRINT(",");
         }
@@ -202,35 +264,33 @@ bool parseStringMessage(const String &_messageString) {
 
         // NOTE: commands can be concatenated AFTER and END_PACKET in case of input from something else than a terminal,
         // so we need to restart parsing from here (will only happen when input string is stored in memory or sent from OSC, etc)
-        resetParsedData();
+        resetParser();
       }
-      else { // END of packet received WITHOUT a command: repeat command IF there was a previous good command:
-        // NOTE: for the time being, this discards the rest of the message (in case it came from something else than a terminal of course)
-
-        PRINTLN(oldMessageString);
-        parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent call here.. but this "RETURN" based repeat will
-
-        // only be used while using command line input, so there is no risk of deep nested calls.
-        // A safer alternative would be to do the following (but something is wrong):
-        // resetParsedData();
-        // messageString = oldMessageString;
-        // i = 0;
+      else {
+        PRINTLN("> BAD FORMED PACKET");
+        #ifdef CONTINUE_PARSING
+        resetParser(); // reset parsing data, and continue from next character.
+        #else
+        break; // abort parsing (we could also restart it from here with resetParser())
+        #endif
       }
+    }
+    else if (val == LINE_FEED_IGNORE) {
+      // do nothing with this, continue parsing
+    }
 
-    } else if (val == LINE_FEED_IGNORE) {
-      // do nothing with this
-    } else {
-      // this means we received something else (not a number, not a letter from A-Z, not a number or packet terminator):
-      // ignore or abort?
-      PRINTLN("> BAD PACKET");
+    else {  // this means we received something else (not a number, not a letter from A-Z,
+      // not a number, packet terminator, not a concatenator)
+      PRINTLN("> BAD FORMED PACKET");
       //PRINT("> ");
       #ifdef CONTINUE_PARSING
-      // do nothing
+      resetParser(); // reset parsing data, and continue from next character.
       #else
-      break;
+      break; // break the for-loop of parsing
       #endif
     }
-  }
+  } // end parse for-loop
+
   return (cmdExecuted);
 }
 
@@ -251,7 +311,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, 4095));
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAM");
+    else PRINTLN("> BAD PARAMETERS");
   }
 
   else if (_cmdString == SET_BLANKING) {
@@ -672,7 +732,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Renderer2D::renderFigure();
 
       Hardware::Lasers::setPowerRed(1000);
-        Hardware::Lasers::setSwitchRed(true);
+      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay();
 
       execFlag = true;

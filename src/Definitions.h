@@ -35,6 +35,15 @@
 #define RAD_TO_DEG (57.29578) // = 180.0/PI
 */
 
+// ==================== PACKET ENCAPSULATION:
+#define NUMBER_SEPARATOR    ','
+#define COMMAND_SEPARATOR '@'   // continue parsing after CMD (useful to concatenate commands)
+#define END_PACKET          '\n' // newline (ASCII value 10). NOTE: without anything else, this repeat GOOD command.
+#define LINE_FEED_IGNORE    13   // line feed: ignored and continue parsing
+
+// ==================== SPEED COMMUNICATION:
+#define SERIAL_BAUDRATE 38400
+
 // *****************************************************************************
 // Size of an array of anything (careful: this doesn't work if array is allocated dynamically)
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
