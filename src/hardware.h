@@ -144,6 +144,7 @@ namespace Hardware {
 		// of the galvano mirrors:
 		extern void testMirrorRange(uint16_t _durationSec);
 		extern void testCircleRange(uint16_t _durationSec);
+		extern void testCrossRange(uint16_t _durationSec);
 
 	}
 

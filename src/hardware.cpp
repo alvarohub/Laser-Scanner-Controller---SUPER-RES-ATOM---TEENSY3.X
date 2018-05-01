@@ -124,6 +124,7 @@ namespace Hardware {
 			// Switch: set as digital outputs:
 			for (uint8_t i=0; i<NUM_LASERS; i++) pinMode(pinSwitchLaser[i], OUTPUT);
 
+			// START WITH LASERS ON at an eight of the max power, so we don't need to send commands SWLASER or POWLASER
 			setPowerAll(500);
 			switchOnAll();
 
@@ -143,21 +144,21 @@ namespace Hardware {
 			setPowerAll(0);
 			elapsedMillis msTime;
 
-	PRINTLN("TESTING LASERS: ");
+			PRINTLN("TESTING LASERS: ");
 
 			for (uint8_t i=0; i<NUM_LASERS; i++) {
 				PRINT("TEST LASER: "); PRINTLN(i);
 				setSwitchLaser(i, true);
 
 				for (uint16_t p=0; p<MAX_LASER_POWER; p+=100) {
-						setPowerLaser(i,p);
-						//	PRINT("power: "); PRINTLN(p);
-						msTime =0;
-						while (msTime < 50);
+					setPowerLaser(i,p);
+					//	PRINT("power: "); PRINTLN(p);
+					msTime =0;
+					while (msTime < 50);
 				}
 				for (int16_t p=MAX_LASER_POWER; p>=0; p-=100) { // attn with the >= on uint!!
 					setPowerLaser(i,p);
-				//	PRINT("power: "); PRINTLN(p);
+					//	PRINT("power: "); PRINTLN(p);
 					msTime =0;
 					while (msTime < 50);
 				}
@@ -168,8 +169,11 @@ namespace Hardware {
 				while (msTime < 500);
 			}
 
+			setPowerAll(500);
+			switchOnAll();
+
 			// restart the ISR?
-		 //	if (previousState) DisplayScan::startDisplay();
+			//	if (previousState) DisplayScan::startDisplay();
 
 		}
 
@@ -277,6 +281,48 @@ namespace Hardware {
 			}
 			recenterPosRaw();
 			// restart the ISR?
+			if (previousState) DisplayScan::startDisplay();
+		}
+
+		void testCrossRange(uint16_t _durationSec) {
+			// first, stop the ISR whatever its state:
+			bool previousState = DisplayScan::getRunningState();
+			if (previousState) DisplayScan::stopDisplay();
+
+			uint16_t stepX = (MAX_MIRRORS_ADX-MIN_MIRRORS_ADX)/100;
+			uint16_t stepY = (MAX_MIRRORS_ADY-MIN_MIRRORS_ADY)/100;
+
+			uint16_t x, y;
+			elapsedMicros usec =0; elapsedMillis msec = 0;
+
+			while (msec < (_durationSec*1000)) {
+
+				// vertical line:
+				y = MIN_MIRRORS_ADY;
+				analogWrite( PIN_ADCX, CENTER_MIRROR_ADX );
+				do  {
+					#ifdef TEENSY_35_36
+					analogWrite( PIN_ADCY, y );
+					#endif
+					y+=stepY;
+					while (usec < 100); usec = 0;// wait 100us
+				} while (y< MAX_MIRRORS_ADY);
+
+				// horizontal line:
+				x = MIN_MIRRORS_ADX;
+				#ifdef TEENSY_35_36
+				analogWrite( PIN_ADCY, CENTER_MIRROR_ADY );
+				#endif
+				do  {
+					analogWrite( PIN_ADCX, x );
+					x+=stepX;
+					while (usec < 100); usec = 0;// wait 100us
+				} while (x < MAX_MIRRORS_ADX);
+
+			}
+
+			recenterPosRaw();
+
 			if (previousState) DisplayScan::startDisplay();
 		}
 

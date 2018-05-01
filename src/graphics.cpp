@@ -89,7 +89,7 @@ namespace Graphics {
 		const uint16_t _numPoints
 	) {
 		drawLine(
-			P2(-_lenX/2,-_lenY/2),
+			P2(0,0),
 			_lenX, _lenY,
 			_numPoints
 		);

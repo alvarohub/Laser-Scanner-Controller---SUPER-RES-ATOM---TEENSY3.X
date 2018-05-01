@@ -8,9 +8,9 @@
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
-#define DEBUG_MODE_SERIAL// by defining this, we can debug on the serial port
-//#define DEBUG_MODE_LCD   // for using the LCD panel
-#define DEBUG_MODE_TFT   // for using the TFT panel
+#define DEBUG_MODE_SERIAL // by defining this, we can debug on the serial port
+//#define DEBUG_MODE_LCD  // for using the LCD panel
+#define DEBUG_MODE_TFT    // for using the TFT panel
 
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
 #define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
@@ -37,7 +37,7 @@
 
 // ==================== PACKET ENCAPSULATION:
 #define NUMBER_SEPARATOR    ','
-#define COMMAND_SEPARATOR '@'   // continue parsing after CMD (useful to concatenate commands)
+#define COMMAND_SEPARATOR   '@'  // continue parsing after CMD (useful to concatenate commands)
 #define END_PACKET          '\n' // newline (ASCII value 10). NOTE: without anything else, this repeat GOOD command.
 #define LINE_FEED_IGNORE    13   // line feed: ignored and continue parsing
 
