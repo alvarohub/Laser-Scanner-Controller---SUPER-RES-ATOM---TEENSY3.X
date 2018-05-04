@@ -17,7 +17,7 @@
 
 // ==================== COMMANDS:
 // 1) Laser commands:
-#define SET_POWER_LASER     "POWLASER"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_POWER_LASER     "PWLASER"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
 #define SET_SWITCH_LASER    "SWLASER"   // Parameters: [0-1],SWLASER. Will open/close the laser ultrafast switch.
                                         // This is useful for safety, for blanking between figures, and eventually for
                                         // laser carrier modulation.
@@ -326,7 +326,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  if (_cmdString == SET_SWITCH_LASER) {     // Parameters: 0 to 4096 (12 bit res).
+  else if (_cmdString == SET_SWITCH_LASER) {     // Parameters: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setSwitchRed( (argStack[0].toInt() > 0)? 1 : 0);
