@@ -5,6 +5,7 @@
 #include "Definitions.h"
 #include "Utils.h"
 #include "scannerDisplay.h"
+#include "Class_Laser.h"
 
 #ifdef DEBUG_MODE_LCD
 #include "Wire.h"
@@ -57,52 +58,90 @@ namespace Hardware {
 
 	namespace Lasers {
 
-		// ============== Laser pin declaration and #defines ========
-		#define NUM_LASERS 5
+		enum LaserName {RED_LASER=0, GREEN_LASER, BLUE_LASER, YELLOW_LASER, CYAN_LASER};
 
-		// * NOTE 1 : to switch on/off we could use just PWM, but it is better to have a digital "switch" so we conserve
-		// the value of current power.
-		// * NOTE 2 : pwm frequency change in Gpio init affects PWM capable pins: 5, 6, 9, 10, 20, 21, 22, 23
-		//const uint8_t pinPowerLaser[5] = {5,6,9,10,20};
-		//const uint8_t pinSwitchLaser[5] = {0,1,2,3,4};
+		extern Laser LaserArray[NUM_LASERS];
 
-		// Use an enum to identify lasers by a name [corresponds to array index]
-		enum Laser {RED_LASER=0, GREEN_LASER = 1, BLUE_LASER = 2, YELLOW_LASER =3, CYAN_LASER = 4};
-
+		// ****************** METHODS ********************
+		// NOTE: namespace methods correspond to static methods of the class Laser
 		extern void init();
 		extern void test();
 
-		void switchOffAll();
-		void switchOnAll();
-		void setPowerAll( uint16_t _power );
-
-		inline void setSwitchLaser(uint8_t _laser, bool _state) {
-			digitalWrite(pinSwitchLaser[_laser], _state);
+		inline void switchOffAll() { // <<-- without affecting the state!
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setSwitch(LOW);
 		}
 
-		inline void setPowerLaser(uint8_t _laser, uint16_t _power) {
-			analogWrite(pinPowerLaser[_laser], _power);
+		inline void switchOnAll() { // <<-- without affecting the state!
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setSwitch(HIGH);
+		}
+		// Methods affecting ALL the lasers in the LaserArray
+		inline void setStateSwitchAll(bool _switch) {
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setStateSwitch(_switch);
 		}
 
-		// Composite setting:
-		// TODO: extern void setColor();
+		inline void setStatePowerAll(uint16_t _power) {
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setStatePower(_power);
+		}
 
-		// Other methods for low level, more explicit control:
-		inline void setSwitchRed(bool _state) {digitalWrite(pinSwitchLaser[RED_LASER], _state);}
-		inline void setPowerRed(uint16_t _power) {analogWrite(pinPowerLaser[RED_LASER], _power);}
+		// Wrappers for independent laser control:
+		inline void setStateSwitch(uint8_t _laser, bool _state) { // carrier mode overrides this
+			LaserArray[_laser].setStateSwitch(_state);
+			//digitalWrite(pinSwitchLaser[_laser], _state);
+		}
 
-		inline void setSwitchGreen(bool _state) {digitalWrite(pinSwitchLaser[GREEN_LASER], _state);}
-		inline void setPowerGreen(uint16_t _power) {analogWrite(pinPowerLaser[GREEN_LASER], _power);}
+		inline void setStatePower(uint8_t _laser, uint16_t _power) {
+			LaserArray[_laser].setStatePower(_power);
+			//analogWrite(pinPowerLaser[_laser], _power);
+		}
 
-		inline void setSwitchBlue(bool _state) {digitalWrite(pinSwitchLaser[BLUE_LASER], _state);}
-		inline void setPowerBlue(uint16_t _power) {analogWrite(pinPowerLaser[BLUE_LASER], _power);}
+		inline void setBlankingModeAll(bool _blankingMode) {
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setBlankingMode(_blankingMode);
+		}
+		inline void setBlankingMode(uint8_t _laser, bool _blankingMode) {
+			LaserArray[_laser].setBlankingMode(_blankingMode);
+		}
 
-		inline void setSwitchYellow(bool _state) {digitalWrite(pinSwitchLaser[YELLOW_LASER], _state);}
-		inline void setPowerYellow(uint16_t _power) {analogWrite(pinPowerLaser[YELLOW_LASER], _power);}
+		inline void setCarrierModeAll(bool _carrierMode) {
+			for (uint8_t i=0; i<NUM_LASERS; i++) LaserArray[i].setCarrierMode(_carrierMode);
+		}
+		inline void setCarrierMode(uint8_t _laser, bool _carrierMode) {
+			LaserArray[_laser].setCarrierMode(_carrierMode);
+		}
 
-		inline void setSwitchCyan(bool _state) {digitalWrite(pinSwitchLaser[CYAN_LASER], _state);}
-		inline void setPowerCyan(uint16_t _power) {analogWrite(pinPowerLaser[CYAN_LASER], _power);}
+		// Other handy methods, more explicit control:
+		inline void setStateSwitchRed(bool _state) {LaserArray[RED_LASER].setStateSwitch(_state);}
+		inline void setStatePowerRed(uint16_t _power) {LaserArray[RED_LASER].setStatePower(_power);}
 
+		inline void setStateSwitchGreen(bool _state) {LaserArray[BLUE_LASER].setStateSwitch(_state);}
+		inline void setStatePowerGreen(uint16_t _power) {LaserArray[BLUE_LASER].setStatePower(_power);}
+
+		inline void setStateSwitchBlue(bool _state) {LaserArray[GREEN_LASER].setStateSwitch(_state);}
+		inline void setStatePowerBlue(uint16_t _power) {LaserArray[GREEN_LASER].setStatePower(_power);}
+
+		inline void setStateSwitchYellow(bool _state) {LaserArray[YELLOW_LASER].setStateSwitch(_state);}
+		inline void setStatePowerYellow(uint16_t _power) {LaserArray[YELLOW_LASER].setStatePower(_power);}
+
+		inline void setStateSwitchCyan(bool _state) {LaserArray[CYAN_LASER].setStateSwitch(_state);}
+		inline void setStatePowerCyan(uint16_t _power) {LaserArray[CYAN_LASER].setStatePower(_power);}
+
+		// TODO: Composite colors (simultaneous laser manipulation)
+		// NOTE: in the future, use HSV (color wheel):
+		// inline void setLaserColor()
+
+		inline void setToCurrentState() {
+			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].setToCurrentState();
+		}
+
+		// And a stack for *all* the lasers:
+		inline void pushState() {
+			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].pushState();
+		}
+		inline void popState() {
+			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].popState();
+		}
+		inline void clearStateStack() {
+			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].clearStateStack();
+		}
 
 	}
 
@@ -162,13 +201,13 @@ namespace Hardware {
 	}
 
 	namespace Tft {
-#ifdef DEBUG_MODE_TFT
+		#ifdef DEBUG_MODE_TFT
 
 		extern void init();
 		extern void print(String text);
 		extern void println(String text);
 
-#endif
+		#endif
 	}
 
 }

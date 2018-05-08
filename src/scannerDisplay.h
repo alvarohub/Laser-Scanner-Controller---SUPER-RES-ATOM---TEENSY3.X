@@ -22,10 +22,29 @@
 // NOTE: analogWrite - for the ADC - takes ~10us? (is it blocking?)
 
 // ISR timer interval for rendering each point [non-blocking of course]
-#define DEFAULT_RENDERING_INTERVAL 80 // in microseconds
+#define DEFAULT_RENDERING_INTERVAL 70 // in microseconds
+
+// ISR internal delays:
+// NOTE 1 : to have any effect, the waiting times below shuold all be larger than the rendering interval - the effective
+//          waiting will be a multiple of the rendering interval.
+//          Another option is to do blocking delays INSIDE the ISR (in which case the sum should be << than the ISR period).
+//            In the last case, the main thing to remember iss that while you are in an interrupt routine the clock isn't ticking:
+//            millis() won't change and micros() will initially change, but once it goes past a millisecond where a
+//            millisecond tick is required to update the counter, it all falls apart. SO, if used properly, micros()
+//            can work inside the ISR to do a blocking delay.
+#define BLOCKING_DELAYS // uncomment to have non-blocking delays
+
+// NOTE 2 : do this variable, with setters and getters for the following:
+#define MIRROR_INTER_FIGURE_WAITING_TIME    20           // in microseconds, delay to give time to the galvos to reach start new figure.
+#define MIRROR_INTER_POINT_WAITING_TIME     10           // delay to give time to the mirrors to reach the current point
+//#define LASER_OFF_WAITING_TIME               0         // in microseconds - or assumed to be really fast anyway.
+#define LASER_ON_WAITING_TIME                5  // time waiting for correct laser power when reaching the current point position
+#define IN_NORMAL_POINT_WAIT                 10  // Time it passes EXACTLY on the current point with lasers ON
 
 namespace DisplayScan { // note: this namespace contains methods that are beyond the low level hardware ones for controlling the
-	// mirrors: it is actually the diaplaying engine!
+	// mirrors: it is actually the displaying engine!
+
+    enum StateDisplayEngine {STATE_START=0, STATE_IDLE, STATE_START_BLANKING, STATE_BLANKING_WAIT, STATE_START_NORMAL_POINT, STATE_TO_NORMAL_POINT_WAIT, STATE_IN_NORMAL_POINT_WAIT, STATE_LASER_ON_WAITING};
 
 	// ======================= SCANNER CONTROL methods  =======================
 	extern void init();
@@ -42,11 +61,13 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
 
 	extern void setInterPointTime(uint16_t _dt);
 
-	extern void setBlankingRed(bool _val);
+    extern void setInterPointBlankingMode(bool _mode);
 
 	// * NOTE: Even if this is not a class, I can make variables or methods
  	// "private" by using an anonymous namespace:
 	//namespace {
+
+        inline void resetWaitingTimers();
 
 		// =============DOUBLE RING BUFFERS =================================
 		// * NOTE: Double buffering is VERY USEFUL to avoid seeing the
@@ -66,7 +87,8 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         }
         */
 
-    extern volatile bool needSwapFlag;
+        // Note: variables cannot be inlined (<C++11)
+        extern volatile bool needSwapFlag;
 		extern uint16_t newSizeBufferDisplay; // no need to be volatile
 		extern uint16_t readingHead;
 
@@ -84,15 +106,18 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
         //       are set to priority 32 (there are 256 levels, arranged in 16 groups).
         //       For that, we use the "priority(..)" method of IntervalTimer.
         //       (Check Paul Stoffregen notes).
-		extern IntervalTimer scannerTimer; // check: https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
+
+        extern IntervalTimer scannerTimer; // check: https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
 		extern void displayISR();
 		extern uint32_t dt;
-    extern elapsedMicros delayMirrorsMicros;
+        extern elapsedMicros delayMirrorsInterPointMicros, delayMirrorsInterFigureBlankingMicros;
+        extern elapsedMicros delayInPoint;
+        extern elapsedMicros delayLaserOnMicros, delayLaserOffMicros;
 		extern bool running;
+        extern bool interpointBlanking;
+        extern StateDisplayEngine stateDisplayEngine;
+//    }
 
-		// ======================= OTHERS  =================================
-		extern bool blankingFlag; // inter-point laser on/off (true means off or "blankingFlag")
-	//}
 }
 
 #endif

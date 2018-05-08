@@ -17,11 +17,17 @@
 
 // ==================== COMMANDS:
 // 1) Laser commands:
-#define SET_POWER_LASER     "PWLASER"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
-#define SET_SWITCH_LASER    "SWLASER"   // Parameters: [0-1],SWLASER. Will open/close the laser ultrafast switch.
-                                        // This is useful for safety, for blanking between figures, and eventually for
-                                        // laser carrier modulation.
-#define TEST_LASERS         "TEST LASERS" // no parameters. Will test each laser with a power ramp
+// Per-Laser:
+#define SET_POWER_LASER     "PWLASER"  // Parameters: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_SWITCH_LASER    "SWLASER"  // Parameters: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_CARRIER         "CARRIER"  // laser num + 0/1 (0 means no carrier: when switch open, the laser shines continuously at the
+                                       // current power, otherwise it will be a 50% PWM (chopping the analog power value)
+//Simultaneously affecting lasers:
+#define SET_POWER_LASER_ALL     "PWLASERALL"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Parameters: [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_CARRIER_ALL         "CARRIERALL"
+
+#define TEST_LASERS         "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
 // 2) Hardware::Scan commands:
 #define START_DISPLAY       "START"  // start the ISR for the displaying engine
@@ -34,7 +40,7 @@
 // 3) Figures and pose:
 // * NOTE : each time these commands are called, the current figure (in blueprint) is
 // re-rendered with the new transforms, in this order of transformation: rotation/scale/translation
-#define RESET_POSE_GLOBAL   "RESET POSE" // set angle to 0, center to (0,0) and factor to 1
+#define RESET_POSE_GLOBAL   "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
 #define SET_ANGLE_GLOBAL    "ANGLE"      // Parameters: angle (deg),ANGLE
 #define SET_CENTER_GLOBAL   "CENTER"     // Parameters: x,y,CENTER
 #define SET_FACTOR_GLOBAL   "FACTOR"     // Parameters: factor (0-...),FACTOR
@@ -45,11 +51,14 @@
 #define CLEAR_MODE          "CLMODE"     // [0-1],CLMODE. When set to 0, if we draw a figure it will
                                          // be ADDED to the current scene. Otherwise drawing first
                                          // clear the current scene and make a new figure.
-#define SET_BLANKING      "BLANK"   // (TODO) Parameters: 0/1, OR also laser number.
+// The following commands affect all lasers simultaneously [TODO: per laser]
+#define SET_BLANKING_ALL    "BLANKALL"    //Figure-to-figure blanking. Parameters: [0/1]. Affects all lasers.
+#define SET_BLANKING        "BLANK"    // per laser fig-to-fig blanking
 
+#define SET_INTER_POINT_BLANKING   "PTBLANK"  // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
 
 // 5) Figure primitives:
-#define MAKE_LINE           "LINE"     // Parametres: length,hauteur,numpoints, LINE [premier point sur (0,0)] or posX,posY,length,height,numpoint,LINE
+#define MAKE_LINE           "LINE"     // Parametres: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
 #define MAKE_CIRCLE         "CIRCLE"   // Parametres: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
 #define MAKE_RECTANGLE      "RECT"     // Parametres: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
 #define MAKE_SQUARE         "SQUARE"   // Parametres: size of side,numpoints side,RECT ou X,Y,size-of-side,RECT
@@ -57,7 +66,7 @@
 #define MAKE_SPIRAL         "SPIRAL"   // Parametres: length-between-arms, num-tours, numpoints, SPIRAL
 
 // 6) TEST FIGURES:
-#define COMPOSITE_TEST      "TEST"     // no parameters: cross and squares (will automatically launch START)
+#define COMPOSITE_TEST      "MIRE"     // no parameters: cross and squares (will automatically launch START)
                                        // NOTE: we can see the blanking problem here because it is a composite figure
 #define CIRCLE_TEST         "CITEST"   // no parameters: makes a circle.
 #define SQUARE_TEST         "SQTEST"   // no parameters: makes a square
@@ -317,19 +326,55 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
   // A) ====== LASER COMMANDS ================================================
   //==========================================================================
-  if (_cmdString == SET_POWER_LASER) {     // Parameters: 0 to 4096 (12 bit res).
+  if (_cmdString == SET_POWER_LASER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setPowerRed(constrain(argStack[0].toInt(), 0, MAX_LASER_POWER));
+      Hardware::Lasers::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_LASER_POWER));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_POWER_LASER) {     // Parameters: laser number, power (0 to 4096, 12 bit res).
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_LASER_POWER));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_SWITCH_LASER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::setStateSwitchAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
   }
 
   else if (_cmdString == SET_SWITCH_LASER) {     // Parameters: 0 to 4096 (12 bit res).
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::setStateSwitch(argStack[0].toInt(), argStack[1].toInt() > 0);
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_CARRIER_ALL) {
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setSwitchRed( (argStack[0].toInt() > 0)? 1 : 0);
+      Hardware::Lasers::setCarrierModeAll(argStack[0].toInt()>0);
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_CARRIER) {
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::setCarrierMode(argStack[0].toInt(), argStack[1].toInt()>0);
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
@@ -489,11 +534,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       // clear also the pose parameters - otherwise there is a lot of confusion:
       Graphics::resetGlobalPose();
 
-      // Switch Off laser (power state is not affected):
-      DisplayScan::stopDisplay(); // necessary before switching off the laser, because
-      // blanking may be set to true (so the pin is toggled at eatch ISR call)
-
-      Hardware::Lasers::setSwitchRed(true); //... not good to do this [will be ok when per-point color]
+      // Switch Off laser? (power state is not affected): NO, stay with current value
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
@@ -502,18 +543,40 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   else if (_cmdString == CLEAR_MODE)     {
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
-      Graphics::setClearMode((argStack[0].toInt()>0? 1 : 0));
+      Graphics::setClearMode(argStack[0].toInt()>0);
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
   }
 
+  else if (_cmdString == SET_BLANKING_ALL) {
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      // This is delicate: we need to stop the displaying engine, and reset it (in particular
+      // the style stack, or we may run into overflows because the variable affects the program flow)
+      Hardware::Lasers::setBlankingModeAll(argStack[0].toInt()>0);
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
   else if (_cmdString == SET_BLANKING) {
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      // This is delicate: we need to stop the displaying engine, and reset it (in particular
+      // the style stack, or we may run into overflows because the variable affects the program flow),
+      // OR, we don't use the style stack (I decided for the later for the time being)
+      Hardware::Lasers::setBlankingMode(argStack[0].toInt(), argStack[1].toInt()>0);
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_INTER_POINT_BLANKING) { // for the time being, this is for ALL lasers:
     // for the time being, this is a "DisplayScan"
     // method [in the future, a per-laser method?]
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
-      DisplayScan::setBlankingRed((argStack[0].toInt()>0? 1 : 0));
+      DisplayScan::setInterPointBlankingMode(argStack[0].toInt()>0);
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");
@@ -715,15 +778,17 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       Graphics::clearScene();
+
       Graphics::drawCircle(50.0, 100); // fisrt argument is the radius
       // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
+
+      // NOTE: the color attributes will be used by the renderer in the future.
+      // USE CURRENT PARAMETERS:
+      //Hardware::Lasers::setStatePowerRed(1000);
+      //Hardware::Lasers::setStateSwitchRed(true);
+
       Renderer2D::renderFigure();
 
-      // THIS IS A TEST: Force display whatever the previous state, and force
-      // also the laser power and blanking state:
-      // TODO: make a LIFO stack (push/pop) for the display engine attributes?
-      Hardware::Lasers::setPowerRed(1000);
-      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay(); // start engine, whatever the previous state
 
       execFlag = true;
@@ -737,10 +802,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       //PRINTLN("> EXECUTING... ");
       Graphics::clearScene();
       Graphics::drawSquare(100, 50.0); //length of side, num points per side
+
+      // NOTE: the color attributes will be used by the renderer in the future.
+      // USE CURRENT PARAMETERS:
+      //Hardware::Lasers::setStatePowerRed(1000);
+      //Hardware::Lasers::setStateSwitchRed(true);
+
       Renderer2D::renderFigure();
 
-      Hardware::Lasers::setPowerRed(1000);
-      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay();
 
       execFlag = true;
@@ -759,10 +828,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Graphics::drawSquare(1.414*radius, 50.0);
       Graphics::drawLine(P2(-90, 0), 180, 0, 50.0);
       Graphics::drawLine(P2(0, -90), 0, 180, 50.0);
+
+      // NOTE: the color attributes will be used by the renderer in the future.
+      // USE CURRENT PARAMETERS:
+      //Hardware::Lasers::setStatePowerRed(1000);
+      //Hardware::Lasers::setStateSwitchRed(true);
+
       Renderer2D::renderFigure();
 
-      Hardware::Lasers::setPowerRed(1000);
-      Hardware::Lasers::setSwitchRed(true);
       DisplayScan::startDisplay();
 
       execFlag = true;
@@ -806,9 +879,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       //            if it was working. A the LIFO stack for ISR state could come handy...
       // * NOTE 2 : power and switch of lasers is modified. Again, a stack for laser
       //            attributes would be great.
-      Hardware::Lasers::setSwitchRed(true);
-      Hardware::Lasers::setPowerRed(1000);
+       Hardware::Lasers::pushState();
+      Hardware::Lasers::setStateSwitchRed(true);
+      Hardware::Lasers::setStatePowerRed(1000);
+      Hardware::Lasers::setStateSwitchGreen(true);
+      Hardware::Lasers::setStatePowerGreen(1000);
+      Hardware::Lasers::setStateSwitchBlue(true);
+      Hardware::Lasers::setStatePowerBlue(1000);
       Hardware::Scanner::testMirrorRange(argStack[0].toInt());
+       Hardware::Lasers::popState();
 
       execFlag = true;
     }
@@ -819,10 +898,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
-
-      Hardware::Lasers::setSwitchRed(true);
-      Hardware::Lasers::setPowerRed(1000);
+ Hardware::Lasers::pushState();
+ Hardware::Lasers::setStateSwitchRed(true);
+ Hardware::Lasers::setStatePowerRed(1000);
+ Hardware::Lasers::setStateSwitchGreen(true);
+ Hardware::Lasers::setStatePowerGreen(1000);
+ Hardware::Lasers::setStateSwitchBlue(true);
+ Hardware::Lasers::setStatePowerBlue(1000);
       Hardware::Scanner::testCircleRange(argStack[0].toInt());
+       Hardware::Lasers::popState();
 
       execFlag = true;
     }
@@ -834,9 +918,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
 
-      Hardware::Lasers::setSwitchRed(true); // TODO: do a push/pop for laser color and power attributes!
-      Hardware::Lasers::setPowerRed(1000);
+      Hardware::Lasers::pushState();
+      Hardware::Lasers::setStateSwitchRed(true);
+      Hardware::Lasers::setStatePowerRed(1000);
+      Hardware::Lasers::setStateSwitchGreen(true);
+      Hardware::Lasers::setStatePowerGreen(1000);
+      Hardware::Lasers::setStateSwitchBlue(true);
+      Hardware::Lasers::setStatePowerBlue(1000);
       Hardware::Scanner::testCrossRange(argStack[0].toInt());
+      Hardware::Lasers::popState();
 
       execFlag = true;
     }

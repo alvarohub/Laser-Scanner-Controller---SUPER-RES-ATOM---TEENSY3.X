@@ -89,44 +89,36 @@ namespace Hardware {
 			pinMode(PIN_LED_DEBUG, OUTPUT);   digitalWrite(PIN_LED_DEBUG, LOW);     // for debug, etc
 			pinMode(PIN_LED_MESSAGE, OUTPUT); digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
-			// ========= Configure PWM frequency and resolution
-			// Resolution [available on Teensy LC, 3.0 - 3.6]
-			analogWriteResolution(12); // 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-
-			// Frequency PWM pins:
-			// * NOTE: the PWM signals are created by hardware timers. PWM pins common to each timer always
-			// have the same frequency, so if you change one pin's PWM frequency, all other pins for the same timer change:
-			setPWMFreq(FREQ_PWM);
-			// Duty cycle: I guess by default it is 0. Otherwise make a const array and reset all the powers. This will
-			// be done anyway for the lasers in the Lasers namespace init()
-
-			// ========= DAC: of course, the DACs are not PWM pins. They not need setting.
-			// On Teensy Teensy 3.5 and 3.6 the native DACs are on pins A21 and A22), A14 on the
-			// Teensy 3.1/3.2, and A12 on the Teensy LC.
-
 			PRINTLN("> GPIOs READY");
 		}
 
-		// When setting analogWriteFrequency on pin 5, it affects pins 5, 6, 9, 10, 20, 21, 22, 23
-		//[works on 3.1 to 3.6]
-		void setPWMFreq(uint16_t _freq) {
-			analogWriteFrequency(5, _freq);
-		}
 	}
 
 	namespace Lasers {
 
+ 		Laser LaserArray[NUM_LASERS]; // definition external
+
 		void init() {
 
-			// Power: will use the PWM pins. No need to set as output, plus its frequency
-			// is set in the Gpio init().
+			// Set the PWM frequency for all the power pwm pins (need to set only on one):
+			analogWriteFrequency(pinPowerLaser[0], FREQ_PWM_POWER);
 
-			// Switch: set as digital outputs:
-			for (uint8_t i=0; i<NUM_LASERS; i++) pinMode(pinSwitchLaser[i], OUTPUT);
+			// Resolution [available on Teensy LC, 3.0 - 3.6]
+			analogWriteResolution(12); // 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
+			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
+			// timers, but that's the way the library works now). Fortunately, the carrier pwm uses a fized 50% duty cycle, so
+			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
+			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
+			// since we just need to be in the middle of the range)
 
-			// START WITH LASERS ON at an eight of the max power, so we don't need to send commands SWLASER or POWLASER
-			setPowerAll(500);
-			switchOnAll();
+		    // Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
+			// NOTE: it uses a different timer from the PWM for power.
+		    analogWriteFrequency(pinSwitchLaser[0],FREQ_PWM_CARRIER);
+		   	//analogWrite(pinSwitchLaser[0], 2047); // this will start the pwm signal
+
+			for (uint8_t i=0; i<NUM_LASERS; i++) {
+				LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]); // power, switch and carrier are off
+			}
 
 			PRINTLN("> LASERS READY");
 		}
@@ -140,53 +132,42 @@ namespace Hardware {
 			// if (previousState) DisplayScan::stopDisplay();
 			// Scanner::recenterPosRaw();
 
-			switchOffAll();
-			setPowerAll(0);
+			pushState(); // save current laser state
+
 			elapsedMillis msTime;
 
 			PRINTLN("TESTING LASERS: ");
 
 			for (uint8_t i=0; i<NUM_LASERS; i++) {
 				PRINT("TEST LASER: "); PRINTLN(i);
-				setSwitchLaser(i, true);
+				setStateSwitch(i, true);
 
 				for (uint16_t p=0; p<MAX_LASER_POWER; p+=100) {
-					setPowerLaser(i,p);
+					setStatePower(i,p);
 					//	PRINT("power: "); PRINTLN(p);
 					msTime =0;
 					while (msTime < 50);
 				}
 				for (int16_t p=MAX_LASER_POWER; p>=0; p-=100) { // attn with the >= on uint!!
-					setPowerLaser(i,p);
+					setStatePower(i,p);
 					//	PRINT("power: "); PRINTLN(p);
 					msTime =0;
 					while (msTime < 50);
 				}
 
-				setSwitchLaser(i, false);
+				setStateSwitch(i, false);
 
 				msTime =0;
 				while (msTime < 500);
 			}
 
-			setPowerAll(500);
-			switchOnAll();
+			popState(); // back to current laser state.
 
 			// restart the ISR?
 			//	if (previousState) DisplayScan::startDisplay();
 
 		}
 
-		extern void switchOffAll() {
-			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], LOW);
-		}
-		extern void switchOnAll() { // NOTE: power is set independently
-			for (uint8_t i=0; i<NUM_LASERS; i++) digitalWrite(pinSwitchLaser[i], HIGH);
-		}
-
-		extern void setPowerAll(uint16_t _power) {
-			for (uint8_t i=0; i<NUM_LASERS; i++) analogWrite(pinPowerLaser[i], _power);
-		}
 	}
 
 	namespace Scanner {
