@@ -85,8 +85,11 @@ public:
 	}
 
 	void updateBlank() {
-		if (myState.blankingMode) digitalWrite(pinSwitch, LOW);
+		if (myState.blankingMode) {
+			pinMode(pinSwitch, OUTPUT); //setToCurrentState will make it go back to PWM if necessary
+			digitalWrite(pinSwitch, LOW);
 		// ATTN: no change to current state!!
+	}
 	}
 
 	void setState(LaserState _state) {
@@ -133,10 +136,10 @@ private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: half power, switched on, no carrier, inter-figure blanking
+	// Default laser state: half power, switched on, no carrier, no inter-figure blanking
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
-	const LaserState defaultState = {2000, true, false, true};
+	const LaserState defaultState = {2000, true, false, false};
 
 	std::vector<LaserState> laserState_Stack;
 

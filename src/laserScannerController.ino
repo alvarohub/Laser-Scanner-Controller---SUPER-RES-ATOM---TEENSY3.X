@@ -42,7 +42,7 @@ void setup() {
         // 2] INIT HARDWARE
         Hardware::init();
 
-        // 3] INIT DISPLAY ENGINE (default is stand by)
+        // 3] INIT DISPLAY ENGINE (default is not stand by, but running)
         DisplayScan::init();
 
         PRINTLN("==SYSTEM READY==");

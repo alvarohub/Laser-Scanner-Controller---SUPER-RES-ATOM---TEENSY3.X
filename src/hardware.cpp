@@ -133,6 +133,7 @@ namespace Hardware {
 			// Scanner::recenterPosRaw();
 
 			pushState(); // save current laser state
+			setCarrierModeAll(false);
 
 			elapsedMillis msTime;
 

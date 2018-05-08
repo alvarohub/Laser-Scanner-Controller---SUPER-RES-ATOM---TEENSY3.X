@@ -42,8 +42,10 @@ namespace Graphics {
 
 		// NOTE: this does not STOPS the display engine if it was working!
 
-		// Goes to center position (not by loading the blueprint):
-		Hardware::Scanner::recenterPosRaw();
+		// Goes to center position or stay in the last point? Second option for the time being.
+		// Repositioning of the mirrors can be done after clearing the scene anyway (in the
+		// interpret command method)
+		// Hardware::Scanner::recenterPosRaw();
 	}
 
 	void setClearMode(bool _clearModeFlag) {
@@ -73,17 +75,17 @@ namespace Graphics {
 		const float _lenX, const float _lenY,
 		const uint16_t _numPoints
 	) {
-		float dx = _lenX/_numPoints, dy = _lenY/_numPoints;
+		float dx = _lenX/(_numPoints-1); // Note the -1 because of the line endpoint
+		float dy = _lenY/(_numPoints-1);
 		P2 newPoint(_fromPoint);
-		// Note the <= because of the line endpoint
-		for (uint16_t i = 0; i <= _numPoints; i++) {
+
+		for (uint16_t i = 0; i < _numPoints; i++) {
 			addVertex(newPoint);
 			// TODO: use overloaded operators (make a good 2D vector class)!!
 			newPoint.x+=dx; newPoint.y+=dy;
 		}
-
 	}
-	//Centered:
+	//Origin at (0,0):
 	void drawLine(
 		const float _lenX, const float _lenY,
 		const uint16_t _numPoints
@@ -101,7 +103,7 @@ namespace Graphics {
 		const uint16_t _numPoints
 	) {
 		for (uint16_t i = 0; i <= _numPoints; i++) {
-			float phi = 2.0*PI/_numPoints*i;
+			float phi = 2.0*PI/(_numPoints-1)*i;
 			P2 auxPoint(_radius*cos(phi), _radius*sin(phi));
 			auxPoint.x += _center.x; auxPoint.y += _center.y;
 			addVertex(auxPoint);
@@ -201,12 +203,12 @@ namespace Graphics {
 	)	{
 		float phi = 2.0*PI*_numTours;
 		float length = _radiusArm/(4.0*PI)*( phi*sqrt(1+phi*phi) + log(phi+sqrt(1+phi*phi)) );
-		float stepLength = 1.0*length/_numPoints;
+		float stepLength = 1.0*length/(_numPoints-1);
 
 		Serial.println(length);
 
 		float theta = 0, stepTheta;
-		while (theta<phi) {
+		while (theta<=phi) {
 			float r = _radiusArm * theta;
 			P2 point( _center.x + r*cos(theta), _center.y + r*sin(theta) );
 			addVertex(point);

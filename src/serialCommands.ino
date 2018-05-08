@@ -22,14 +22,14 @@
 #define SET_SWITCH_LASER    "SWLASER"  // Parameters: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
 #define SET_CARRIER         "CARRIER"  // laser num + 0/1 (0 means no carrier: when switch open, the laser shines continuously at the
                                        // current power, otherwise it will be a 50% PWM (chopping the analog power value)
-//Simultaneously affecting lasers:
+//Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL     "PWLASERALL"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
 #define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Parameters: [0-1],SWLASER. Will open/close the laser ultrafast switch.
 #define SET_CARRIER_ALL         "CARRIERALL"
 
 #define TEST_LASERS         "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
-// 2) Hardware::Scan commands:
+// 2) Display Engine (on ISR) commands (namespace Hardware::Scan):
 #define START_DISPLAY       "START"  // start the ISR for the displaying engine
 #define STOP_DISPLAY        "STOP"   // stop the displaying ISR
 #define SET_INTERVAL        "DT"     // parameter: inter-point time in us (min about 20us)
@@ -66,12 +66,13 @@
 #define MAKE_SPIRAL         "SPIRAL"   // Parametres: length-between-arms, num-tours, numpoints, SPIRAL
 
 // 6) TEST FIGURES:
-#define COMPOSITE_TEST      "MIRE"     // no parameters: cross and squares (will automatically launch START)
-                                       // NOTE: we can see the blanking problem here because it is a composite figure
+#define LINE_TEST           "LITEST"
 #define CIRCLE_TEST         "CITEST"   // no parameters: makes a circle.
 #define SQUARE_TEST         "SQTEST"   // no parameters: makes a square
+#define COMPOSITE_TEST      "MIRE"     // no parameters: cross and squares (will automatically launch START)
+                                       // NOTE: we can see the blanking problem here because it is a composite figure
 
-// 8) LOW LEVEL FUNCTIONS and CHECK COMMANDS:
+// 8) LOW LEVEL FUNCTIONS and CHECKING COMMANDS:
 #define TEST_MIRRORS_RANGE  "SQRANGE"  // time of show in seconds, SQRANGE (square showing the limits of galvos)
 #define TEST_CIRCLE_RANGE   "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
 #define TEST_CROSS_RANGE    "CRRANGE"  // time of show in seconds, CRRANGE (CROSS centered on 0,0)
@@ -585,12 +586,12 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // == MAKE LINE ==========================================
   else if (_cmdString == MAKE_LINE) {
     switch(_numArgs) {
-      case 3:  //centered
+      case 3:  //origina at (0,0)
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawLine(
-        argStack[0].toFloat(), argStack[2].toFloat(),
-        argStack[4].toInt()
+        argStack[0].toFloat(), argStack[1].toFloat(),
+        argStack[2].toInt()
       );
       Renderer2D::renderFigure();
       execFlag = true;
@@ -772,8 +773,33 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // ....
 
   // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
-  // and displaying is STARTED whatever the previous state]
-  // a) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
+  // and displaying is STARTED whatever the previous state]. Laser Color and mode
+  // is given by the currest state of lasers.
+
+  // a) LINE TEST:
+  else if (_cmdString == LINE_TEST)     {
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      Graphics::clearScene();
+
+      Graphics::drawLine(P2(-50.0,-30), 100,60, 50); // fisrt argument is the radius
+      // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
+
+      // NOTE: the color attributes will be used by the renderer in the future.
+      // USE CURRENT PARAMETERS:
+      //Hardware::Lasers::setStatePowerRed(1000);
+      //Hardware::Lasers::setStateSwitchRed(true);
+
+      Renderer2D::renderFigure();
+
+      DisplayScan::startDisplay(); // start engine, whatever the previous state
+
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  // b) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
   else if (_cmdString == CIRCLE_TEST)     {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
@@ -796,7 +822,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  // b) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
+
+
+  // c) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
   else if (_cmdString == SQUARE_TEST)  {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
@@ -817,7 +845,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  // c) : SQUARE + CIRCLE TEST
+  // d) : SQUARE + CIRCLE TEST
   else if (_cmdString == COMPOSITE_TEST)  {
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
