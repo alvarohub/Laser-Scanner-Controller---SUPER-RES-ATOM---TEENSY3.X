@@ -18,7 +18,7 @@
 // ==================== COMMANDS:
 // 1) Laser commands:
 // Per-Laser:
-#define SET_POWER_LASER     "PWLASER"  // Parameters: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_POWER_LASER     "PWLASER"  // Parameters: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res).
 #define SET_SWITCH_LASER    "SWLASER"  // Parameters: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
 #define SET_CARRIER         "CARRIER"  // laser num + 0/1 (0 means no carrier: when switch open, the laser shines continuously at the
                                        // current power, otherwise it will be a 50% PWM (chopping the analog power value)

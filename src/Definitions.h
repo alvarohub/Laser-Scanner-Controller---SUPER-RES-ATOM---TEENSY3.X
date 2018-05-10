@@ -95,7 +95,7 @@
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
 #define FREQ_PWM_POWER 65000
-#define FREQ_PWM_CARRIER 100000
+#define FREQ_PWM_CARRIER 110000
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 

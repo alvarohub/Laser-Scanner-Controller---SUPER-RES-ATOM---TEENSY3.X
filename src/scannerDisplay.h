@@ -37,7 +37,7 @@
 
 // NOTE 2 : do this variable, with setters and getters for the following:
 #define MIRROR_INTER_FIGURE_WAITING_TIME    300           // in microseconds, delay to give time to the galvos to reach start new figure.
-#define MIRROR_INTER_POINT_WAITING_TIME     150           // delay to give time to the mirrors to reach the current point
+#define MIRROR_INTER_POINT_WAITING_TIME     100           // delay to give time to the mirrors to reach the current point
 //#define LASER_OFF_WAITING_TIME               0         // in microseconds - or assumed to be really fast anyway.
 #define LASER_ON_WAITING_TIME                5  // time waiting for correct laser power when reaching the current point position
 #define IN_NORMAL_POINT_WAIT                 20  // Time it passes EXACTLY on the current point with lasers ON
