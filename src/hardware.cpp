@@ -84,10 +84,26 @@ namespace Hardware {
 
 		void init() { // set default modes, output values, etc of pins, other that the laser and scanner:
 
-			// ========= Setting Digital pins
+			// ========= Setting debug Digital pins
 			// * NOTE : we set here only the pins that do not belong to specific hardware;
 			pinMode(PIN_LED_DEBUG, OUTPUT);   digitalWrite(PIN_LED_DEBUG, LOW);     // for debug, etc
 			pinMode(PIN_LED_MESSAGE, OUTPUT); digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
+
+			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
+			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer, while
+			// resolution is common for all PWM timer [available on Teensy LC, 3.0 - 3.6]
+
+			// Setting mode for the digital pins (PIN_DIGITAL_A and B):
+			// unnecesary, the mode is re-selected when using the wrapping methods.
+
+			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
+			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
+			// timers, but that's the way the library works now). Fortunately, the carrier pwm uses a fized 50% duty cycle, so
+			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
+			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
+			// since we just need to be in the middle of the range)
+
+
 
 			PRINTLN("> GPIOs READY");
 		}
@@ -98,18 +114,10 @@ namespace Hardware {
 
  		Laser LaserArray[NUM_LASERS]; // definition external
 
-		void init() {
+			extern void init() {
 
 			// Set the PWM frequency for all the power pwm pins (need to set only on one):
 			analogWriteFrequency(pinPowerLaser[0], FREQ_PWM_POWER);
-
-			// Resolution [available on Teensy LC, 3.0 - 3.6]
-			analogWriteResolution(12); // 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
-			// timers, but that's the way the library works now). Fortunately, the carrier pwm uses a fized 50% duty cycle, so
-			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
-			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
-			// since we just need to be in the middle of the range)
 
 		    // Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
 			// NOTE: it uses a different timer from the PWM for power.
@@ -168,6 +176,56 @@ namespace Hardware {
 			//	if (previousState) DisplayScan::startDisplay();
 
 		}
+
+	}
+
+	namespace OptoTuners {
+
+	 OptoTune OptoTuneArray[NUM_OPTOTUNERS];
+
+			extern void init() {
+
+			// Set the PWM frequency for all the optotune pwm pins (need to set only on one):
+			analogWriteFrequency(pinPowerOptoTuner[OPTOTUNE_A], FREQ_PWM_OPTOTUNE);
+
+			// Resolution [available on Teensy LC, 3.0 - 3.6]:
+			 analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
+			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
+			// timers, but that's the way the library works now).
+
+			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) {
+				OptoTuneArray[i].init(pinPowerOptoTuner[i]); // power, switch and carrier are off
+			}
+
+			PRINTLN("> OPTOTUNERS READY");
+		}
+
+		extern void test() {
+
+			elapsedMillis msTime;
+
+			PRINTLN("TESTING OPTOTUNERS: ");
+
+			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) {
+				PRINT("TEST OPTOTUNE: "); PRINTLN(char(i+65)); // letters A, B ...
+
+				for (uint16_t p=0; p<MAX_OPTOTUNE_POWER; p+=100) {
+					setPower(i,p);
+					//	PRINT("power: "); PRINTLN(p);
+					msTime =0;
+					while (msTime < 50);
+				}
+				for (int16_t p=MAX_OPTOTUNE_POWER; p>=0; p-=100) { // attn with the >= on uint!!
+					setPower(i,p);
+					//	PRINT("power: "); PRINTLN(p);
+					msTime =0;
+					while (msTime < 50);
+				}
+
+				// Go back to previous power state for all optotuners: not changed because we did not call setStatePower but setPower
+				setToCurrentState();
+		}
+	}
 
 	}
 

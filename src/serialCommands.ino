@@ -29,7 +29,22 @@
 
 #define TEST_LASERS         "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
-// 2) Display Engine (on ISR) commands (namespace Hardware::Scan):
+// 2) Opto Tunners:
+#define SET_POWER_OPTOTUNER_ALL "PWOPTOALL" // one value (power)
+#define SET_POWER_OPTOTUNER     "PWOPTO"    // two values (index of optotunner + power)
+
+// 3) READOUT DIGITAL and ANALOG PINS:
+#define SET_DIGITAL_A     "WDIG_A" // write digital pin A (pin 31). Parameter: 0,1
+#define SET_DIGITAL_B     "WDIG_B" // write digital pin B (pin 32). Parameter: 0,1
+#define READ_DIGITAL_A     "RDIG_A" // read digital pin A (pin 31).
+#define READ_DIGITAL_B     "RDIG_B" // read digital pin B (pin 32).
+
+#define SET_ANALOG_A      "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4096
+#define SET_ANALOG_B      "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4096
+#define READ_ANALOG_A     "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
+#define READ_ANALOG_B     "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
+
+// 4) Display Engine (on ISR) commands (namespace Hardware::Scan):
 #define START_DISPLAY       "START"  // start the ISR for the displaying engine
 #define STOP_DISPLAY        "STOP"   // stop the displaying ISR
 #define SET_INTERVAL        "DT"     // parameter: inter-point time in us (min about 20us)
@@ -37,7 +52,7 @@
                                     // current blueprint (or "figure"), and the size of the
                                     // displaying buffer may differ because of clipping.
 
-// 3) Figures and pose:
+// 5) Figures and pose:
 // * NOTE : each time these commands are called, the current figure (in blueprint) is
 // re-rendered with the new transforms, in this order of transformation: rotation/scale/translation
 #define RESET_POSE_GLOBAL   "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
@@ -46,7 +61,7 @@
 #define SET_FACTOR_GLOBAL   "FACTOR"     // Parameters: factor (0-...),FACTOR
 #define SET_COLOR_GLOBAL    "COLOR"      // TODO
 
-//4) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
+//6) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
 #define CLEAR_SCENE         "CLEAR"      // clear the blueprint, and also stop the display
 #define CLEAR_MODE          "CLMODE"     // [0-1],CLMODE. When set to 0, if we draw a figure it will
                                          // be ADDED to the current scene. Otherwise drawing first
@@ -57,7 +72,7 @@
 
 #define SET_INTER_POINT_BLANKING   "PTBLANK"  // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
 
-// 5) Figure primitives:
+// 7) Figure primitives:
 #define MAKE_LINE           "LINE"     // Parametres: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
 #define MAKE_CIRCLE         "CIRCLE"   // Parametres: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
 #define MAKE_RECTANGLE      "RECT"     // Parametres: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
@@ -65,14 +80,14 @@
 #define MAKE_ZIGZAG         "ZIGZAG"   // Parametres: width,height,numpoints X,numpoints Y,ZIGZAG or with position first
 #define MAKE_SPIRAL         "SPIRAL"   // Parametres: length-between-arms, num-tours, numpoints, SPIRAL
 
-// 6) TEST FIGURES:
+// 8) TEST FIGURES:
 #define LINE_TEST           "LITEST"
 #define CIRCLE_TEST         "CITEST"   // no parameters: makes a circle.
 #define SQUARE_TEST         "SQTEST"   // no parameters: makes a square
 #define COMPOSITE_TEST      "MIRE"     // no parameters: cross and squares (will automatically launch START)
                                        // NOTE: we can see the blanking problem here because it is a composite figure
 
-// 8) LOW LEVEL FUNCTIONS and CHECKING COMMANDS:
+// 9) LOW LEVEL FUNCTIONS and CHECKING COMMANDS:
 #define TEST_MIRRORS_RANGE  "SQRANGE"  // time of show in seconds, SQRANGE (square showing the limits of galvos)
 #define TEST_CIRCLE_RANGE   "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
 #define TEST_CROSS_RANGE    "CRRANGE"  // time of show in seconds, CRRANGE (CROSS centered on 0,0)
@@ -391,7 +406,29 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   }
 
   //==========================================================================
-  // B) ====== SCANNER COMMANDS  =============================================
+  // B) ====== OPTOTUNNER COMMANDS  =============================================
+  //==========================================================================
+
+  if (_cmdString == SET_POWER_OPTOTUNER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::OptoTuners::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_OPTOTUNE_POWER));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_POWER_OPTOTUNER) {     // Parameters: laser number, power (0 to 4096, 12 bit res).
+    if (_numArgs == 2) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::OptoTuners::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  //==========================================================================
+  // C) ====== SCANNER COMMANDS  =============================================
   //==========================================================================
   else if (_cmdString == START_DISPLAY) {
     if (_numArgs == 0) {
@@ -449,10 +486,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-
-
   //==========================================================================
-  // C) ======= POSE PARAMETERS ("OpenGL"-like state machine) ================
+  // D) ======= POSE PARAMETERS ("OpenGL"-like state machine) ================
   //==========================================================================
   //  * NOTE 1 : This is a very simplified "open-gl" like rendering engine, but
   //    should be handy anyway. It works as follows: the pose parameters are applied
@@ -517,7 +552,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   }
 
   //==========================================================================
-  // D) ============ FIGURES (check Graphics namespace) ======================
+  // E) ============ FIGURES (check Graphics namespace) ======================
   // * NOTE 1 : after all the figure composition, it is
   // imperative to call to the method Renderer2D::renderFigure().
   // * NOTE 2 : The pose parameters are COMPOSED with the global ones.
@@ -772,7 +807,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
   // ....
 
-  // 7) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
+  // F) TEST FIGURES [this is a test: scene is CLEARED whatever the clear state,
   // and displaying is STARTED whatever the previous state]. Laser Color and mode
   // is given by the currest state of lasers.
 
@@ -877,7 +912,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
 
   //==========================================================================
-  // E) ============  LOW LEVEL COMMANDS ===========================
+  // G) ============  LOW LEVEL COMMANDS ===========================
   //==========================================================================
 
   else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, state
@@ -885,6 +920,83 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
       execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  // Wrappers for special pins (exposed in the D25 connector):
+  else if (_cmdString == SET_DIGITAL_A)   {     // Parameters: state
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setDigitalPinA(argStack[0].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_DIGITAL_B)   {     // Parameters: state
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setDigitalPinB(argStack[0].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == READ_DIGITAL_A)   {     // Parameters: none
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      bool val = Hardware::Gpio::readDigitalPinA();
+      execFlag = true;
+      PRINT("> "); PRINTLN((val>0? "1" : "0"));
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == READ_DIGITAL_B)   {     // Parameters: none
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      bool val = Hardware::Gpio::readDigitalPinB();
+      execFlag = true;
+      PRINT("> "); PRINTLN((val>0? "1" : "0"));
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_ANALOG_A)   {     // Parameters: duty cycle (0-4095)
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setAnalogPinA(argStack[0].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_ANALOG_B)   {     // Parameters: duty cycle (0-4095)
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setAnalogPinB(argStack[0].toInt());
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == READ_ANALOG_A)   {     // Parameters: none
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      uint16_t val = Hardware::Gpio::readAnalogPinA();
+      execFlag = true;
+      PRINT("> "); PRINTLN(val);
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == READ_ANALOG_B)   {     // Parameters: none
+    if (_numArgs == 0) {
+      //PRINTLN("> EXECUTING... ");
+      uint16_t val = Hardware::Gpio::readAnalogPinB();
+      execFlag = true;
+      PRINT("> "); PRINTLN(val);
     }
     else PRINTLN("> BAD PARAMETERS");
   }

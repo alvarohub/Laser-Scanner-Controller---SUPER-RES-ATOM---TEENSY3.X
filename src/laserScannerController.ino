@@ -62,13 +62,13 @@ void loop() {
 
 
         //TEST:
-        /*
+
         float t= 1.0*millis()/1000;
         Graphics::setAngle(45.0*t); // in deg (10 deg/sec)
         Graphics::setCenter(20.0*cos(2.0*t), 30.0*sin(3.0*t));
          Graphics::setScaleFactor(0.2+.3*(1.0+cos(2.5*t)));
         Renderer2D::renderFigure();
-        */
+
 
         //delay(200);
 

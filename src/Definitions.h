@@ -90,7 +90,7 @@
 #define CENTER_MIRROR_ADY  2047
 
 // ======================== LASER STUFF ========================================
-#define MAX_LASER_POWER 4095 // 12 bit PWM res; maybe not used for now
+#define MAX_LASER_POWER 4095 // 12 bit PWM res. TODO: normalize for the control commands (wrapper)
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
@@ -111,6 +111,26 @@ const uint8_t pinPowerLaser[NUM_LASERS] = {5,6,9,10};//,20, 21, 22, 23};
 // PWM pins on FTM3 (pins 2,7,8,14,38,37,36,35)
 const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36,  38, 37};// 14, 7, 2};
 
+// ======================== OPTOTUNE stuff =====================================
+#define NUM_OPTOTUNERS 2
+const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pins controlled by FTM2
+// NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin
+#define FREQ_PWM_OPTOTUNE 65000
+// #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
+// affect ALL the timers... ackwards, as it could be per-timer group.
+#define MAX_OPTOTUNE_POWER 4095 // TODO: normalize for the control commands (wrapper)
+
+// =========== OTHER PWM pins exposed in the D25 connector  ====================
+// NOTE : there is yet no wrapper associated to these pins: they are
+// just exposed in the connector. In the case of digital pins, they can be switched on/off
+// by the generic command: pin,0/1,SETPIN
+// TODO : we could have commands for reading pins too (digital and analog)
+// ANALOG PINS (for reading and writing, on TPM1 timer)
+#define PIN_ANALOG_A 16 
+#define PIN_ANALOG_B 17
+// DIGITAL PINS:
+#define PIN_DIGITAL_A 31
+#define PIN_DIGITAL_B 32
 
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=

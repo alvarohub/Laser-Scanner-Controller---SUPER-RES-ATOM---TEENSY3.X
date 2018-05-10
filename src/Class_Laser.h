@@ -8,7 +8,10 @@
 
 // ===========================================================================================================
 
-// There will be several lasers, so I do a class instead of a namespace:
+// There will be several lasers, so I do a class instead of a namespace.
+// NOTE : the group of lasers is not an object itself, but a namespace. Anotehr option
+// would have been to make the group of laser (array and methods) static methods and variables
+// (in that case, the array could be dynamic - a vector)
 class Laser {
 	// I will create a struct to store laser state: the reason is I will use a
 	// stack to avoid having to save the state whenever we want to try something
@@ -30,7 +33,7 @@ public:
 
 	void init(uint8_t _pinPower, uint8_t _pinSwitch) {
 		pinPower = _pinPower;
-	    pinSwitch = _pinSwitch;
+	  pinSwitch = _pinSwitch;
 
 		//pinMode(_pinPower, OUTPUT); // <<-- no need, it will be used exclusively as a PWM signal
 		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method

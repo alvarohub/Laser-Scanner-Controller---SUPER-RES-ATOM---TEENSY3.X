@@ -6,6 +6,7 @@
 #include "Utils.h"
 #include "scannerDisplay.h"
 #include "Class_Laser.h"
+#include "Class_OptoTuner.h"
 
 #ifdef DEBUG_MODE_LCD
 #include "Wire.h"
@@ -40,12 +41,51 @@ namespace Hardware {
 
 		void init();
 
-		// Other digital pins
 		inline void setDigitalPin(uint8_t _pin, bool _state) {
 			// TODO: for the time being, it is up to the user to check if the pin is set as OUTPUT, capable of that
 			// and not conflicting with the used pins? we could do such tests here.
 			digitalWrite(_pin, _state);
 		}
+
+		// Wrappers for special pins (that appear on the D25 connector):
+		inline void setDigitalPinA(bool _state) {
+			pinMode(PIN_DIGITAL_A, OUTPUT); // it could have been used as input!
+			digitalWrite(PIN_DIGITAL_A, _state);
+		}
+
+		inline bool readDigitalPinA() {
+			// INPUT or INPUT_PULLUP?
+			pinMode(PIN_DIGITAL_A, INPUT); // it could have been used as output!
+			return (digitalRead(PIN_DIGITAL_A));
+		}
+
+		inline void setAnalogPinA(uint16_t _duty) {
+			return(analogWrite(PIN_ANALOG_A, _duty));
+		}
+
+		inline uint16_t readAnalogPinA() {
+			return(analogRead(PIN_ANALOG_A));
+		}
+
+		inline void setDigitalPinB(bool _state) {
+			pinMode(PIN_DIGITAL_B, OUTPUT); // it could have been used as input!
+			digitalWrite(PIN_DIGITAL_B, _state);
+		}
+
+		inline bool readDigitalPinB() {
+			// INPUT or INPUT_PULLUP?
+			pinMode(PIN_DIGITAL_B, INPUT); // it could have been used as output!
+			return (digitalRead(PIN_DIGITAL_B));
+		}
+
+		inline void setAnalogPinB(uint16_t _duty) {
+			return(analogWrite(PIN_ANALOG_B, _duty));
+		}
+
+		inline uint16_t readAnalogPinB() {
+			return(analogRead(PIN_ANALOG_B));
+		}
+
 
 		// Change PWM frequency:
 		extern void setPWMFreq(uint16_t _freq);
@@ -142,6 +182,45 @@ namespace Hardware {
 		inline void clearStateStack() {
 			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].clearStateStack();
 		}
+
+	}
+	namespace OptoTuners {
+		enum OptoTuneName {OPTOTUNE_A = 0, OPTOTUNE_B};
+
+		extern OptoTune OptoTuneArray[NUM_OPTOTUNERS];
+
+		// ****************** METHODS ********************
+		// NOTE: namespace methods correspond to static methods of the class OptoTune
+		extern void init();
+		extern void test();
+
+		inline void setStatePowerAll(uint16_t _power) {
+			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) OptoTuneArray[i].setStatePower(_power);
+		}
+
+		// Without changing the power state:
+		inline void setPowerAll(uint16_t _power) {
+			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) OptoTuneArray[i].setPower(_power);
+		}
+
+		// Wrappers for independent optotune control from this namespace:
+		inline void setStatePower(uint8_t _opto, uint16_t _power) {
+			if (_opto<NUM_OPTOTUNERS) OptoTuneArray[_opto].setStatePower(_power);
+			//analogWrite(pinPowerOptoTune[_opto], _power);
+		}
+
+		inline void setPower(uint8_t _opto, uint16_t _power) {
+			if (_opto<NUM_OPTOTUNERS) OptoTuneArray[_opto].setPower(_power);
+			//analogWrite(pinPowerOptoTune[_opto], _power);
+		}
+
+		inline void setToCurrentState() {
+			for (uint8_t k = 0; k< NUM_OPTOTUNERS; k++) OptoTuneArray[k].setToCurrentState();
+		}
+
+		// Other handy methods, more explicit control:
+		inline void setStatePowerOptoA(uint16_t _power) {OptoTuneArray[OPTOTUNE_A].setStatePower(_power);}
+		inline void setStatePowerOptoB(uint16_t _power) {OptoTuneArray[OPTOTUNE_B].setStatePower(_power);}
 
 	}
 
