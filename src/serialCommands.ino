@@ -18,81 +18,81 @@
 // ==================== COMMANDS:
 // 1) Laser commands:
 // Per-Laser:
-#define SET_POWER_LASER     "PWLASER"  // Parameters: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res).
-#define SET_SWITCH_LASER    "SWLASER"  // Parameters: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
-#define SET_CARRIER         "CARRIER"  // laser num + 0/1 (0 means no carrier: when switch open, the laser shines continuously at the
+#define SET_POWER_LASER         "PWLASER"  // Param: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res).
+#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_CARRIER             "CARRIER"  // laser num + 0/1 (0 means no carrier: when switch open, the laser shines continuously at the
                                        // current power, otherwise it will be a 50% PWM (chopping the analog power value)
 //Simultaneously affecting all lasers:
-#define SET_POWER_LASER_ALL     "PWLASERALL"  // Parameters: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
-#define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Parameters: [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_POWER_LASER_ALL     "PWLASERALL"   // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Param: [0-1],SWLASER. Will open/close the laser ultrafast switch.
 #define SET_CARRIER_ALL         "CARRIERALL"
 
-#define TEST_LASERS         "TSTLASERS" // no parameters. Will test each laser with a power ramp
+#define TEST_LASERS             "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
 // 2) Opto Tunners:
 #define SET_POWER_OPTOTUNER_ALL "PWOPTOALL" // one value (power)
 #define SET_POWER_OPTOTUNER     "PWOPTO"    // two values (index of optotunner + power)
 
 // 3) READOUT DIGITAL and ANALOG PINS:
-#define SET_DIGITAL_A     "WDIG_A" // write digital pin A (pin 31). Parameter: 0,1
-#define SET_DIGITAL_B     "WDIG_B" // write digital pin B (pin 32). Parameter: 0,1
-#define READ_DIGITAL_A     "RDIG_A" // read digital pin A (pin 31).
-#define READ_DIGITAL_B     "RDIG_B" // read digital pin B (pin 32).
+#define SET_DIGITAL_A           "WDIG_A" // write digital pin A (pin 31). Parameter: 0,1
+#define SET_DIGITAL_B           "WDIG_B" // write digital pin B (pin 32). Parameter: 0,1
+#define READ_DIGITAL_A          "RDIG_A" // read digital pin A (pin 31).
+#define READ_DIGITAL_B          "RDIG_B" // read digital pin B (pin 32).
 
-#define SET_ANALOG_A      "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4096
-#define SET_ANALOG_B      "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4096
-#define READ_ANALOG_A     "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
-#define READ_ANALOG_B     "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
+#define SET_ANALOG_A            "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4096
+#define SET_ANALOG_B            "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4096
+#define READ_ANALOG_A           "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
+#define READ_ANALOG_B           "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
 
 // 4) Display Engine (on ISR) commands (namespace Hardware::Scan):
-#define START_DISPLAY       "START"  // start the ISR for the displaying engine
-#define STOP_DISPLAY        "STOP"   // stop the displaying ISR
-#define SET_INTERVAL        "DT"     // parameter: inter-point time in us (min about 20us)
-#define DISPLAY_STATUS      "STATUS" // show various settings. Note that the number of points in the
+#define START_DISPLAY           "START"  // start the ISR for the displaying engine
+#define STOP_DISPLAY            "STOP"   // stop the displaying ISR
+#define SET_INTERVAL            "DT"     // parameter: inter-point time in us (min about 20us)
+#define DISPLAY_STATUS          "STATUS" // show various settings. Note that the number of points in the
                                     // current blueprint (or "figure"), and the size of the
                                     // displaying buffer may differ because of clipping.
 
 // 5) Figures and pose:
 // * NOTE : each time these commands are called, the current figure (in blueprint) is
 // re-rendered with the new transforms, in this order of transformation: rotation/scale/translation
-#define RESET_POSE_GLOBAL   "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
-#define SET_ANGLE_GLOBAL    "ANGLE"      // Parameters: angle (deg),ANGLE
-#define SET_CENTER_GLOBAL   "CENTER"     // Parameters: x,y,CENTER
-#define SET_FACTOR_GLOBAL   "FACTOR"     // Parameters: factor (0-...),FACTOR
-#define SET_COLOR_GLOBAL    "COLOR"      // TODO
+#define RESET_POSE_GLOBAL       "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
+#define SET_ANGLE_GLOBAL        "ANGLE"      // Param: angle (deg),ANGLE
+#define SET_CENTER_GLOBAL       "CENTER"     // Param: x,y,CENTER
+#define SET_FACTOR_GLOBAL       "FACTOR"     // Param: factor (0-...),FACTOR
+#define SET_COLOR_GLOBAL        "COLOR"      // TODO
 
 //6) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
-#define CLEAR_SCENE         "CLEAR"      // clear the blueprint, and also stop the display
-#define CLEAR_MODE          "CLMODE"     // [0-1],CLMODE. When set to 0, if we draw a figure it will
+#define CLEAR_SCENE             "CLEAR"      // clear the blueprint, and also stop the display
+#define CLEAR_MODE              "CLMODE"     // [0-1],CLMODE. When set to 0, if we draw a figure it will
                                          // be ADDED to the current scene. Otherwise drawing first
                                          // clear the current scene and make a new figure.
 // The following commands affect all lasers simultaneously [TODO: per laser]
-#define SET_BLANKING_ALL    "BLANKALL"    //Figure-to-figure blanking. Parameters: [0/1]. Affects all lasers.
-#define SET_BLANKING        "BLANK"    // per laser fig-to-fig blanking
+#define SET_BLANKING_ALL        "BLANKALL"    //Figure-to-figure blanking. Param: [0/1]. Affects all lasers.
+#define SET_BLANKING            "BLANK"    // per laser fig-to-fig blanking
 
-#define SET_INTER_POINT_BLANKING   "PTBLANK"  // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
+#define SET_INTER_POINT_BLANK   "PTBLANK"  // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
 
 // 7) Figure primitives:
-#define MAKE_LINE           "LINE"     // Parametres: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
-#define MAKE_CIRCLE         "CIRCLE"   // Parametres: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
-#define MAKE_RECTANGLE      "RECT"     // Parametres: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
-#define MAKE_SQUARE         "SQUARE"   // Parametres: size of side,numpoints side,RECT ou X,Y,size-of-side,RECT
-#define MAKE_ZIGZAG         "ZIGZAG"   // Parametres: width,height,numpoints X,numpoints Y,ZIGZAG or with position first
-#define MAKE_SPIRAL         "SPIRAL"   // Parametres: length-between-arms, num-tours, numpoints, SPIRAL
+#define MAKE_LINE               "LINE"     // Param: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
+#define MAKE_CIRCLE             "CIRCLE"   // Param: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
+#define MAKE_RECTANGLE          "RECT"     // Param: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
+#define MAKE_SQUARE             "SQUARE"   // Param: size of side,numpoints side,RECT ou X,Y,size-of-side,RECT
+#define MAKE_ZIGZAG             "ZIGZAG"   // Param: width,height,numpoints X,numpoints Y,ZIGZAG or with position first
+#define MAKE_SPIRAL             "SPIRAL"   // Param: length-between-arms, num-tours, numpoints, SPIRAL
 
 // 8) TEST FIGURES:
-#define LINE_TEST           "LITEST"
-#define CIRCLE_TEST         "CITEST"   // no parameters: makes a circle.
-#define SQUARE_TEST         "SQTEST"   // no parameters: makes a square
-#define COMPOSITE_TEST      "MIRE"     // no parameters: cross and squares (will automatically launch START)
+#define LINE_TEST               "LITEST"
+#define CIRCLE_TEST             "CITEST"   // no parameters: makes a circle.
+#define SQUARE_TEST             "SQTEST"   // no parameters: makes a square
+#define COMPOSITE_TEST          "MIRE"     // no parameters: cross and squares (will automatically launch START)
                                        // NOTE: we can see the blanking problem here because it is a composite figure
 
 // 9) LOW LEVEL FUNCTIONS and CHECKING COMMANDS:
-#define TEST_MIRRORS_RANGE  "SQRANGE"  // time of show in seconds, SQRANGE (square showing the limits of galvos)
-#define TEST_CIRCLE_RANGE   "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
-#define TEST_CROSS_RANGE    "CRRANGE"  // time of show in seconds, CRRANGE (CROSS centered on 0,0)
-#define SET_DIGITAL_PIN     "SETPIN"   // pin number, state(true/false), SETPIN
-#define RESET_BOARD         "RESET"    // RESET the board (note: this will disconnect the serial port)
+#define TEST_MIRRORS_RANGE      "SQRANGE"  // time of show in seconds, SQRANGE (square showing the limits of galvos)
+#define TEST_CIRCLE_RANGE       "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
+#define TEST_CROSS_RANGE        "CRRANGE"  // time of show in seconds, CRRANGE (CROSS centered on 0,0)
+#define SET_DIGITAL_PIN         "SETPIN"   // pin number, state(true/false), SETPIN
+#define RESET_BOARD             "RESET"    // RESET the board (note: this will disconnect the serial port)
 
 // =============================================================================
 String messageString;
@@ -342,7 +342,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
   // A) ====== LASER COMMANDS ================================================
   //==========================================================================
-  if (_cmdString == SET_POWER_LASER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
+  if (_cmdString == SET_POWER_LASER_ALL) {     // Param: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_LASER_POWER));
@@ -351,7 +351,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_POWER_LASER) {     // Parameters: laser number, power (0 to 4096, 12 bit res).
+  else if (_cmdString == SET_POWER_LASER) {     // Param: laser number, power (0 to 4096, 12 bit res).
     if (_numArgs == 2) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_LASER_POWER));
@@ -360,7 +360,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SWITCH_LASER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
+  else if (_cmdString == SET_SWITCH_LASER_ALL) {     // Param: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStateSwitchAll(argStack[0].toInt() > 0);
@@ -369,7 +369,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SWITCH_LASER) {     // Parameters: 0 to 4096 (12 bit res).
+  else if (_cmdString == SET_SWITCH_LASER) {     // Param: 0 to 4096 (12 bit res).
     if (_numArgs == 2) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStateSwitch(argStack[0].toInt(), argStack[1].toInt() > 0);
@@ -409,7 +409,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // B) ====== OPTOTUNNER COMMANDS  =============================================
   //==========================================================================
 
-  if (_cmdString == SET_POWER_OPTOTUNER_ALL) {     // Parameters: 0 to 4096 (12 bit res).
+  else if (_cmdString == SET_POWER_OPTOTUNER_ALL) {     // Param: 0 to 4096 (12 bit res).
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_OPTOTUNE_POWER));
@@ -418,7 +418,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_POWER_OPTOTUNER) {     // Parameters: laser number, power (0 to 4096, 12 bit res).
+  else if (_cmdString == SET_POWER_OPTOTUNER) {     // Param: laser number, power (0 to 4096, 12 bit res).
     if (_numArgs == 2) {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
@@ -500,7 +500,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //                     using namespace Graphics;
   //    However, I prefer the suffix for clariry (my Object Oriented biais...)
   //==========================================================================
-  else if (_cmdString == RESET_POSE_GLOBAL)       {     // Parameters: none
+  else if (_cmdString == RESET_POSE_GLOBAL)       {     // Param: none
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       Graphics::resetGlobalPose();
@@ -511,7 +511,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANGLE_GLOBAL)  {     // Parameters: angle in DEG (float)
+  else if (_cmdString == SET_ANGLE_GLOBAL)  {     // Param: angle in DEG (float)
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Graphics::setAngle(argStack[0].toFloat());
@@ -521,7 +521,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_CENTER_GLOBAL)    {  // Parameters: x,y
+  else if (_cmdString == SET_CENTER_GLOBAL)    {  // Param: x,y
     if (_numArgs == 2) {
       //PRINTLN("> EXECUTING... ");
       Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
@@ -531,7 +531,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_FACTOR_GLOBAL)    {  // Parameters: scale
+  else if (_cmdString == SET_FACTOR_GLOBAL)    {  // Param: scale
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Graphics::setScaleFactor(argStack[0].toFloat());
@@ -541,7 +541,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_COLOR_GLOBAL)    {  // Parameters: color bool [TODO: real colors]
+  else if (_cmdString == SET_COLOR_GLOBAL)    {  // Param: color bool [TODO: real colors]
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Graphics::setColorRed(argStack[0].toInt());
@@ -607,7 +607,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_INTER_POINT_BLANKING) { // for the time being, this is for ALL lasers:
+  else if (_cmdString == SET_INTER_POINT_BLANK) { // for the time being, this is for ALL lasers:
     // for the time being, this is a "DisplayScan"
     // method [in the future, a per-laser method?]
     if (_numArgs == 1) {
@@ -915,7 +915,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // G) ============  LOW LEVEL COMMANDS ===========================
   //==========================================================================
 
-  else if (_cmdString == SET_DIGITAL_PIN)   {     // Parameters:pin, state
+  else if (_cmdString == SET_DIGITAL_PIN)   {     // Param:pin, state
     if (_numArgs == 2) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
@@ -925,7 +925,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   }
 
   // Wrappers for special pins (exposed in the D25 connector):
-  else if (_cmdString == SET_DIGITAL_A)   {     // Parameters: state
+  else if (_cmdString == SET_DIGITAL_A)   {     // Param: state
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinA(argStack[0].toInt());
@@ -934,7 +934,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_DIGITAL_B)   {     // Parameters: state
+  else if (_cmdString == SET_DIGITAL_B)   {     // Param: state
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinB(argStack[0].toInt());
@@ -943,7 +943,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_DIGITAL_A)   {     // Parameters: none
+  else if (_cmdString == READ_DIGITAL_A)   {     // Param: none
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       bool val = Hardware::Gpio::readDigitalPinA();
@@ -953,7 +953,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_DIGITAL_B)   {     // Parameters: none
+  else if (_cmdString == READ_DIGITAL_B)   {     // Param: none
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       bool val = Hardware::Gpio::readDigitalPinB();
@@ -963,7 +963,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANALOG_A)   {     // Parameters: duty cycle (0-4095)
+  else if (_cmdString == SET_ANALOG_A)   {     // Param: duty cycle (0-4095)
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinA(argStack[0].toInt());
@@ -972,7 +972,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANALOG_B)   {     // Parameters: duty cycle (0-4095)
+  else if (_cmdString == SET_ANALOG_B)   {     // Param: duty cycle (0-4095)
     if (_numArgs == 1) {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinB(argStack[0].toInt());
@@ -981,7 +981,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_ANALOG_A)   {     // Parameters: none
+  else if (_cmdString == READ_ANALOG_A)   {     // Param: none
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       uint16_t val = Hardware::Gpio::readAnalogPinA();
@@ -991,7 +991,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_ANALOG_B)   {     // Parameters: none
+  else if (_cmdString == READ_ANALOG_B)   {     // Param: none
     if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
       uint16_t val = Hardware::Gpio::readAnalogPinB();

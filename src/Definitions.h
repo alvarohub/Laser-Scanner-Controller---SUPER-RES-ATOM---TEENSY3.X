@@ -126,7 +126,7 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pi
 // by the generic command: pin,0/1,SETPIN
 // TODO : we could have commands for reading pins too (digital and analog)
 // ANALOG PINS (for reading and writing, on TPM1 timer)
-#define PIN_ANALOG_A 16 
+#define PIN_ANALOG_A 16
 #define PIN_ANALOG_B 17
 // DIGITAL PINS:
 #define PIN_DIGITAL_A 31
