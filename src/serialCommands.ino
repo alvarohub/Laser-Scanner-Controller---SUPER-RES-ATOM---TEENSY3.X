@@ -51,6 +51,9 @@
 #define DISPLAY_STATUS          "STATUS" // show various settings. Note that the number of points in the
                                     // current blueprint (or "figure"), and the size of the
                                     // displaying buffer may differ because of clipping.
+#define SET_SHUTTER             "SHUTTER"
+
+
 
 // 5) Figures and pose:
 // * NOTE : each time these commands are called, the current figure (in blueprint) is
@@ -396,6 +399,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
     else PRINTLN("> BAD PARAMETERS");
   }
 
+  else if (_cmdString == SET_SHUTTER) {
+    if (_numArgs == 1) {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Gpio::setShutter(argStack[0].toInt()>0);
+      execFlag = true;
+    }
+    else PRINTLN("> BAD PARAMETERS");
+  }
+
   else if (_cmdString == TEST_LASERS) {
   if (_numArgs == 0) {
       //PRINTLN("> EXECUTING... ");
@@ -565,12 +577,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       //PRINTLN("> EXECUTING... ");
 
       // The sequence order and items is arbitrary:
-
       Graphics::clearScene();
       // clear also the pose parameters - otherwise there is a lot of confusion:
       Graphics::resetGlobalPose();
 
-      // Switch Off laser? (power state is not affected): NO, stay with current value
       execFlag = true;
     }
     else PRINTLN("> BAD PARAMETERS");

@@ -94,8 +94,8 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 65000
-#define FREQ_PWM_CARRIER 110000
+#define FREQ_PWM_POWER 25000
+#define FREQ_PWM_CARRIER 38000
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -125,12 +125,20 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pi
 // just exposed in the connector. In the case of digital pins, they can be switched on/off
 // by the generic command: pin,0/1,SETPIN
 // TODO : we could have commands for reading pins too (digital and analog)
-// ANALOG PINS (for reading and writing, on TPM1 timer)
+
+// * ANALOG PINS (for reading and writing, on TPM1 timer)
 #define PIN_ANALOG_A 16
 #define PIN_ANALOG_B 17
-// DIGITAL PINS:
+// * DIGITAL PINS:
 #define PIN_DIGITAL_A 31
 #define PIN_DIGITAL_B 32
+// * TRIGGER PIN (bidirectional?)
+#define PIN_TRIGGER_INPUT	 22 // pin 12 in D25 ILDA connector
+#define PIN_TRIGGER_OUTPUT 23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+// * INTENSITY/BLANKING
+#define PIN_INTENSITY_BLANKING 15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
+#define PIN_SHUTTER	14 // this is pin 13 in D25 ILDA connector
 
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=

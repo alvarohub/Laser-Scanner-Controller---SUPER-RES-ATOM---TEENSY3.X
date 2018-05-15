@@ -41,6 +41,22 @@ namespace Hardware {
 
 		void init();
 
+		inline void setShutter(bool _state) {
+			digitalWrite(PIN_SHUTTER, _state);
+		}
+
+		inline void setIntensityBlanking(bool _state) {
+			digitalWrite(PIN_INTENSITY_BLANKING, _state);
+		}
+
+		inline void setTriggerOut(bool _state) {
+			digitalWrite(PIN_TRIGGER_OUTPUT, _state);
+		}
+
+		inline bool readTriggerInput() {
+			return(digitalRead(PIN_TRIGGER_INPUT));
+		}
+
 		inline void setDigitalPin(uint8_t _pin, bool _state) {
 			// TODO: for the time being, it is up to the user to check if the pin is set as OUTPUT, capable of that
 			// and not conflicting with the used pins? we could do such tests here.
@@ -168,9 +184,27 @@ namespace Hardware {
 		// NOTE: in the future, use HSV (color wheel):
 		// inline void setLaserColor()
 
-		inline void setToCurrentState() {
-			for (uint8_t k = 0; k< NUM_LASERS; k++) LaserArray[k].setToCurrentState();
+
+		inline bool someLaserOn() {
+			bool someLaserOn = false;
+			for (uint8_t k = 0; k< NUM_LASERS; k++) {
+				someLaserOn|= LaserArray[k].readStateSwitch();
+			}
+			return(someLaserOn);
 		}
+
+ 	 		inline void updateIntensityBlanking() {
+ 	 			if (someLaserOn()) Hardware::Gpio::setIntensityBlanking(true);
+ 	 			else Hardware::Gpio::setIntensityBlanking(false);
+ 	 		}
+
+		inline void setToCurrentState() {
+			for (uint8_t k = 0; k< NUM_LASERS; k++) {
+				LaserArray[k].setToCurrentState();
+			}
+			updateIntensityBlanking();
+		}
+
 
 		// And a stack for *all* the lasers:
 		inline void pushState() {

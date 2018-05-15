@@ -89,6 +89,23 @@ namespace Hardware {
 			pinMode(PIN_LED_DEBUG, OUTPUT);   digitalWrite(PIN_LED_DEBUG, LOW);     // for debug, etc
 			pinMode(PIN_LED_MESSAGE, OUTPUT); digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
+			// Multi-purpose external triggers (NOTE: they are not associated necessarily with a microcontroller interrupt,
+			// but it may be important for some experiments?). BTW, practically ALL Teensy3.6 pins can be configured as
+			// external interrupts, and set using the classic Arduino methods "attachInterrupt()"...
+			pinMode(PIN_TRIGGER_OUTPUT, OUTPUT);
+			pinMode(PIN_TRIGGER_INPUT, INPUT_PULLUP);
+
+			// LEGACY INTENSITY/BLANKING. Here it will be used so that it is HIGH whenever the lasers are ON, and OFF otherwise.
+			// For the time being, it will be ON when display engine is running, and OFF otherwise?
+			pinMode(PIN_INTENSITY_BLANKING, OUTPUT);
+			if (Lasers::someLaserOn()) digitalWrite(PIN_INTENSITY_BLANKING, HIGH);
+			else digitalWrite(PIN_INTENSITY_BLANKING, LOW);
+
+			// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
+			pinMode(PIN_SHUTTER, OUTPUT);
+			 digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
+
+
 			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
 			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer, while
 			// resolution is common for all PWM timer [available on Teensy LC, 3.0 - 3.6]

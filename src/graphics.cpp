@@ -40,7 +40,10 @@ namespace Graphics {
 		Renderer2D::clearBlueprint(); // clear blueprint is just like drawing an
 		// object with... zero points (and not added to the others).
 
-		// NOTE: this does not STOPS the display engine if it was working!
+		// Will clearing the scene stop the display engine? If yes, then we may
+		// need to START the engine again. Should this be done automatically when
+		// rendering a figure? Sounds nice. Let's do that.
+		DisplayScan::stopDisplay();
 
 		// Goes to center position or stay in the last point? Second option for the time being.
 		// Repositioning of the mirrors can be done after clearing the scene anyway (in the

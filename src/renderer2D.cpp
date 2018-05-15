@@ -68,6 +68,13 @@ void renderFigure() {
         // and it is made of uint16_t points! (for the itme being, still floats, but use a TEMPLATE and a typedef...)
         // * NOTE 2 : this method will fill the current "hidden" buffer, and indicate the need to swap buffers:
         DisplayScan::setDisplayBuffer(frameBuffer, numframeBufferPoints);
+
+        // ... and we are ready to start the display engine:
+        // NOTE: this was not done automatically before, but it makes sense: we show a figure when ready, and IF we want to
+        // stop it and re-start it, we can use the commands. The only disadvante with this would be if one wants to prepare
+        // a figure and at a very precise moment make it appear; but even in this case, it is much wiser to use the laser
+        // switches that the display engine...
+        		DisplayScan::startDisplay();
 }
 
 void clearBlueprint() {

@@ -92,7 +92,18 @@ namespace DisplayScan {
   }
 
   void stopDisplay() {
-    if (running) scannerTimer.end(); // perhaps the condition is not necessary
+    if (running) {
+      scannerTimer.end(); // perhaps the condition is not necessary
+
+    // Switch Off laser? (power *state* is not affected, and
+    // will be retrieved when restarting the engine):
+    Hardware::Lasers::switchOffAll(); // not "setStateSwitchAll(false)"
+
+    // Also, set the PIN_INTENSITY_BLANKING to LOW (will be set to HIGH when retrieving the laser
+    // state AND if at least one laser is not switched off):
+    Hardware::Gpio::setIntensityBlanking(false);
+  }
+
     running = false;
   }
 

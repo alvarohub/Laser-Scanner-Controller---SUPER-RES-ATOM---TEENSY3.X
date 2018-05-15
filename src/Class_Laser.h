@@ -58,6 +58,7 @@ public:
 		pinMode(pinSwitch, OUTPUT);
 		digitalWrite(pinSwitch, _state);
 	}
+
 	void setPower(uint16_t _power) {
 		analogWrite(pinPower, _power);
 	}
@@ -66,6 +67,10 @@ public:
 		// Note: if in carrier mode, this action will be IGNORED (but the state changes)
 		myState.state = _state;
 		setSwitch(_state);
+	}
+
+	bool readStateSwitch() {
+		return(myState.state);
 	}
 
 	void setStatePower(uint16_t _power) {
@@ -100,11 +105,12 @@ public:
 		setToCurrentState();
 	}
 
-	void setToCurrentState() {
+	bool setToCurrentState() {
 		digitalWrite(pinSwitch, myState.state);
 		analogWrite(pinPower, myState.power);
 		setCarrierMode(myState.carrierMode);
 		setBlankingMode(myState.blankingMode);
+		return(myState.state);
 	}
 
 	void pushState() {
