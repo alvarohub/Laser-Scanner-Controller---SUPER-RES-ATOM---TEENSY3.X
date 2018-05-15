@@ -212,7 +212,7 @@ namespace Graphics {
 
 		float theta = 0, stepTheta;
 		while (theta<=phi) {
-			float r = _radiusArm * theta;
+			float r = _radiusArm * theta/2/PI;
 			P2 point( _center.x + r*cos(theta), _center.y + r*sin(theta) );
 			addVertex(point);
 

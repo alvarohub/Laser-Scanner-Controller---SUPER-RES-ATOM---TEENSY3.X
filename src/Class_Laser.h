@@ -151,10 +151,10 @@ private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: [ half power, switched on, no carrier, no inter-figure blanking ]
+	// Default laser state: [ half power, switched ON, carrier OFF, inter-figure blanking ON]
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
-	const LaserState defaultState = {2000, true, false, false};
+	const LaserState defaultState = {2000, true, false, true};
 
 	std::vector<LaserState> laserState_Stack;
 
