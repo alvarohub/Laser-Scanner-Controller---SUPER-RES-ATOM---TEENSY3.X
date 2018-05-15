@@ -55,11 +55,11 @@ void setup() {
         //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
 
         // FOR TESTS:
-        Graphics::clearScene();
-        Graphics::drawCircle(40.0, 60);
-        Renderer2D::renderFigure();
-        DisplayScan::startDisplay();
-        Hardware::Lasers::setCarrierModeAll(true);
+        // Graphics::clearScene();
+        // Graphics::drawCircle(40.0, 60);
+        // Renderer2D::renderFigure();
+        // DisplayScan::startDisplay();
+        // Hardware::Lasers::setCarrierModeAll(true);
 
 }
 

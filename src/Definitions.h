@@ -94,8 +94,8 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 25000
-#define FREQ_PWM_CARRIER 38000
+#define FREQ_PWM_POWER 65000
+#define FREQ_PWM_CARRIER 38000 // 100000
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -136,6 +136,8 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pi
 #define PIN_TRIGGER_INPUT	 22 // pin 12 in D25 ILDA connector
 #define PIN_TRIGGER_OUTPUT 23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
 // * INTENSITY/BLANKING
+// * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be
+// much better if this was done electronically, not using the relatively complex - and easy to broke - logic of my program!
 #define PIN_INTENSITY_BLANKING 15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
 // * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
 #define PIN_SHUTTER	14 // this is pin 13 in D25 ILDA connector
