@@ -486,12 +486,30 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       PRINT(" 3-DISPLAY ISR: ");
       if (DisplayScan::getRunningState())
+      {
+        PRINT("ON");
+        PRINT(" / PERIOD: "); PRINT(DisplayScan::getInterPointTime());  PRINT(" us");
+        PRINT(" / BUFFER: "); PRINT(DisplayScan::getBufferSize());  PRINTLN(" points");
+      }
+      else
+      PRINT("OFF");
+
+      PRINT(" 6-INTERPOINT BLANKING: ");
+      if (DisplayScan::getInterPointBlankingMode())
       PRINTLN("ON");
       else
       PRINTLN("OFF");
 
-      PRINT(" 5-DISPLAY PTS: ");
-      PRINTLN(DisplayScan::getBufferSize());
+      PRINTLN(" 7-LASERS [power, state, carrier mode, end blank]: ");
+      Laser::LaserState laserState;
+      for (uint8_t k=0; k<NUM_LASERS; k++) {
+        laserState = Hardware::Lasers::LaserArray[k].getLaserState();
+        PRINT("     "); PRINT(Hardware::Lasers::laserNames[k]); PRINT(" : [");
+        PRINT(laserState.power); PRINT(", ");
+        PRINT(laserState.state>0? "on" : "off"); PRINT(", ");
+        PRINT(laserState.carrierMode>0? "on" : "off"); PRINT(", ");
+        PRINT(laserState.blankingMode>0? "on" : "off"); PRINTLN("]");
+      }
 
       execFlag = true;
     }

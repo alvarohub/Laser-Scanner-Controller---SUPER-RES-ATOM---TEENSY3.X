@@ -71,6 +71,10 @@ namespace DisplayScan {
     // including
   }
 
+uint32_t getInterPointTime() {return(dt);}
+
+uint32_t getInterPointBlankingMode() {return(interpointBlanking);}
+
   void resetWaitingTimers() {
     delayMirrorsInterPointMicros=0;
     delayMirrorsInterFigureBlankingMicros=0;
@@ -103,7 +107,6 @@ namespace DisplayScan {
     // state AND if at least one laser is not switched off):
     Hardware::Gpio::setIntensityBlanking(false);
   }
-
     running = false;
   }
 

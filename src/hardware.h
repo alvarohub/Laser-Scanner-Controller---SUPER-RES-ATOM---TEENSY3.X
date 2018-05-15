@@ -116,6 +116,8 @@ namespace Hardware {
 
 		enum LaserName {RED_LASER=0, GREEN_LASER, BLUE_LASER, YELLOW_LASER, CYAN_LASER};
 
+		const String laserNames[NUM_LASERS] = {"RED", "GREEN", "BLUE", "DEEP BLUE"};
+		
 		extern Laser LaserArray[NUM_LASERS];
 
 		// ****************** METHODS ********************

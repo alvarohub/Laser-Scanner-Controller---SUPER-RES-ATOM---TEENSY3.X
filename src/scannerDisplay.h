@@ -62,8 +62,10 @@ namespace DisplayScan { // note: this namespace contains methods that are beyond
   extern uint16_t getBufferSize();
 
   extern void setInterPointTime(uint16_t _dt);
+  extern uint32_t getInterPointTime();// {return(dt);}
 
   extern void setInterPointBlankingMode(bool _mode);
+  extern uint32_t getInterPointBlankingMode();// {return(interpointBlanking);}
 
   // * NOTE: Even if this is not a class, I can make variables or methods
   // "private" by using an anonymous namespace:

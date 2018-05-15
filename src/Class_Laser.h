@@ -13,19 +13,23 @@
 // would have been to make the group of laser (array and methods) static methods and variables
 // (in that case, the array could be dynamic - a vector)
 class Laser {
-	// I will create a struct to store laser state: the reason is I will use a
-	// stack to avoid having to save the state whenever we want to try something
-	// or do some complex drawing (very similar to "pushStyle" in OF or
-	// Processing)
-	struct LaserState {
-		uint16_t power;
-		bool state; // on/off
 
-		bool carrierMode;
-		bool blankingMode;
+	public:
+
+		// I will create a struct to store laser state: the reason is I will use a
+		// stack to avoid having to save the state whenever we want to try something
+		// or do some complex drawing (very similar to "pushStyle" in OF or
+		// Processing)
+		struct LaserState {
+		uint16_t power;	// 0-MAX_LASER_POWER
+		bool state; 		// on/off
+
+		bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
+		bool blankingMode;  // blank between each figure (for the time being, end of trajectory buffer).
+		// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+		// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
-public:
 	Laser() {};
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch) {
 		init(_pinPower,_pinSwitch);
@@ -105,6 +109,8 @@ public:
 		setToCurrentState();
 	}
 
+	LaserState getLaserState() {return(myState);}
+
 	bool setToCurrentState() {
 		digitalWrite(pinSwitch, myState.state);
 		analogWrite(pinPower, myState.power);
@@ -145,7 +151,7 @@ private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: half power, switched on, no carrier, no inter-figure blanking
+	// Default laser state: [ half power, switched on, no carrier, no inter-figure blanking ]
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
 	const LaserState defaultState = {2000, true, false, false};
