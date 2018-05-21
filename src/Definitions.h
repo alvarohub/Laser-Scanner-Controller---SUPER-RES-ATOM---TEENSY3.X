@@ -4,7 +4,7 @@
 //* NOTE1 : The file should be called instead "Constants" and should use const and "extern", but
 // for the time being I use #define instead (to avoid the problem of multiple definitions
 // requires "extern" declarations (or inline since C++17). TODO: change this, #define(s)
-// is bad practice (however this program is short)
+// is bad practice (however this program is short.
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
@@ -15,7 +15,6 @@
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
 #define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
 
-//
 // #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
 // #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
 // #define PRINTLN(...)    ({Serial.println(__VA_ARGS__); Hardware::Lcd::println(__VA_ARGS__);})
@@ -31,7 +30,7 @@
 
 /*
 #define PI 3.14159265889
-#define DEG_TO_RAD  (0.01745) // = PI/180.0:
+#define DEG_TO_RAD  (0.01745) // = PI/180.0
 #define RAD_TO_DEG (57.29578) // = 180.0/PI
 */
 
@@ -94,7 +93,7 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 65000     // for filtering
+#define FREQ_PWM_POWER 70000     // for filtering
 #define FREQ_PWM_CARRIER 100000  // this is for chopping the signal (control fast switches)
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
@@ -145,7 +144,7 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pi
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
 //NOTE: these pins are listed here for reference, but they are the
-//d efault pins using in Wire.h.
+//default pins using in Wire.h.
 #define LCD_SDA 18
 #define LCD_SCL 19
 // 2] TFT display (Adafruit_ST7735)

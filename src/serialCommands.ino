@@ -18,8 +18,8 @@
 // ==================== COMMANDS:
 // 1) Laser commands:
 // Per-Laser:
-#define SET_POWER_LASER         "PWLASER"  // Param: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res).
-#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_POWER_LASER         "PWLASER"  // Param: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
+#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch. Changes current state.
 #define SET_CARRIER             "CARRIER"  // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
 // current power, otherwise it will be a 50% PWM [chopping the analog power value]
 //Simultaneously affecting all lasers:
@@ -503,7 +503,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
       Laser::LaserState laserState;
       for (uint8_t k=0; k<NUM_LASERS; k++) {
         laserState = Hardware::Lasers::LaserArray[k].getLaserState();
-        PRINT("     "); PRINT(Hardware::Lasers::laserNames[k]); PRINT(" : [");
+        PRINT("     "); PRINT(Hardware::Lasers::laserNames[k]); PRINT("\t[");
         PRINT(laserState.power); PRINT(", ");
         PRINT(laserState.state>0? "on" : "off"); PRINT(", ");
         PRINT(laserState.carrierMode>0? "on" : "off"); PRINT(", ");

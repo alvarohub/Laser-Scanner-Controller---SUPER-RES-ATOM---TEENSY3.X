@@ -36,11 +36,11 @@ class Laser {
 	}
 
 	void init(uint8_t _pinPower, uint8_t _pinSwitch) {
-		pinPower = _pinPower;
-	  pinSwitch = _pinSwitch;
+		pinPower = _pinPower; // this is analog output (PWM). Does not need to be set (pinMode)
+	  pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
 
 		//pinMode(_pinPower, OUTPUT); // <<-- no need, it will be used exclusively as a PWM signal
-		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method
+		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method (if carrier off)
 
 		// setCarrierMode(false); // by default it will *not* be set to "carrier" mode, so the pinSwitch
 		// will be set as OUTPUT
@@ -112,9 +112,9 @@ class Laser {
 	LaserState getLaserState() {return(myState);}
 
 	bool setToCurrentState() {
+		setCarrierMode(myState.carrierMode); // done before setting the switch state, as it will do pinMode output IF carrier off
 		digitalWrite(pinSwitch, myState.state);
 		analogWrite(pinPower, myState.power);
-		setCarrierMode(myState.carrierMode);
 		setBlankingMode(myState.blankingMode);
 		return(myState.state);
 	}
@@ -151,10 +151,10 @@ private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: [ half power, switched ON, carrier OFF, inter-figure blanking ON]
+	// Default laser state: [ half power, switched OFF, carrier OFF, inter-figure blanking ON]
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
-	const LaserState defaultState = {2000, true, false, true};
+	const LaserState defaultState = {2000, false, false, true};
 
 	std::vector<LaserState> laserState_Stack;
 

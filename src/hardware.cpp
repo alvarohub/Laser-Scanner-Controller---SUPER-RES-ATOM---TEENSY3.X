@@ -103,7 +103,7 @@ namespace Hardware {
 
 			// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
 			pinMode(PIN_SHUTTER, OUTPUT);
-			 digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
+			digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
 
 
 			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
@@ -129,17 +129,17 @@ namespace Hardware {
 
 	namespace Lasers {
 
- 		Laser LaserArray[NUM_LASERS]; // definition external
+		Laser LaserArray[NUM_LASERS]; // definition external
 
-			extern void init() {
+		extern void init() {
 
 			// Set the PWM frequency for all the power pwm pins (need to set only on one):
 			analogWriteFrequency(pinPowerLaser[0], FREQ_PWM_POWER);
 
-		    // Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
+			// Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
 			// NOTE: it uses a different timer from the PWM for power.
-		    analogWriteFrequency(pinSwitchLaser[0],FREQ_PWM_CARRIER);
-		   	//analogWrite(pinSwitchLaser[0], 2047); // this will start the pwm signal
+			analogWriteFrequency(pinSwitchLaser[0],FREQ_PWM_CARRIER);
+			//analogWrite(pinSwitchLaser[0], 2047); // this will start the pwm signal
 
 			for (uint8_t i=0; i<NUM_LASERS; i++) {
 				LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]); // power, switch and carrier are off
@@ -198,15 +198,15 @@ namespace Hardware {
 
 	namespace OptoTuners {
 
-	 OptoTune OptoTuneArray[NUM_OPTOTUNERS];
+		OptoTune OptoTuneArray[NUM_OPTOTUNERS];
 
-			extern void init() {
+		extern void init() {
 
 			// Set the PWM frequency for all the optotune pwm pins (need to set only on one):
 			analogWriteFrequency(pinPowerOptoTuner[OPTOTUNE_A], FREQ_PWM_OPTOTUNE);
 
 			// Resolution [available on Teensy LC, 3.0 - 3.6]:
-			 analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
+			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
 			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
 			// timers, but that's the way the library works now).
 
@@ -241,8 +241,8 @@ namespace Hardware {
 
 				// Go back to previous power state for all optotuners: not changed because we did not call setStatePower but setPower
 				setToCurrentState();
+			}
 		}
-	}
 
 	}
 
@@ -406,16 +406,15 @@ namespace Hardware {
 
 		void println(String text) {
 			static uint8_t row =0;
-			//lcd.clear();
-			//lcd.print("\n");
+			lcd.print(text);
 			row++;
 			if (row==2) {
 				row = 0;
-				lcd.clear();
+				//lcd.clear();
 			}
 			lcd.setCursor(0,row);
-			lcd.print(text);
 		}
+		
 		#endif
 	}
 
