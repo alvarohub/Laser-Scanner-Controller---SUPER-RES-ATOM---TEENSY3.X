@@ -108,12 +108,12 @@ const uint8_t pinPowerLaser[NUM_LASERS] = {5,6,9,10};//,20, 21, 22, 23};
 // as PWM - to generate a carrier for instance. Using the lasers in "carrier" mode does not precludes
 // inter-sprite or inter-point complete blanking.
 // PWM pins on FTM3 (pins 2,7,8,14,38,37,36,35)
-const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36,  38, 37};// 14, 7, 2};
+const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36, 38, 37};// 14, 7, 2};
 
 // ======================== OPTOTUNE stuff =====================================
 // NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin (the "carrier")
 #define NUM_OPTOTUNERS 2
-const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pins controlled by FTM2
+const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pins controlled by FTM2
 #define FREQ_PWM_OPTOTUNE 65000  // for filtering
 // #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
 // affect ALL the timers... ackwards, as it could be per-timer group.
