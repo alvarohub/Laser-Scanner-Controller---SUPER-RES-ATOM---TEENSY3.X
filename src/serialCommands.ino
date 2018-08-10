@@ -17,12 +17,14 @@
 
 // ==================== COMMANDS:
 // 1) Laser commands:
-// Per-Laser:
+
+// a) Per-Laser:
 #define SET_POWER_LASER         "PWLASER"  // Param: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
-#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Will open/close the laser ultrafast switch. Changes current state.
+#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Set the chopping ultrafast switch. Changes current state.
 #define SET_CARRIER             "CARRIER"  // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
-// current power, otherwise it will be a 50% PWM [chopping the analog power value]
-//Simultaneously affecting all lasers:
+// current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value]
+
+// b) Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL     "PWLASERALL"   // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
 #define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Param: [0-1],SWLASER. Will open/close the laser ultrafast switch.
 #define SET_CARRIER_ALL         "CARRIERALL"
@@ -39,8 +41,8 @@
 #define READ_DIGITAL_A          "RDIG_A" // read digital pin A (pin 31).
 #define READ_DIGITAL_B          "RDIG_B" // read digital pin B (pin 32).
 
-#define SET_ANALOG_A            "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4096
-#define SET_ANALOG_B            "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4096
+#define SET_ANALOG_A            "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4095
+#define SET_ANALOG_B            "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4095
 #define READ_ANALOG_A           "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
 #define READ_ANALOG_B           "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
 

@@ -105,7 +105,6 @@ namespace Hardware {
 			pinMode(PIN_SHUTTER, OUTPUT);
 			digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
 
-
 			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
 			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer, while
 			// resolution is common for all PWM timer [available on Teensy LC, 3.0 - 3.6]
@@ -119,8 +118,6 @@ namespace Hardware {
 			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
 			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
 			// since we just need to be in the middle of the range)
-
-
 
 			PRINTLN("> GPIOs READY");
 		}
@@ -414,7 +411,7 @@ namespace Hardware {
 			}
 			lcd.setCursor(0,row);
 		}
-		
+
 		#endif
 	}
 

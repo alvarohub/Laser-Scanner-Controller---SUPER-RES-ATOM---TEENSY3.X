@@ -37,7 +37,7 @@ class Laser {
 
 	void init(uint8_t _pinPower, uint8_t _pinSwitch) {
 		pinPower = _pinPower; // this is analog output (PWM). Does not need to be set (pinMode)
-	  pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
+	    pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
 
 		//pinMode(_pinPower, OUTPUT); // <<-- no need, it will be used exclusively as a PWM signal
 		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method (if carrier off)
@@ -82,13 +82,19 @@ class Laser {
 		analogWrite(pinPower, _power);
 	}
 
-	void setCarrierMode( bool _carrierMode) {
+	void setCarrierMode( bool _carrierMode) { // note: the carrier is a square wave (pwm, 50% or adjusted at 58% or so
+	// to account for an asymetry between the time it takes to switch ON and switch OFF of the lasers,
+	// with a pwm frequency that is tunneable - by default 100kHz).
+	// It "modulates" the current laser power (another PWM per-laser at FREQ_PWM_CARRIER of
+	// about 70kHz, with a low pass filter)
 		myState.carrierMode = _carrierMode;
 		if (!_carrierMode) {
 			pinMode(pinSwitch, OUTPUT); // by doing this, we re-enable digital control.
 			//digitalWrite(pinSwitch, LOW); // set to LOW when stopping PWM cycles?
 		} else {
-			analogWrite(pinSwitch, 0.58*MAX_LASER_POWER);//MAX_LASER_POWER>>1); // restart a 50% PWM generation if needed
+			// note: the resolution of all PWM signals is RES_PWM, defaulting to 12 (see "Definitions.h"), or 4095
+			analogWrite(pinSwitch, 0.58*2048); // it is not exactly 50% because of the different time it takes to switch the
+			// lasers ON or OFF
 		}
 	}
 
