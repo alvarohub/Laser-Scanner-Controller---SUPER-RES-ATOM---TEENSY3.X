@@ -114,7 +114,7 @@ const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36, 38, 37};// 14, 7, 2};
 // NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin (the "carrier")
 #define NUM_OPTOTUNERS 2
 const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pins controlled by FTM2
-#define FREQ_PWM_OPTOTUNE 65000  // for filtering
+#define FREQ_PWM_OPTOTUNE 65000  // PWM frequency for filtering
 // #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
 // affect ALL the timers... ackwards, as it could be per-timer group.
 #define MAX_OPTOTUNE_POWER 4095 // TODO: normalize for the control commands (wrapper)

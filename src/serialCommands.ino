@@ -31,7 +31,7 @@
 
 #define TEST_LASERS             "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
-// 2) Opto Tunners:
+// 2) Opto Tunners (note: these outputs are not "chopped" by a fast switch, i.e., there is no "carrier-mode"):
 #define SET_POWER_OPTOTUNER_ALL "PWOPTOALL" // one value (power)
 #define SET_POWER_OPTOTUNER     "PWOPTO"    // two values (index of optotunner + power)
 

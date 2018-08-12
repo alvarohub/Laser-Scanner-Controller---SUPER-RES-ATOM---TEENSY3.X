@@ -71,6 +71,7 @@ namespace Hardware {
 		Gpio::init();
 		Lasers::init();
 		Scanner::init();
+		OptoTuners::init();
 
 	}
 
@@ -106,15 +107,17 @@ namespace Hardware {
 			digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
 
 			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
-			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer, while
-			// resolution is common for all PWM timer [available on Teensy LC, 3.0 - 3.6]
+			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer.
+
 
 			// Setting mode for the digital pins (PIN_DIGITAL_A and B):
 			// unnecesary, the mode is re-selected when using the wrapping methods.
 
 			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
-			// timers, but that's the way the library works now). Fortunately, the carrier pwm uses a fized 50% duty cycle, so
+			// NOTE : this affects the resolution on ALL the PWM channels (could be differnt, since there are many independent
+			// timers, but that's the way the library works now). Note that I will set the resolution MANY times (in the init for lasers,
+			// optotuners, etc) even if for the time being this is redundant; however in the future, the library can be updated and have
+			// a different resolution for each flexi-timer. Fortunately, the carrier pwm uses a fized 50% duty cycle, so
 			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
 			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
 			// since we just need to be in the middle of the range)
@@ -199,12 +202,13 @@ namespace Hardware {
 
 		extern void init() {
 
-			// Set the PWM frequency for all the optotune pwm pins (need to set only on one):
+			// Set the PWM frequency for all the optotune pwm pins (need to set only on one of the outputs, since both optotune pins, {29, 30} are
+		  // on the FTM2 flexitimer):
 			analogWriteFrequency(pinPowerOptoTuner[OPTOTUNE_A], FREQ_PWM_OPTOTUNE);
 
 			// Resolution [available on Teensy LC, 3.0 - 3.6]:
 			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
+			// NOTE : this affects the resolution on ALL the PWM channels (it could not be so, since there are many independent
 			// timers, but that's the way the library works now).
 
 			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) {
