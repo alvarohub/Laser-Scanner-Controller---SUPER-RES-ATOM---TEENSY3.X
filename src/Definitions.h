@@ -93,8 +93,8 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 70000     // for filtering
-#define FREQ_PWM_CARRIER 200000  // this is for chopping the signal (control fast switches)
+#define FREQ_PWM_POWER      70000     // for filtering
+#define FREQ_PWM_CARRIER    200000  // this is for chopping the signal (control fast switches)
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -152,11 +152,11 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 #define LCD_SDA     18
 #define LCD_SCL     19
 // 2] TFT display (Adafruit_ST7735)
-#define TFT_SCLK   25    // set these to be whatever pins you like, if using software SPI
-#define TFT_MOSI   26   // set these to be whatever pins you like, if using software SPI
-#define TFT_CS     27
-#define TFT_DC     28
-#define TFT_RST    0 // not used for now, the RST is connected to 5V (Vin)
+#define TFT_SCLK    25    // set these to be whatever pins you like, if using software SPI
+#define TFT_MOSI    26   // set these to be whatever pins you like, if using software SPI
+#define TFT_CS      27
+#define TFT_DC      28
+#define TFT_RST     0 // not used for now, the RST is connected to 5V (Vin)
 
 
 // ************************ OTHER USEFUL MACROS ********************************
