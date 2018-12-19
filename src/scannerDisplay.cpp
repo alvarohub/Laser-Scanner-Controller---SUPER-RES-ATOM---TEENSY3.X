@@ -219,6 +219,7 @@ uint32_t getInterPointBlankingMode() {return(interpointBlanking);}
       //Hardware::Lasers::clearStateStack();
 
       //Hardware::Scanner::recenterPosRaw(); // recenter? no
+      Hardware::Lasers::setToCurrentState();
 
       stateDisplayEngine = STATE_IDLE;
       //break; // proceed with the next case...

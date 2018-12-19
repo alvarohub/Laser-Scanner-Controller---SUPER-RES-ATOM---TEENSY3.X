@@ -116,9 +116,11 @@ namespace Hardware {
 
 		enum LaserName {RED_LASER=0, GREEN_LASER, BLUE_LASER, YELLOW_LASER, CYAN_LASER};
 
-		const String laserNames[NUM_LASERS] = {"RED", "GREEN", "BLUE", "DEEP BLUE"};
-		
-		extern Laser LaserArray[NUM_LASERS];
+		const String laserNames[NUM_LASERS] = {"RED", "GREEN", "BLUE", "D-BLUE"};
+
+		extern Laser LaserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
+		// note: the laser IDs (used for sequence triggering) will be automatically created 
+		// from the class static variable "myID" which is incremented at each instantiation. 
 
 		// ****************** METHODS ********************
 		// NOTE: namespace methods correspond to static methods of the class Laser

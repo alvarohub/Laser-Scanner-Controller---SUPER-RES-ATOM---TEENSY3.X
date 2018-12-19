@@ -16,12 +16,33 @@ namespace Utils {
 	inline void waitBlink(uint8_t _times) {
 		pinMode(PIN_LED_DEBUG, OUTPUT); //<-- to be able to call this without calling init first
 		for (uint8_t i=0; i<_times; i++) {
-			for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
-			for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
+			for (unsigned long i=0; i<1000000;i++) {
+				digitalWrite(PIN_LED_DEBUG, LOW);
+			}
+			for (unsigned long i=0; i<1000000;i++) {
+				digitalWrite(PIN_LED_DEBUG, HIGH);
+			}
 		}
 	}
 
-
+	// Trigger mode and trigger event (will be used by the lasers, or the camera, etc)
+	enum TriggerMode
+	{
+		TRIG_RISE,
+		TRIG_FALL,
+		TRIG_CHANGE
+	};
+	
+	enum TriggerState
+	{
+		TRIG_EVENT_NONE,
+		TRIG_EVENT_RISE,
+		TRIG_EVENT_FALL,
+		TRIG_EVENT_CHANGE
+	};
 }
+
+
+
 
 #endif

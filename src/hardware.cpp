@@ -71,6 +71,7 @@ namespace Hardware {
 		Gpio::init();
 		Lasers::init();
 		Scanner::init();
+		OptoTuners::init();
 
 	}
 
@@ -103,43 +104,50 @@ namespace Hardware {
 
 			// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
 			pinMode(PIN_SHUTTER, OUTPUT);
-			 digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
-
+			digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
 
 			// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
-			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer, while
-			// resolution is common for all PWM timer [available on Teensy LC, 3.0 - 3.6]
+			analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer.
+
 
 			// Setting mode for the digital pins (PIN_DIGITAL_A and B):
 			// unnecesary, the mode is re-selected when using the wrapping methods.
 
 			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
-			// timers, but that's the way the library works now). Fortunately, the carrier pwm uses a fized 50% duty cycle, so
+			// NOTE : this affects the resolution on ALL the PWM channels (could be differnt, since there are many independent
+			// timers, but that's the way the library works now). Note that I will set the resolution MANY times (in the init for lasers,
+			// optotuners, etc) even if for the time being this is redundant; however in the future, the library can be updated and have
+			// a different resolution for each flexi-timer. Fortunately, the carrier pwm uses a fized 50% duty cycle, so
 			// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
 			// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
 			// since we just need to be in the middle of the range)
-
-
 
 			PRINTLN("> GPIOs READY");
 		}
 
 	}
 
+	namespace ExternalTrigger {
+		Trigger extTrigger(Utils::TriggerState::TRIG_EVENT_NONE);
+		Utils::TriggerState updateExternalTrigger() // attached to the external trigger pin
+		{
+			return(extTrigger.updateTriggerState(digitalRead(PIN_TRIGGER_INPUT)));
+		}
+	}
+
 	namespace Lasers {
 
- 		Laser LaserArray[NUM_LASERS]; // definition external
+		Laser LaserArray[NUM_LASERS]; // definition external
 
-			extern void init() {
+		extern void init() {
 
 			// Set the PWM frequency for all the power pwm pins (need to set only on one):
 			analogWriteFrequency(pinPowerLaser[0], FREQ_PWM_POWER);
 
-		    // Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
+			// Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
 			// NOTE: it uses a different timer from the PWM for power.
-		    analogWriteFrequency(pinSwitchLaser[0],FREQ_PWM_CARRIER);
-		   	//analogWrite(pinSwitchLaser[0], 2047); // this will start the pwm signal
+			analogWriteFrequency(pinSwitchLaser[0],FREQ_PWM_CARRIER);
+			//analogWrite(pinSwitchLaser[0], 2047); // this will start the pwm signal
 
 			for (uint8_t i=0; i<NUM_LASERS; i++) {
 				LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]); // power, switch and carrier are off
@@ -194,20 +202,48 @@ namespace Hardware {
 
 		}
 
+		extern void updateLaserSequence() { 
+			// NOTE: this should be called in the main loop all the time (in the future, I can use a timer with lower priority than the
+			// laser scanning periodic soft interrupt)
+
+			// First, update all trigger states (from external trigger and from laser states):
+			ExternalTrigger::extTrigger.updateExternalTrigger();
+			for (uint8_t laserID = 0; laserID < NUM_LASERS; laserID++)
+				LaserArray[i].trigger.updateTriggerState();
+
+			// Then, update laser state following the predefined sequence for each laser:
+			for (uint8_t laserID = 0; laserID < NUM_LASERS; laserID++)
+			{
+				// Of course, if a laser is not in sequence mode, the sequencer method is ignored:
+				if (LaserArray[i].myState.sequenceMode)
+				{  
+					// Check *which* trigger to check:
+					uint8_t triggerdID = LaserArray[i].mySequence.triggerID;
+					if (triggerID == 0)
+					{ // this means the trigger is the external trigger on pin PIN_TRIGGER_INPUT
+						ExternalTrigger::extTrigger
+					}
+					else
+					{ // this means we trigger from another laser state:
+
+					}
+				}
+		}
 	}
 
 	namespace OptoTuners {
 
-	 OptoTune OptoTuneArray[NUM_OPTOTUNERS];
+		OptoTune OptoTuneArray[NUM_OPTOTUNERS];
 
-			extern void init() {
+		extern void init() {
 
-			// Set the PWM frequency for all the optotune pwm pins (need to set only on one):
+			// Set the PWM frequency for all the optotune pwm pins (need to set only on one of the outputs, since both optotune pins, {29, 30} are
+		  // on the FTM2 flexitimer):
 			analogWriteFrequency(pinPowerOptoTuner[OPTOTUNE_A], FREQ_PWM_OPTOTUNE);
 
 			// Resolution [available on Teensy LC, 3.0 - 3.6]:
-			 analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-			// NOTE : this affects the resolution on ALL the PWM channels (could not be so, since there are many independent
+			analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
+			// NOTE : this affects the resolution on ALL the PWM channels (it could not be so, since there are many independent
 			// timers, but that's the way the library works now).
 
 			for (uint8_t i=0; i<NUM_OPTOTUNERS; i++) {
@@ -241,8 +277,8 @@ namespace Hardware {
 
 				// Go back to previous power state for all optotuners: not changed because we did not call setStatePower but setPower
 				setToCurrentState();
+			}
 		}
-	}
 
 	}
 
@@ -406,16 +442,15 @@ namespace Hardware {
 
 		void println(String text) {
 			static uint8_t row =0;
-			//lcd.clear();
-			//lcd.print("\n");
+			lcd.print(text);
 			row++;
 			if (row==2) {
 				row = 0;
-				lcd.clear();
+				//lcd.clear();
 			}
 			lcd.setCursor(0,row);
-			lcd.print(text);
 		}
+
 		#endif
 	}
 

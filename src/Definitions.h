@@ -4,7 +4,7 @@
 //* NOTE1 : The file should be called instead "Constants" and should use const and "extern", but
 // for the time being I use #define instead (to avoid the problem of multiple definitions
 // requires "extern" declarations (or inline since C++17). TODO: change this, #define(s)
-// is bad practice (however this program is short)
+// is bad practice (however this program is short.
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
@@ -15,7 +15,6 @@
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
 #define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
 
-//
 // #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
 // #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
 // #define PRINTLN(...)    ({Serial.println(__VA_ARGS__); Hardware::Lcd::println(__VA_ARGS__);})
@@ -31,7 +30,7 @@
 
 /*
 #define PI 3.14159265889
-#define DEG_TO_RAD  (0.01745) // = PI/180.0:
+#define DEG_TO_RAD  (0.01745) // = PI/180.0
 #define RAD_TO_DEG (57.29578) // = 180.0/PI
 */
 
@@ -94,8 +93,8 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 65000     // for filtering
-#define FREQ_PWM_CARRIER 100000  // this is for chopping the signal (control fast switches)
+#define FREQ_PWM_POWER 70000     // for filtering
+#define FREQ_PWM_CARRIER 200000  // this is for chopping the signal (control fast switches)
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -109,13 +108,13 @@ const uint8_t pinPowerLaser[NUM_LASERS] = {5,6,9,10};//,20, 21, 22, 23};
 // as PWM - to generate a carrier for instance. Using the lasers in "carrier" mode does not precludes
 // inter-sprite or inter-point complete blanking.
 // PWM pins on FTM3 (pins 2,7,8,14,38,37,36,35)
-const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36,  38, 37};// 14, 7, 2};
+const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36, 38, 37};// 14, 7, 2};
 
 // ======================== OPTOTUNE stuff =====================================
+// NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin (the "carrier")
 #define NUM_OPTOTUNERS 2
-const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pins controlled by FTM2
-// NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin
-#define FREQ_PWM_OPTOTUNE 65000  // for filtering
+const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pins controlled by FTM2
+#define FREQ_PWM_OPTOTUNE 65000  // PWM frequency for filtering
 // #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
 // affect ALL the timers... ackwards, as it could be per-timer group.
 #define MAX_OPTOTUNE_POWER 4095 // TODO: normalize for the control commands (wrapper)
@@ -129,25 +128,29 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29 , 30}; // these are PWM pi
 // * ANALOG PINS (for reading and writing, on TPM1 timer)
 #define PIN_ANALOG_A 16
 #define PIN_ANALOG_B 17
+
 // * DIGITAL PINS:
 #define PIN_DIGITAL_A 31
 #define PIN_DIGITAL_B 32
+
 // * TRIGGER PIN (bidirectional?)
-#define PIN_TRIGGER_INPUT	 22 // pin 12 in D25 ILDA connector
-#define PIN_TRIGGER_OUTPUT 23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+#define PIN_TRIGGER_INPUT   22 // pin 12 in D25 ILDA connector
+#define PIN_TRIGGER_OUTPUT  23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+
 // * INTENSITY/BLANKING
 // * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be
 // much better if this was done electronically, not using the relatively complex - and easy to broke - logic of my program!
-#define PIN_INTENSITY_BLANKING 15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+#define PIN_INTENSITY_BLANKING  15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+
 // * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
-#define PIN_SHUTTER	14 // this is pin 13 in D25 ILDA connector
+#define PIN_SHUTTER	            14 // this is pin 13 in D25 ILDA connector
 
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
 //NOTE: these pins are listed here for reference, but they are the
-//d efault pins using in Wire.h.
-#define LCD_SDA 18
-#define LCD_SCL 19
+//default pins using in Wire.h.
+#define LCD_SDA     18
+#define LCD_SCL     19
 // 2] TFT display (Adafruit_ST7735)
 #define TFT_SCLK   25    // set these to be whatever pins you like, if using software SPI
 #define TFT_MOSI   26   // set these to be whatever pins you like, if using software SPI

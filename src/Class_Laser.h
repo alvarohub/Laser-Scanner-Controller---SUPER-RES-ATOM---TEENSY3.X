@@ -13,55 +13,43 @@
 // would have been to make the group of laser (array and methods) static methods and variables
 // (in that case, the array could be dynamic - a vector)
 class Laser {
+	static uint8_t myID;
 
-	public:
-
-		// I will create a struct to store laser state: the reason is I will use a
-		// stack to avoid having to save the state whenever we want to try something
-		// or do some complex drawing (very similar to "pushStyle" in OF or
-		// Processing)
-		struct LaserState {
-		uint16_t power;	// 0-MAX_LASER_POWER
+  public:
+	// I will create a struct to store laser state: the reason is I will use a
+	// stack to avoid having to save the state whenever we want to try something
+	// or do some complex drawing (very similar to "pushStyle" in OF or
+	// Processing)
+	struct LaserState {
+		uint16_t power;		// 0-MAX_LASER_POWER
 		bool state; 		// on/off
-
 		bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
+		bool sequenceMode; 	// this will activate the sequence mode, whose parameters are in a variable sequenceParam
 		bool blankingMode;  // blank between each figure (for the time being, end of trajectory buffer).
 		// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
 		// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
-	Laser() {};
+	// Sequence parameters to use when in sequence mode. Note that the updateSequence method is a method of the
+	//namespace Hardware::Lasers, because we may need to check the states of all the laser objects instantiated.
+	struct SequenceParam {
+		uint16_t t_delay, t_on; // eventually t_off too
+		uint8_t triggerID; // the trigger to 
+		Utils::TriggerMode triggerMode;
+		uint16_t triggerDecimation; // the number of trigger pulses that correspond to one cycle of the sequence
+	};
+
+	Laser() {myID++;};
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch) {
 		init(_pinPower,_pinSwitch);
+		trigger.setTriggerState(Utils::TriggerState::TRIG_EVENT_NONE);
+		myID++;
 	}
 
-	void init(uint8_t _pinPower, uint8_t _pinSwitch) {
-		pinPower = _pinPower;
-	  pinSwitch = _pinSwitch;
-
-		//pinMode(_pinPower, OUTPUT); // <<-- no need, it will be used exclusively as a PWM signal
-		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method
-
-		// setCarrierMode(false); // by default it will *not* be set to "carrier" mode, so the pinSwitch
-		// will be set as OUTPUT
-
-		//setStatePower(MAX_LASER_POWER/2); // half power...
-		//setStateSwitch(false);			 // but switched off
-
-		// Set the default laser state:
-		setState(defaultState);
-
-		// clear the
-		clearStateStack();
-	}
+	void init(uint8_t _pinPower, uint8_t _pinSwitch);
 
 	// Low level methods not affecting the current LaserState (myState):
-	void setSwitch(bool _state) {
-		// Note: if in carrier mode, this action will be IGNORED unless we force
-		// pinMode OUTPUT (it will reverse to PWM when issuing an analoWrite command)
-		pinMode(pinSwitch, OUTPUT);
-		digitalWrite(pinSwitch, _state);
-	}
+	void setSwitch(bool _state);
 
 	void setPower(uint16_t _power) {
 		analogWrite(pinPower, _power);
@@ -82,41 +70,27 @@ class Laser {
 		analogWrite(pinPower, _power);
 	}
 
-	void setCarrierMode( bool _carrierMode) {
-		myState.carrierMode = _carrierMode;
-		if (!_carrierMode) {
-			pinMode(pinSwitch, OUTPUT); // by doing this, we re-enable digital control.
-			//digitalWrite(pinSwitch, LOW); // set to LOW when stopping PWM cycles?
-		} else {
-			analogWrite(pinSwitch, 0.58*MAX_LASER_POWER);//MAX_LASER_POWER>>1); // restart a 50% PWM generation if needed
-		}
-	}
+	void setCarrierMode( bool _carrierMode);
 
 	void setBlankingMode( bool _blankingMode) {
 		myState.blankingMode = _blankingMode;
 	}
 
-	void updateBlank() {
-		if (myState.blankingMode) {
-			pinMode(pinSwitch, OUTPUT); //setToCurrentState will make it go back to PWM if necessary
-			digitalWrite(pinSwitch, LOW);
-		// ATTN: no change to current state!!
-	}
-	}
+	void updateBlank();
 
 	void setState(LaserState _state) {
-		myState=_state;
+		myState =_state;
 		setToCurrentState();
 	}
+	
+	bool setToCurrentState();
 
-	LaserState getLaserState() {return(myState);}
+	void resetState() { // revert to default state (without clearing the state stack)
+		setState(defaultState);
+	}
 
-	bool setToCurrentState() {
-		digitalWrite(pinSwitch, myState.state);
-		analogWrite(pinPower, myState.power);
-		setCarrierMode(myState.carrierMode);
-		setBlankingMode(myState.blankingMode);
-		return(myState.state);
+	LaserState getLaserState() {
+		return(myState);
 	}
 
 	void pushState() {
@@ -131,9 +105,16 @@ class Laser {
 		laserState_Stack.clear();
 	}
 
-	LaserState myState;
+	void setSequenceMode(bool _seqMode) {
+		 // NOTE: carrier mode is independent of the sequence mode (meaning that in the 
+		 // ON state, the laser is still modulated at the carrier frequency)
+		 myState.sequenceMode = _seqMode; 
+	}
 
-private:
+	LaserState myState{defaultState};  // C++11 class member initialization (I  define defaultState in case we want to revert to default):
+	Sequencer mySequencer{defaultSequence};
+	
+  private:
 
 	// NOTE: methods that affect all the objects from this class could access
 	// all the objects by having a static vector<> or a static array and a static
@@ -151,10 +132,23 @@ private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: [ half power, switched ON, carrier OFF, inter-figure blanking ON]
+	// Default laser state: [ half power, switched OFF, carrier OFF, inter-figure blanking ON]
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
-	const LaserState defaultState = {2000, true, false, true};
+	const LaserState defaultState = {
+		2000,  // power (0-4095)
+		false, // carrier mode (on/off)
+		false, // sequence mode (on/off)
+		false  // blancking mode (on/off)
+		};
+
+	const SequenceParam defaultSequence = {
+		0, // delay time (in ms)
+		5, // time on (in ms)
+		0, // trigger ID (0 for the camera, 1, 2, 3 for the lasers - )
+		Utils::TRIG_RISE,
+		1 // number of trigger events to restart the sequence
+	};
 
 	std::vector<LaserState> laserState_Stack;
 

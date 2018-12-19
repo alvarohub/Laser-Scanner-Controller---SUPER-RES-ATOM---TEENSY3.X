@@ -37,13 +37,13 @@ public:
 	}
 
 	void setToCurrentState() {
-setStatePower(power);
+		setStatePower(power);
 	}
 
 private:
 
 	uint8_t pinPower;
-	const uint16_t defaultPower = MAX_OPTOTUNE_POWER>>2; // middle of range
+	const uint16_t defaultPower = MAX_OPTOTUNE_POWER>>1; // middle of range
 
 };
 
