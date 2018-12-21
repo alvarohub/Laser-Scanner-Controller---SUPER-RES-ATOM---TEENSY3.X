@@ -503,7 +503,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       uint8_t laserIndex = argStack[0].toInt();
       Hardware::Lasers::LaserArray[laserIndex].setTriggerSource(argStack[1].toInt());
-      Trigger::TriggerMode trigMode;
+      Trigger::TriggerMode trigMode=Trigger::TRIG_RISE;
       switch (argStack[2].toInt())
       {
       case 0:
@@ -540,9 +540,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
   //=============== OPTOTUNNER COMMANDS  =====================================
   //==========================================================================
-
-  else if (_cmdString == SET_POWER_OPTOTUNER_ALL)
-  { // Param: 0 to 4096 (12 bit res).
+  else if (_cmdString == SET_POWER_OPTOTUNER_ALL) // Param: 0 to 4096 (12 bit res)
+  {
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
@@ -553,8 +552,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_POWER_OPTOTUNER)
-  { // Param: laser number, power (0 to 4096, 12 bit res).
+  else if (_cmdString == SET_POWER_OPTOTUNER) // Param: laser number, power (0 to 4096, 12 bit res)
+  {
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
@@ -644,20 +643,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
         laserState = Hardware::Lasers::LaserArray[k].getLaserState();
-        // struct LaserState
-        // {
-        //   uint16_t power;     // 0-MAX_LASER_POWER
-        //   bool state;         // on/off
-        //   bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
-        //   bool sequencerMode; // this will activate the sequence mode, whose parameters are in the member variable mySequencer.
-        //   // NOTE1: this variable seems redundant, but it is done to be able to quickly read the laser mode and all other laser states
-        //   // NOTE2: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
-        //   // modulated at the carrier frequency)
-        //   int8_t triggerSource; // to identify the source to update myTrigger (0 for external, 1-4 for the other laser-states)
-        //   bool blankingMode;    // blank between each figure (for the time being, end of trajectory buffer).
-        //                         // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
-        //                         // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
-        // };
         PRINT("     ");
         PRINT(Hardware::Lasers::laserNames[k]);
         PRINT("\t[ power = ");
@@ -709,8 +694,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANGLE_GLOBAL)
-  { // Param: angle in DEG (float)
+  else if (_cmdString == SET_ANGLE_GLOBAL) // Param: angle in DEG (float)
+  {
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
@@ -722,8 +707,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_CENTER_GLOBAL)
-  { // Param: x,y
+  else if (_cmdString == SET_CENTER_GLOBAL) // Param: x,y
+  {
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
@@ -735,8 +720,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_FACTOR_GLOBAL)
-  { // Param: scale
+  else if (_cmdString == SET_FACTOR_GLOBAL) // Param: scale
+  {
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
@@ -748,8 +733,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_COLOR_GLOBAL)
-  { // Param: color bool [TODO: real colors]
+  else if (_cmdString == SET_COLOR_GLOBAL) // Param: color bool [TODO: real colors]
+  {
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
@@ -775,7 +760,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 0)
     {
       //PRINTLN("> EXECUTING... ");
-
       // The sequence order and items is arbitrary:
       Graphics::clearScene();
       // clear also the pose parameters - otherwise there is a lot of confusion:
@@ -846,7 +830,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   {
     switch (_numArgs)
     {
-    case 3: //origina at (0,0)
+    case 3: //origin at (0,0)
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawLine(
@@ -881,7 +865,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //      [of course, the radius is multiplied by the currrent scaling factor]
   else if (_cmdString == MAKE_CIRCLE)
   {
-
     switch (_numArgs)
     {
     case 2: // radius + num points [centered]
