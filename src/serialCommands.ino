@@ -8,99 +8,100 @@
 #include "scannerDisplay.h"
 #include "graphics.h"
 
-
 // ==================== PARSER SETTINGS:
 // Uncomment the following if you want the parser to continue parsing after a bad character (better not to do that)
 //#define CONTINUE_PARSING
-
 
 // ==================== COMMANDS:
 // 1) Laser commands:
 
 // a) Per-Laser:
-#define SET_POWER_LASER         "PWLASER"  // Param: laser num, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
-#define SET_SWITCH_LASER        "SWLASER"  // Param: laser num, [0-1],SWLASER. Set the chopping ultrafast switch. Changes current state.
-#define SET_CARRIER             "CARRIER"  // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
-// current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value]
+#define SET_POWER_LASER "PWLASER"  // Param: laser index, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
+#define SET_SWITCH_LASER "SWLASER" // Param: laser index, [0-1],SWLASER. Set the chopping ultrafast switch. Changes current state.
+#define SET_CARRIER "CARRIER"      // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
+// current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value
+
+#define SET_PARAM_SEQUENCE "SET_SEQPARAM" // Param: laser index, trigger number (-1 for external trigger, otherwise the index of another laser (0-3), t_delay, t_off (in us)
+#define SET_SEQUENCER "SET_SEQ"           // Param: laser index, [0-1] to deactivate/activate sequencer
 
 // b) Simultaneously affecting all lasers:
-#define SET_POWER_LASER_ALL     "PWLASERALL"   // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
-#define SET_SWITCH_LASER_ALL    "SWLASERALL"   // Param: [0-1],SWLASER. Will open/close the laser ultrafast switch.
-#define SET_CARRIER_ALL         "CARRIERALL"
+#define SET_POWER_LASER_ALL "PWLASERALL"  // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
+#define SET_SWITCH_LASER_ALL "SWLASERALL" // Param: [0-1],SWLASER. Will open/close the laser ultrafast switch.
+#define SET_CARRIER_ALL "CARRIERALL"
 
-#define TEST_LASERS             "TSTLASERS" // no parameters. Will test each laser with a power ramp
+#define TEST_LASERS "TSTLASERS" // no parameters. Will test each laser with a power ramp
 
 // 2) Opto Tunners (note: these outputs are not "chopped" by a fast switch, i.e., there is no "carrier-mode"):
 #define SET_POWER_OPTOTUNER_ALL "PWOPTOALL" // one value (power)
-#define SET_POWER_OPTOTUNER     "PWOPTO"    // two values (index of optotunner + power)
+#define SET_POWER_OPTOTUNER "PWOPTO"        // two values (index of optotunner + power)
 
 // 3) READOUT DIGITAL and ANALOG PINS:
-#define SET_DIGITAL_A           "WDIG_A" // write digital pin A (pin 31). Parameter: 0,1
-#define SET_DIGITAL_B           "WDIG_B" // write digital pin B (pin 32). Parameter: 0,1
-#define READ_DIGITAL_A          "RDIG_A" // read digital pin A (pin 31).
-#define READ_DIGITAL_B          "RDIG_B" // read digital pin B (pin 32).
+#define SET_DIGITAL_A "WDIG_A"  // write digital pin A (pin 31). Parameter: 0,1
+#define SET_DIGITAL_B "WDIG_B"  // write digital pin B (pin 32). Parameter: 0,1
+#define READ_DIGITAL_A "RDIG_A" // read digital pin A (pin 31).
+#define READ_DIGITAL_B "RDIG_B" // read digital pin B (pin 32).
 
-#define SET_ANALOG_A            "WANA_A" // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4095
-#define SET_ANALOG_B            "WANA_B" // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4095
-#define READ_ANALOG_A           "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
-#define READ_ANALOG_B           "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
+#define SET_ANALOG_A "WANA_A"  // write ANALOG (pwm) pin A (pin 16). Parameter: 0-4095
+#define SET_ANALOG_B "WANA_B"  // write ANALOG (pwm) pin B (pin 17). Parameter: 0-4095
+#define READ_ANALOG_A "RANA_A" // read analog pin A (pin 16), 12 bit resolution.
+#define READ_ANALOG_B "RANA_B" // read analog pin B (pin 17), 12 bit resolution.
 
 // 4) Display Engine (on ISR) commands (namespace Hardware::Scan):
-#define START_DISPLAY           "START"  // start the ISR for the displaying engine
-#define STOP_DISPLAY            "STOP"   // stop the displaying ISR
-#define SET_INTERVAL            "DT"     // parameter: inter-point time in us (min about 20us)
-#define DISPLAY_STATUS          "STATUS" // show various settings. Note that the number of points in the
+#define START_DISPLAY "START"   // start the ISR for the displaying engine
+#define STOP_DISPLAY "STOP"     // stop the displaying ISR
+#define SET_INTERVAL "DT"       // parameter: inter-point time in us (min about 20us)
+#define DISPLAY_STATUS "STATUS" // show various settings. Note that the number of points in the
 // current blueprint (or "figure"), and the size of the
 // displaying buffer may differ because of clipping.
-#define SET_SHUTTER             "SHUTTER"
+#define SET_SHUTTER "SHUTTER"
 
 // 5) Figures and pose:
 // * NOTE : each time these commands are called, the current figure (in blueprint) is
 // re-rendered with the new transforms, in this order of transformation: rotation/scale/translation
-#define RESET_POSE_GLOBAL       "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
-#define SET_ANGLE_GLOBAL        "ANGLE"      // Param: angle (deg),ANGLE
-#define SET_CENTER_GLOBAL       "CENTER"     // Param: x,y,CENTER
-#define SET_FACTOR_GLOBAL       "FACTOR"     // Param: factor (0-...),FACTOR
-#define SET_COLOR_GLOBAL        "COLOR"      // TODO
+#define RESET_POSE_GLOBAL "RSTPOSE" // set angle to 0, center to (0,0) and factor to 1
+#define SET_ANGLE_GLOBAL "ANGLE"    // Param: angle (deg),ANGLE
+#define SET_CENTER_GLOBAL "CENTER"  // Param: x,y,CENTER
+#define SET_FACTOR_GLOBAL "FACTOR"  // Param: factor (0-...),FACTOR
+#define SET_COLOR_GLOBAL "COLOR"    // TODO
 
 //6) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
-#define CLEAR_SCENE             "CLEAR"      // clear the blueprint, and also stop the display
-#define CLEAR_MODE              "CLMODE"     // [0-1],CLMODE. When set to 0, if we draw a figure it will
+#define CLEAR_SCENE "CLEAR" // clear the blueprint, and also stop the display
+#define CLEAR_MODE "CLMODE" // [0-1],CLMODE. When set to 0, if we draw a figure it will
 // be ADDED to the current scene. Otherwise drawing first
 // clear the current scene and make a new figure.
 // The following commands affect all lasers simultaneously [TODO: per laser]
-#define SET_BLANKING_ALL        "BLANKALL"    //Figure-to-figure blanking. Param: [0/1]. Affects all lasers.
-#define SET_BLANKING            "BLANK"    // per laser fig-to-fig blanking
+#define SET_BLANKING_ALL "BLANKALL" //Figure-to-figure blanking. Param: [0/1]. Affects all lasers.
+#define SET_BLANKING "BLANK"        // per laser fig-to-fig blanking
 
-#define SET_INTER_POINT_BLANK   "PTBLANK"  // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
+#define SET_INTER_POINT_BLANK "PTBLANK" // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
 
 // 7) Figure primitives:
-#define MAKE_LINE               "LINE"     // Param: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
-#define MAKE_CIRCLE             "CIRCLE"   // Param: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
-#define MAKE_RECTANGLE          "RECT"     // Param: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
-#define MAKE_SQUARE             "SQUARE"   // Param: size of side,numpoints side,RECT ou X,Y,size-of-side,RECT
-#define MAKE_ZIGZAG             "ZIGZAG"   // Param: width,height,numpoints X,numpoints Y,ZIGZAG or with position first
-#define MAKE_SPIRAL             "SPIRAL"   // Param: length-between-arms, num-tours, numpoints, SPIRAL
+#define MAKE_LINE "LINE"      // Param: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
+#define MAKE_CIRCLE "CIRCLE"  // Param: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
+#define MAKE_RECTANGLE "RECT" // Param: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
+#define MAKE_SQUARE "SQUARE"  // Param: size of side,numpoints side,RECT ou X,Y,size-of-side,RECT
+#define MAKE_ZIGZAG "ZIGZAG"  // Param: width,height,numpoints X,numpoints Y,ZIGZAG or with position first
+#define MAKE_SPIRAL "SPIRAL"  // Param: length-between-arms, num-tours, numpoints, SPIRAL
 
 // 8) TEST FIGURES:
-#define LINE_TEST               "LITEST"
-#define CIRCLE_TEST             "CITEST"   // no parameters: makes a circle.
-#define SQUARE_TEST             "SQTEST"   // no parameters: makes a square
-#define COMPOSITE_TEST          "MIRE"     // no parameters: cross and squares (will automatically launch START)
+#define LINE_TEST "LITEST"
+#define CIRCLE_TEST "CITEST"  // no parameters: makes a circle.
+#define SQUARE_TEST "SQTEST"  // no parameters: makes a square
+#define COMPOSITE_TEST "MIRE" // no parameters: cross and squares (will automatically launch START)
 // NOTE: we can see the blanking problem here because it is a composite figure
 
 // 9) LOW LEVEL FUNCTIONS and CHECKING COMMANDS:
-#define TEST_MIRRORS_RANGE      "SQRANGE"  // time of show in seconds, SQRANGE (square showing the limits of galvos)
-#define TEST_CIRCLE_RANGE       "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
-#define TEST_CROSS_RANGE        "CRRANGE"  // time of show in seconds, CRRANGE (CROSS centered on 0,0)
-#define SET_DIGITAL_PIN         "SETPIN"   // pin number, state(true/false), SETPIN
-#define RESET_BOARD             "RESET"    // RESET the board (note: this will disconnect the serial port)
+#define TEST_MIRRORS_RANGE "SQRANGE" // time of show in seconds, SQRANGE (square showing the limits of galvos)
+#define TEST_CIRCLE_RANGE "CIRANGE"  // time of show in seconds, CIRANGE (CIRCLE taille de diametre 200 centered on (0,0))
+#define TEST_CROSS_RANGE "CRRANGE"   // time of show in seconds, CRRANGE (CROSS centered on 0,0)
+#define SET_DIGITAL_PIN "SETPIN"     // pin number, state(true/false), SETPIN
+#define RESET_BOARD "RESET"          // RESET the board (note: this will disconnect the serial port)
 
 // =============================================================================
 String messageString;
 #define MAX_LENGTH_STACK 20
-String argStack[MAX_LENGTH_STACK];// number stack storing numeric parameters for commands (for RPN-like parser). Note that the data is saved as a String - it will be converted to int, float or whatever by the specific method associated with the correnspondant command.
-String cmd; // we will parse one command at a time
+String argStack[MAX_LENGTH_STACK]; // number stack storing numeric parameters for commands (for RPN-like parser). Note that the data is saved as a String - it will be converted to int, float or whatever by the specific method associated with the correnspondant command.
+String cmd;                        // we will parse one command at a time
 
 enum stateParser
 {
@@ -112,9 +113,9 @@ enum stateParser
 //Note: the name of an unscoped enumeration may be omitted:
 // such declaration only introduces the enumerators into the enclosing scope.
 
-
 // Initialization:
-void initSerialCom() {
+void initSerialCom()
+{
   Serial.begin(SERIAL_BAUDRATE);
   messageString.reserve(200);
   messageString = "";
@@ -122,7 +123,8 @@ void initSerialCom() {
 
 // ====== GATHER BYTES FROM SERIAL PORT ========================================
 // * NOTE: This will fill the messageString until finding a packet terminator
-void serialEvent() {
+void serialEvent()
+{
   // SerialEvent occurs whenever a new data comes in the hardware serial RX.
   // It is NOT an interrupt routine: the function gets called at the end of each loop()
   // iteration if there is something in the serial buffer - in others
@@ -138,7 +140,8 @@ void serialEvent() {
   // Since there is nothing in the loop (ISR), everything is ok. However, in the future
   // it may be better to have a separate THREAD for this using an RTOS [something the
   // Arduino basic framework cannot do, but MBED and probably Teensy-Arduino can]
-  while (Serial.available()) {
+  while (Serial.available())
+  {
     char inChar = (char)Serial.read();
     messageString += inChar;
     // * If the incoming character is a packet terminator, proceed to parse the data.
@@ -146,13 +149,13 @@ void serialEvent() {
     // have a generic string parser [we can then use ANY other protocol to form the
     // message string, say: OSC, Lora, TCP/IP, etc]. This effectively separates the
     // serial receiver from the parser, and it simplifies debugging.
-    if (inChar == END_PACKET) {
+    if (inChar == END_PACKET)
+    {
       parseStringMessage(messageString); //parse AND calls the appropiate functions
       messageString = "";
     }
   }
 }
-
 
 // ======== PARSE THE MESSAGE ==================================================
 // NOTE: I tested this throughly and it seems to work faultlessly as for 5.April.2018
@@ -160,16 +163,19 @@ String cmdString;
 uint8_t numArgs;
 bool cmdExecuted;
 
-void resetParser() { // without changing the parsing index [in the for loop]:
+void resetParser()
+{ // without changing the parsing index [in the for loop]:
   numArgs = 0;
-  for (uint8_t i = 0; i< MAX_LENGTH_STACK; i++) argStack[i] = "";
+  for (uint8_t i = 0; i < MAX_LENGTH_STACK; i++)
+    argStack[i] = "";
   cmdString = "";
   cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
   myState = START;
 }
 
-bool parseStringMessage(const String &_messageString) {
-  static String oldMessageString =""; // oldMessageString is for repeating last GOOD string-command
+bool parseStringMessage(const String &_messageString)
+{
+  static String oldMessageString = ""; // oldMessageString is for repeating last GOOD string-command
 
   String messageString = _messageString;
 
@@ -188,101 +194,120 @@ bool parseStringMessage(const String &_messageString) {
     // => Let's not permit to write a number AFTER a command.
     if ((val >= '-') && (val <= '9') && (val != '/')) //this is '0' to '9' plus '-' and '.' to form floats and negative numbers
     {
-      if ((myState == START)||(myState == SEPARATOR)) myState = NUMBER;
-      if (myState == NUMBER) { // it could be in CMD state...
+      if ((myState == START) || (myState == SEPARATOR))
+        myState = NUMBER;
+      if (myState == NUMBER)
+      { // it could be in CMD state...
         argStack[numArgs] += val;
         //  PRINTLN(" (data)");
-      } else { // actually this just means myState == CMD
+      }
+      else
+      { // actually this just means myState == CMD
         PRINTLN("> BAD FORMED PACKET");
-        #ifdef CONTINUE_PARSING
+#ifdef CONTINUE_PARSING
         resetParser(); // reset the parser, but continue from next string character.
-        #else
+#else
         break;
-        #endif
+#endif
       }
     }
 
     // Put letter ('A' to 'Z') in cmdString.
     // => Let's not permit to start writing a command if we did not finish a number or
     // nothing was written before.
-    else if ( ( (val >= 'A') && (val <= 'Z') ) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
+    else if (((val >= 'A') && (val <= 'Z')) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
     {
 
-      if ((myState == START)||(myState == SEPARATOR)) myState = CMD;
-      if (myState == CMD) { // Could be in NUMBER state
+      if ((myState == START) || (myState == SEPARATOR))
+        myState = CMD;
+      if (myState == CMD)
+      { // Could be in NUMBER state
         cmdString += val;
         //   PRINTLN(" (command)");
       }
       else
       {
         PRINTLN("> BAD FORMED PACKET");
-        #ifdef CONTINUE_PARSING
+#ifdef CONTINUE_PARSING
         resetParser(); // reset the parser, but continue from next string character.
-        #else
-        break; // abort parsing - we could also restart it from here with resetParser()
-        #endif
+#else
+        break;     // abort parsing - we could also restart it from here with resetParser()
+#endif
       }
     }
 
     // Store numeric argument when receiving a NUMBER_SEPARATOR
-    else if (val == NUMBER_SEPARATOR) {
+    else if (val == NUMBER_SEPARATOR)
+    {
       // NOTE: do not permit a number separator AFTER a command, another separator,
       // or nothing: only a separator after a number is legit
-      if (myState == NUMBER) { // no need to test: }&&(argStack[numArgs].length() > 0)) {
+      if (myState == NUMBER)
+      { // no need to test: }&&(argStack[numArgs].length() > 0)) {
         //PRINTLN(" (separator)");
         //PRINT("> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
         numArgs++;
         myState = SEPARATOR;
       }
-      else { // number separator without previous data, another number separator or command
+      else
+      { // number separator without previous data, another number separator or command
         PRINTLN("> BAD FORMED PACKET");
-        //PRINT_LCD("> BAD FORMED ARG LIST");
-        #ifdef CONTINUE_PARSING
+//PRINT_LCD("> BAD FORMED ARG LIST");
+#ifdef CONTINUE_PARSING
         resetParser(); // reset parsing data, and continue from next character.
-        #else
-        break; // abort parsing (we could also restart it from here with resetParser())
-        #endif
+#else
+        break;     // abort parsing (we could also restart it from here with resetParser())
+#endif
       }
     }
 
-    else if ((val == END_PACKET)||(val == COMMAND_SEPARATOR)) { // or another CMD terminator code...
-      if (myState == START) { // implies cmdString.length() equal to zero
+    else if ((val == END_PACKET) || (val == COMMAND_SEPARATOR))
+    { // or another CMD terminator code...
+      if (myState == START)
+      { // implies cmdString.length() equal to zero
         // END of packet received WITHOUT a command:
         // repeat command IF there was a previous good command:
         // NOTE: for the time being, this discards the rest of the message
         // (in case it came from something else than a terminal of course)
-        if (val == END_PACKET) {
-          if (oldMessageString != "") {
+        if (val == END_PACKET)
+        {
+          if (oldMessageString != "")
+          {
             PRINTLN(oldMessageString);
             parseStringMessage(oldMessageString); // <<== ATTN: not ideal perhaps to use recurrent
             //  call here.. but when using in command line input, the END_PACKET is the
             // last character, so there is no risk of deep nested calls (on return the parser
             // will end in the next loop iteration)
           }
-          else {
+          else
+          {
             PRINTLN("> NO PREVIOUS COMMAND TO REPEAT");
-            #ifdef CONTINUE_PARSING
+#ifdef CONTINUE_PARSING
             resetParser(); // reset parsing data, and continue from next character.
-            #else
+#else
             break; // abort parsing (we could also restart it from here with resetParser())
-            #endif
+#endif
           }
-        } else { // concatenator without previous CMD
+        }
+        else
+        { // concatenator without previous CMD
           PRINTLN("> BAD FORMED PACKET");
-          #ifdef CONTINUE_PARSING
+#ifdef CONTINUE_PARSING
           resetParser(); // reset parsing data, and continue from next character.
-          #else
-          break; // abort parsing (we could also restart it from here with resetParser())
-          #endif
+#else
+          break;   // abort parsing (we could also restart it from here with resetParser())
+#endif
         }
       }
-      else if (myState == CMD) { // anything else before means bad formed!
+      else if (myState == CMD)
+      { // anything else before means bad formed!
         // * Note 1 : state == CMD here implies cmdString.length() > 0
         // * Note 2 : we don't check argument number, can be anything including nothing.
 
         PRINT("> EXEC: ");
-        for (uint8_t k=0; k<numArgs; k++) {
-          PRINT(argStack[k]); PRINT(",");
+        for (uint8_t k = 0; k < numArgs; k++)
+        {
+          PRINT(argStack[k]);
+          PRINT(",");
         }
         PRINTLN(cmdString);
 
@@ -291,12 +316,15 @@ bool parseStringMessage(const String &_messageString) {
         cmdExecuted = interpretCommand(cmdString, numArgs, argStack);
         // *********************************************************
 
-        if (cmdExecuted) { // save well executed command string:
+        if (cmdExecuted)
+        { // save well executed command string:
           oldMessageString = messageString;
           PRINTLN("> OK");
           //PRINT("> ");
           //Hardware::blinkLedMessage(2);
-        } else {
+        }
+        else
+        {
           PRINTLN("> FAIL");
           //PRINT("> ");
         }
@@ -305,28 +333,31 @@ bool parseStringMessage(const String &_messageString) {
         // so we need to restart parsing from here (will only happen when input string is stored in memory or sent from OSC, etc)
         resetParser();
       }
-      else {
+      else
+      {
         PRINTLN("> BAD FORMED PACKET");
-        #ifdef CONTINUE_PARSING
+#ifdef CONTINUE_PARSING
         resetParser(); // reset parsing data, and continue from next character.
-        #else
-        break; // abort parsing (we could also restart it from here with resetParser())
-        #endif
+#else
+        break;     // abort parsing (we could also restart it from here with resetParser())
+#endif
       }
     }
-    else if (val == LINE_FEED_IGNORE) {
+    else if (val == LINE_FEED_IGNORE)
+    {
       // do nothing with this, continue parsing
     }
 
-    else {  // this means we received something else (not a number, not a letter from A-Z,
+    else
+    { // this means we received something else (not a number, not a letter from A-Z,
       // not a number, packet terminator, not a concatenator)
       PRINTLN("> BAD FORMED PACKET");
-      //PRINT("> ");
-      #ifdef CONTINUE_PARSING
+//PRINT("> ");
+#ifdef CONTINUE_PARSING
       resetParser(); // reset parsing data, and continue from next character.
-      #else
-      break; // break the for-loop of parsing
-      #endif
+#else
+      break;       // break the for-loop of parsing
+#endif
     }
   } // end parse for-loop
 
@@ -338,180 +369,279 @@ bool parseStringMessage(const String &_messageString) {
 // NOTE: Here you can add commands at will; but I would wait until I can do a
 // proper command dictionnary so as to simplify the way you write the new ones.
 // =============================================================================
-bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
+bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
+{
   bool execFlag = false;
 
   //==========================================================================
   // A) ====== LASER COMMANDS ================================================
   //==========================================================================
-  if (_cmdString == SET_POWER_LASER_ALL) {     // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 1) {
+  if (_cmdString == SET_POWER_LASER_ALL)
+  { // Param: 0 to 4096 (12 bit res).
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_LASER_POWER));
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_POWER_LASER) {     // Param: laser number, power (0 to 4096, 12 bit res).
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_POWER_LASER)
+  { // Param: laser number, power (0 to 4096, 12 bit res).
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_LASER_POWER));
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SWITCH_LASER_ALL) {     // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_SWITCH_LASER_ALL)
+  { // Param: 0 to 4096 (12 bit res).
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStateSwitchAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SWITCH_LASER) {     // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_SWITCH_LASER)
+  {
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStateSwitch(argStack[0].toInt(), argStack[1].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_CARRIER_ALL) {
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_CARRIER_ALL)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setCarrierModeAll(argStack[0].toInt()>0);
+      Hardware::Lasers::setCarrierModeAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_CARRIER) {
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_CARRIER)
+  {
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setCarrierMode(argStack[0].toInt(), argStack[1].toInt()>0);
+      Hardware::Lasers::setCarrierMode(argStack[0].toInt(), argStack[1].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SHUTTER) {
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_SHUTTER)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setShutter(argStack[0].toInt()>0);
+      Hardware::Gpio::setShutter(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == TEST_LASERS) {
-    if (_numArgs == 0) {
+  else if (_cmdString == SET_SEQUENCER)
+  {
+    // Param: laser index, [0-1] to deactivate/activate sequencer
+    if (_numArgs == 2)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::LaserArray[argStack[0].toInt()].setSequencerMode(argStack[1].toInt() > 0);
+
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_PARAM_SEQUENCE)
+  {
+    // Param: (1) laser index, (2) trigger number (-1 for external trigger, otherwise the index of another laser (0-3),
+    //        (3) t_delay, (4) t_off (in us), (5) trigger decimation
+    if (_numArgs == 4)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::LaserArray[argStack[0].toInt()].setSequencerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt());
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == TEST_LASERS)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::test();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   //==========================================================================
   // B) ====== OPTOTUNNER COMMANDS  =============================================
   //==========================================================================
 
-  else if (_cmdString == SET_POWER_OPTOTUNER_ALL) {     // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_POWER_OPTOTUNER_ALL)
+  { // Param: 0 to 4096 (12 bit res).
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_OPTOTUNE_POWER));
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_POWER_OPTOTUNER) {     // Param: laser number, power (0 to 4096, 12 bit res).
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_POWER_OPTOTUNER)
+  { // Param: laser number, power (0 to 4096, 12 bit res).
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   //==========================================================================
   // C) ====== SCANNER COMMANDS  =============================================
   //==========================================================================
-  else if (_cmdString == START_DISPLAY) {
-    if (_numArgs == 0) {
+  else if (_cmdString == START_DISPLAY)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::startDisplay();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == STOP_DISPLAY) {
-    if (_numArgs == 0) {
+  else if (_cmdString == STOP_DISPLAY)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::stopDisplay();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_INTERVAL) {
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_INTERVAL)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str())); // convert c-string to long, then cast to unsigned int
       // the method strtoul needs a c-string, so we need to convert the String to that:
       //DisplayScan::setInterPointTime(strtoul(argStack[0].c_str(),NULL,10); // base 10
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == DISPLAY_STATUS)    {
-    if (_numArgs == 0) {
+  else if (_cmdString == DISPLAY_STATUS)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
 
       PRINT(" 1-CLEAR MODE: ");
-      if (Graphics:: getClearMode())
-      PRINTLN("ON");
+      if (Graphics::getClearMode())
+        PRINTLN("ON");
       else
-      PRINTLN("OFF");
+        PRINTLN("OFF");
 
       PRINT(" 2-SCENE PTS: ");
       PRINTLN(Renderer2D::getSizeBlueprint());
 
       PRINT(" 3-DISPLAY ISR: ");
       if (DisplayScan::getRunningState())
-      PRINT("ON");
+        PRINT("ON");
       else
-      PRINT("OFF");
-      PRINT(" / PERIOD: "); PRINT(DisplayScan::getInterPointTime());  PRINT(" us");
-      PRINT(" / BUFFER: "); PRINT(DisplayScan::getBufferSize());  PRINTLN(" points");
-
+        PRINT("OFF");
+      PRINT(" / PERIOD: ");
+      PRINT(DisplayScan::getInterPointTime());
+      PRINT(" us");
+      PRINT(" / BUFFER: ");
+      PRINT(DisplayScan::getBufferSize());
+      PRINTLN(" points");
 
       PRINT(" 6-INTERPOINT BLANKING: ");
       if (DisplayScan::getInterPointBlankingMode())
-      PRINTLN("ON");
+        PRINTLN("ON");
       else
-      PRINTLN("OFF");
+        PRINTLN("OFF");
 
       PRINTLN(" 7-LASERS [power, state, carrier, inter-fig blank]: ");
       Laser::LaserState laserState;
-      for (uint8_t k=0; k<NUM_LASERS; k++) {
+      for (uint8_t k = 0; k < NUM_LASERS; k++)
+      {
         laserState = Hardware::Lasers::LaserArray[k].getLaserState();
-        PRINT("     "); PRINT(Hardware::Lasers::laserNames[k]); PRINT("\t[");
-        PRINT(laserState.power); PRINT(", ");
-        PRINT(laserState.state>0? "on" : "off"); PRINT(", ");
-        PRINT(laserState.carrierMode>0? "on" : "off"); PRINT(", ");
-        PRINT(laserState.blankingMode>0? "on" : "off"); PRINTLN("]");
+        // struct LaserState
+        // {
+        //   uint16_t power;     // 0-MAX_LASER_POWER
+        //   bool state;         // on/off
+        //   bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
+        //   bool sequencerMode; // this will activate the sequence mode, whose parameters are in the member variable mySequencer.
+        //   // NOTE1: this variable seems redundant, but it is done to be able to quickly read the laser mode and all other laser states
+        //   // NOTE2: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
+        //   // modulated at the carrier frequency)
+        //   int8_t triggerSource; // to identify the source to update myTrigger (0 for external, 1-4 for the other laser-states)
+        //   bool blankingMode;    // blank between each figure (for the time being, end of trajectory buffer).
+        //                         // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+        //                         // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
+        // };
+        PRINT("     ");
+        PRINT(Hardware::Lasers::laserNames[k]);
+        PRINT("\t[ power = ");
+        PRINT(laserState.power);
+        PRINT(", state = ");
+        PRINT(laserState.state > 0 ? "on" : "off");
+        PRINT(", carrier = ");
+        PRINT(laserState.carrierMode > 0 ? "on" : "off");
+        PRINT(", carrier");
+        PRINT(laserState.sequencerMode > 0 ? "on" : "off");
+        PRINT(", trigger = ");
+        PRINT(laserState.triggerSource);
+        PRINT(", blanking = ");
+        PRINT(laserState.blankingMode > 0 ? "on" : "off");
+        PRINTLN("]");
       }
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   //==========================================================================
@@ -528,55 +658,70 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //                     using namespace Graphics;
   //    However, I prefer the suffix for clariry (my Object Oriented biais...)
   //==========================================================================
-  else if (_cmdString == RESET_POSE_GLOBAL)       {     // Param: none
-    if (_numArgs == 0) {
+  else if (_cmdString == RESET_POSE_GLOBAL)
+  { // Param: none
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::resetGlobalPose();
       // As explained above, we need to RE-RENDER the display buffer:
       Renderer2D::renderFigure();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANGLE_GLOBAL)  {     // Param: angle in DEG (float)
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_ANGLE_GLOBAL)
+  { // Param: angle in DEG (float)
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::setAngle(argStack[0].toFloat());
       Renderer2D::renderFigure();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_CENTER_GLOBAL)    {  // Param: x,y
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_CENTER_GLOBAL)
+  { // Param: x,y
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
       Renderer2D::renderFigure();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_FACTOR_GLOBAL)    {  // Param: scale
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_FACTOR_GLOBAL)
+  { // Param: scale
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::setScaleFactor(argStack[0].toFloat());
       Renderer2D::renderFigure();
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_COLOR_GLOBAL)    {  // Param: color bool [TODO: real colors]
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_COLOR_GLOBAL)
+  { // Param: color bool [TODO: real colors]
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::setColorRed(argStack[0].toInt());
       Renderer2D::renderFigure(); // <<== this will really be useful soon, as we will have a per-point color
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   //==========================================================================
@@ -588,8 +733,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   //==========================================================================
 
   // == CLEAR SCENE and CLEAR MODE ==========================================
-  else if (_cmdString == CLEAR_SCENE)     {
-    if (_numArgs == 0) {
+  else if (_cmdString == CLEAR_SCENE)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
 
       // The sequence order and items is arbitrary:
@@ -599,233 +746,251 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == CLEAR_MODE)     {
-    if (_numArgs == 1) {
+  else if (_cmdString == CLEAR_MODE)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
-      Graphics::setClearMode(argStack[0].toInt()>0);
+      Graphics::setClearMode(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_BLANKING_ALL) {
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_BLANKING_ALL)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow)
-      Hardware::Lasers::setBlankingModeAll(argStack[0].toInt()>0);
+      Hardware::Lasers::setBlankingModeAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
-  else if (_cmdString == SET_BLANKING) {
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_BLANKING)
+  {
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow),
       // OR, we don't use the style stack (I decided for the later for the time being)
-      Hardware::Lasers::setBlankingMode(argStack[0].toInt(), argStack[1].toInt()>0);
+      Hardware::Lasers::setBlankingMode(argStack[0].toInt(), argStack[1].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_INTER_POINT_BLANK) { // for the time being, this is for ALL lasers:
+  else if (_cmdString == SET_INTER_POINT_BLANK)
+  { // for the time being, this is for ALL lasers:
     // for the time being, this is a "DisplayScan"
     // method [in the future, a per-laser method?]
-    if (_numArgs == 1) {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
-      DisplayScan::setInterPointBlankingMode(argStack[0].toInt()>0);
+      DisplayScan::setInterPointBlankingMode(argStack[0].toInt() > 0);
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   // == MAKE LINE ==========================================
-  else if (_cmdString == MAKE_LINE) {
-    switch(_numArgs) {
-      case 3:  //origina at (0,0)
+  else if (_cmdString == MAKE_LINE)
+  {
+    switch (_numArgs)
+    {
+    case 3: //origina at (0,0)
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawLine(
-        argStack[0].toFloat(), argStack[1].toFloat(),
-        argStack[2].toInt()
-      );
+          argStack[0].toFloat(), argStack[1].toFloat(),
+          argStack[2].toInt());
       Renderer2D::renderFigure();
       execFlag = true;
       break;
-      case 5:
-      {
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        // from point, lenX, lenY, num points
-        P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawLine(
+    case 5:
+    {
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      // from point, lenX, lenY, num points
+      P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawLine(
           startP2,
           argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt()
-        );
-        Renderer2D::renderFigure();
-      }
+          argStack[4].toInt());
+      Renderer2D::renderFigure();
+    }
       execFlag = true;
       break;
-      default:
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
-
   }
 
   // == MAKE CIRCLE ==========================================
   // a) Depending on the number of arguments, we do something different:
   //    - with one parameter (nb points), we draw a circle in (0,0) with unit radius
   //      [of course, the radius is multiplied by the currrent scaling factor]
-  else if (_cmdString == MAKE_CIRCLE)     {
+  else if (_cmdString == MAKE_CIRCLE)
+  {
 
-    switch(_numArgs) {
-      case 2: // radius + num points [centered]
+    switch (_numArgs)
+    {
+    case 2: // radius + num points [centered]
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
       Renderer2D::renderFigure();
       execFlag = true;
       break;
-      case 4:
-      { // center point, radius, num points
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
-      break;
-      default:
+    case 4:
+    { // center point, radius, num points
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    break;
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
   }
 
   // == MAKE RECTANGLE ==========================================
-  else if (_cmdString == MAKE_RECTANGLE)     {
-    switch(_numArgs) {
-      case 4: // [centered]
+  else if (_cmdString == MAKE_RECTANGLE)
+  {
+    switch (_numArgs)
+    {
+    case 4: // [centered]
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawRectangle(
-        argStack[0].toFloat(), argStack[1].toFloat(),
-        argStack[2].toInt(), argStack[3].toInt()
-      );
+          argStack[0].toFloat(), argStack[1].toFloat(),
+          argStack[2].toInt(), argStack[3].toInt());
       Renderer2D::renderFigure();
       execFlag = true;
       break;
-      case 6:
-      {   // From lower left corner:
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawRectangle(
+    case 6:
+    { // From lower left corner:
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawRectangle(
           fromP2,
           argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt(), argStack[5].toInt()
-        );
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
-      break;
-      default:
+          argStack[4].toInt(), argStack[5].toInt());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    break;
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
   }
 
   // == MAKE SQUARE ==========================================
-  else if (_cmdString == MAKE_SQUARE) {
-    switch(_numArgs) {
-      case 2: // side, num point [centered]
+  else if (_cmdString == MAKE_SQUARE)
+  {
+    switch (_numArgs)
+    {
+    case 2: // side, num point [centered]
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
       Renderer2D::renderFigure();
       execFlag = true;
       break;
-      case 4:
-      { // center point, radius, num points
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
-      break;
-      default:
+    case 4:
+    { // center point, radius, num points
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    break;
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
   }
 
-  else if (_cmdString == MAKE_ZIGZAG)     {
-    switch(_numArgs) {
-      case 4: // Centered on [0,0]
+  else if (_cmdString == MAKE_ZIGZAG)
+  {
+    switch (_numArgs)
+    {
+    case 4: // Centered on [0,0]
       //PRINTLN("> EXECUTING... ");
       Graphics::updateScene();
       Graphics::drawZigZag(
-        argStack[0].toFloat(), argStack[1].toFloat(),
-        argStack[2].toInt(), argStack[3].toInt()
-      );
+          argStack[0].toFloat(), argStack[1].toFloat(),
+          argStack[2].toInt(), argStack[3].toInt());
       Renderer2D::renderFigure();
       execFlag = true;
       break;
-      case 6:
-      { // from left bottom corner:
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawZigZag(
+    case 6:
+    { // from left bottom corner:
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawZigZag(
           fromP2,
           argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt(), argStack[5].toInt()
-        );
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
-      break;
-      default:
+          argStack[4].toInt(), argStack[5].toInt());
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+    break;
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
   }
 
-  else if (_cmdString == MAKE_SPIRAL)     {
-    switch(_numArgs) {
-      case 5 : {
-        Graphics::updateScene();
-        P2 center(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawSpiral(
+  else if (_cmdString == MAKE_SPIRAL)
+  {
+    switch (_numArgs)
+    {
+    case 5:
+    {
+      Graphics::updateScene();
+      P2 center(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawSpiral(
           center,
           argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
           argStack[3].toFloat(), // num tours (float)
           argStack[4].toInt()    // num points
-        );
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
-      break;
-      case 3:
-      Graphics::updateScene();
-      Graphics::drawSpiral(
-        argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
-        argStack[1].toFloat(),
-        argStack[2].toInt()
       );
       Renderer2D::renderFigure();
       execFlag = true;
+    }
+    break;
+    case 3:
+      Graphics::updateScene();
+      Graphics::drawSpiral(
+          argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
+          argStack[1].toFloat(),
+          argStack[2].toInt());
+      Renderer2D::renderFigure();
+      execFlag = true;
       break;
-      default:
+    default:
       PRINTLN("> BAD PARAMETERS");
       break;
     }
@@ -838,12 +1003,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
   // is given by the currest state of lasers.
 
   // a) LINE TEST:
-  else if (_cmdString == LINE_TEST)     {
-    if (_numArgs == 0) {
+  else if (_cmdString == LINE_TEST)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::clearScene();
 
-      Graphics::drawLine(P2(-50.0,-30), 100,60, 50); // fisrt argument is the radius
+      Graphics::drawLine(P2(-50.0, -30), 100, 60, 50); // fisrt argument is the radius
       // REM: equal to: Graphics::setScaleFactor(500); Graphics::drawCircle(100);
 
       // NOTE: the color attributes will be used by the renderer in the future.
@@ -857,12 +1024,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   // b) CIRCLE, NO PARAMETERS [500 ADC units radius circle, centered, 100 points]
-  else if (_cmdString == CIRCLE_TEST)     {
-    if (_numArgs == 0) {
+  else if (_cmdString == CIRCLE_TEST)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::clearScene();
 
@@ -880,14 +1050,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-
-
   // c) : SQUARE, NO PARAMETERS [500 ADC units side, centered, 10 points/side]
-  else if (_cmdString == SQUARE_TEST)  {
-    if (_numArgs == 0) {
+  else if (_cmdString == SQUARE_TEST)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       Graphics::clearScene();
       Graphics::drawSquare(100, 50.0); //length of side, num points per side
@@ -903,18 +1074,21 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   // d) : SQUARE + CIRCLE TEST
-  else if (_cmdString == COMPOSITE_TEST)  {
-    if (_numArgs == 0) {
+  else if (_cmdString == COMPOSITE_TEST)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       float radius = 75;
       Graphics::clearScene();
-      Graphics::drawSquare(2*radius, 50.0);
+      Graphics::drawSquare(2 * radius, 50.0);
       Graphics::drawCircle(radius, 100.0);
-      Graphics::drawSquare(1.414*radius, 50.0);
+      Graphics::drawSquare(1.414 * radius, 50.0);
       Graphics::drawLine(P2(-90, 0), 180, 0, 50.0);
       Graphics::drawLine(P2(0, -90), 0, 180, 50.0);
 
@@ -929,115 +1103,151 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   // .........................................................................
   // ... BUILD HERE WHAT YOU NEED
   // .........................................................................
 
-
   //==========================================================================
   // G) ============  LOW LEVEL COMMANDS ===========================
   //==========================================================================
 
-  else if (_cmdString == SET_DIGITAL_PIN)   {     // Param:pin, state
-    if (_numArgs == 2) {
+  else if (_cmdString == SET_DIGITAL_PIN)
+  { // Param:pin, state
+    if (_numArgs == 2)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
   // Wrappers for special pins (exposed in the D25 connector):
-  else if (_cmdString == SET_DIGITAL_A)   {     // Param: state
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_DIGITAL_A)
+  { // Param: state
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinA(argStack[0].toInt());
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_DIGITAL_B)   {     // Param: state
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_DIGITAL_B)
+  { // Param: state
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinB(argStack[0].toInt());
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_DIGITAL_A)   {     // Param: none
-    if (_numArgs == 0) {
+  else if (_cmdString == READ_DIGITAL_A)
+  { // Param: none
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       bool val = Hardware::Gpio::readDigitalPinA();
       execFlag = true;
-      PRINT("> "); PRINTLN((val>0? "1" : "0"));
+      PRINT("> ");
+      PRINTLN((val > 0 ? "1" : "0"));
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_DIGITAL_B)   {     // Param: none
-    if (_numArgs == 0) {
+  else if (_cmdString == READ_DIGITAL_B)
+  { // Param: none
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       bool val = Hardware::Gpio::readDigitalPinB();
       execFlag = true;
-      PRINT("> "); PRINTLN((val>0? "1" : "0"));
+      PRINT("> ");
+      PRINTLN((val > 0 ? "1" : "0"));
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANALOG_A)   {     // Param: duty cycle (0-4095)
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_ANALOG_A)
+  { // Param: duty cycle (0-4095)
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinA(argStack[0].toInt());
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_ANALOG_B)   {     // Param: duty cycle (0-4095)
-    if (_numArgs == 1) {
+  else if (_cmdString == SET_ANALOG_B)
+  { // Param: duty cycle (0-4095)
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinB(argStack[0].toInt());
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_ANALOG_A)   {     // Param: none
-    if (_numArgs == 0) {
+  else if (_cmdString == READ_ANALOG_A)
+  { // Param: none
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       uint16_t val = Hardware::Gpio::readAnalogPinA();
       execFlag = true;
-      PRINT("> "); PRINTLN(val);
+      PRINT("> ");
+      PRINTLN(val);
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == READ_ANALOG_B)   {     // Param: none
-    if (_numArgs == 0) {
+  else if (_cmdString == READ_ANALOG_B)
+  { // Param: none
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       uint16_t val = Hardware::Gpio::readAnalogPinB();
       execFlag = true;
-      PRINT("> "); PRINTLN(val);
+      PRINT("> ");
+      PRINTLN(val);
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == RESET_BOARD)    {
-    if (_numArgs == 0) {
+  else if (_cmdString == RESET_BOARD)
+  {
+    if (_numArgs == 0)
+    {
       //PRINTLN("> EXECUTING... ");
       delay(500);
       Hardware::resetBoard();
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == TEST_MIRRORS_RANGE)   {
-    if (_numArgs == 1) {
+  else if (_cmdString == TEST_MIRRORS_RANGE)
+  {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       // ...
 
@@ -1057,12 +1267,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == TEST_CIRCLE_RANGE)   {
+  else if (_cmdString == TEST_CIRCLE_RANGE)
+  {
 
-    if (_numArgs == 1) {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::pushState();
       Hardware::Lasers::setStateSwitchRed(true);
@@ -1076,12 +1289,15 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == TEST_CROSS_RANGE)   {
+  else if (_cmdString == TEST_CROSS_RANGE)
+  {
 
-    if (_numArgs == 1) {
+    if (_numArgs == 1)
+    {
       //PRINTLN("> EXECUTING... ");
 
       Hardware::Lasers::pushState();
@@ -1096,11 +1312,12 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]) {
 
       execFlag = true;
     }
-    else PRINTLN("> BAD PARAMETERS");
+    else
+      PRINTLN("> BAD PARAMETERS");
   }
 
-
-  else { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
+  else
+  { // unkown command or bad parameters ==> bad command (in the future, use a CmdDictionnay)
     PRINTLN("> BAD COMMAND");
     execFlag = false;
   }

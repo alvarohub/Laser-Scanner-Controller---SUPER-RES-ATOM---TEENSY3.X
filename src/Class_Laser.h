@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "Definitions.h"
 #include <vector>
+#include "Class_Sequencer.h"
 #include "Utils.h"
 
 // ===========================================================================================================
@@ -14,103 +15,68 @@
 // (in that case, the array could be dynamic - a vector)
 class Laser
 {
-	static uint8_t myID;
+	static uint8_t myID; // automatically incremented at instantiation (so we can declare a laser array)
 
   public:
-	// I will create a struct to store laser state: the reason is I will use a
+
+// Public struct to store laser state (I will use a
 	// stack to avoid having to save the state whenever we want to try something
-	// or do some complex drawing (very similar to "pushStyle" in OF or
-	// Processing)
+	// or do some complex drawing - similar to "pushStyle" in OF or Processing)
 	struct LaserState
 	{
 		uint16_t power;	// 0-MAX_LASER_POWER
 		bool state;		   // on/off
 		bool carrierMode;  // chopper mode at FREQ_PWM_CARRIER
-		bool sequenceMode; // this will activate the sequence mode, whose parameters are in the member variable mySequencer.
-		// NOTE: carrier mode is independent of the sequence mode (meaning that in the
-		// ON state, the laser is still modulated at the carrier frequency)
-
+		bool sequencerMode; // this will activate the sequence mode, whose parameters are in the member variable mySequencer.
+		// NOTE1: this variable seems redundant, but it is done to be able to quickly read the laser mode and all other laser states
+		// NOTE2: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still 
+		// modulated at the carrier frequency)
+		int8_t triggerSource; // to identify the source to update myTrigger (0 for external, 1-4 for the other laser-states)
 		bool blankingMode; // blank between each figure (for the time being, end of trajectory buffer).
 						   // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
 						   // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
 	Laser();
-	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
+	Laser(uint8_t _pinPower, uint8_t _pinSwitch, int8_t _triggerSource);
 
-	void init(uint8_t _pinPower, uint8_t _pinSwitch);
+	void init(uint8_t _pinPower, uint8_t _pinSwitch, uint8_t _triggerID);
 
-	// Low level methods not affecting the current LaserState (myState):
+	// Low level methods not affecting the current LaserState (myState) - useful for tests.
 	void setSwitch(bool _state);
-
-	void setPower(uint16_t _power)
-	{
-		analogWrite(pinPower, _power);
-	}
-
-	void setStateSwitch(bool _state)
-	{
-		// Note: if in carrier mode, this action will be IGNORED (but the state changes)
-		myState.state = _state;
-		setSwitch(_state);
-	}
-
-	bool readStateSwitch()
-	{
-		return (myState.state);
-	}
-
-	void setStatePower(uint16_t _power)
-	{
-		myState.power = _power;
-		analogWrite(pinPower, _power);
-	}
-
+	void setPower(uint16_t _power);
+	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable (could made all private though)
+	
+	// Methods similar to the above, but affecting the current LaserState variable myState
+	void setStateSwitch(bool _state);
+	void setStatePower(uint16_t _power);
+	void setState(LaserState _state);
+	void resetState(); // reset to default state and activate it
 	void setCarrierMode(bool _carrierMode);
-	void setSequenceMode(bool _seqMode);
+	void setSequencerMode(bool _seqMode);
+	void setBlankingMode(bool _blankingMode);
 
-	void setBlankingMode(bool _blankingMode)
-	{
-		myState.blankingMode = _blankingMode;
-	}
+	void setTriggerSource(int8_t _triggerSource);
+	int8_t getTriggerSource(); 
+	void setTriggerMode(Trigger::TriggerMode _triggerMode); // for the time being, no getTriggerMode method
+	void setSequencerParam(uint16_t _t_delay_us, uint16_t t_on_us, uint16_t _eventDecimation);
 
-	void updateBlank();
+	bool getStateSwitch();
+	uint16_t getStatePower();
+	bool getSequencerMode();
 
-	void setState(LaserState _state)
-	{
-		myState = _state;
-		setToCurrentState();
-	}
+	LaserState getLaserState();
 
-	void resetState()
-	{ // revert to default state (without clearing the state stack)
-		setState(defaultState);
-	}
+	void pushState();
+	void popState();
+	void clearStateStack();
 
-	void setToCurrentState();
-
-	LaserState getLaserState()
-	{
-		return (myState);
-	}
-
-	void pushState()
-	{
-		laserState_Stack.push_back(myState);
-	}
-	void popState()
-	{
-		setState(laserState_Stack.back());
-		laserState_Stack.pop_back();
-	}
-
-	void clearStateStack()
-	{
-		laserState_Stack.clear();
-	}
+	// Update/read methods:
+	bool updateReadTrigger(bool _newInput);
+	bool updateReadSequencer(bool _event);
+	void updateBlank(); // will switch off the laser if the blankingMode is true
 
 	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
-	Sequencer mySequencer{defaultSequence};
 
   private:
 	// NOTE: methods that affect all the objects from this class could access
@@ -134,12 +100,16 @@ class Laser
 	// all the lasers at the same time.
 	const LaserState defaultState = {
 		2000,  // power (0-4095)
+		false, // switch (on/off)
 		false, // carrier mode (on/off)
 		false, // sequence mode (on/off)
+		-1, 	   // trigger source (-1 for external input, [0-3] for other laser states)
 		false  // blancking mode (on/off)
 	};
 
 	std::vector<LaserState> laserState_Stack;
+	Trigger myTrigger;
+	Sequencer mySequencer;
 
 	/* NOTES:
 	- Even if the laser has analog control, a digital pin may be used for fast
