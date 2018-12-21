@@ -122,8 +122,8 @@ class Sequencer
   private:
 
     const SequenceParam defaultSequence = {
-        0, // delay time (in ms)
-        5, // time on (in ms)
+        0, // delay time (in ms) - note: camera frame rate is about 100Hz, or 10ms period. 
+        50000, // time on (in ms)
         1  // (vent decimation: number of events needed to launch the sequence
     };
 
