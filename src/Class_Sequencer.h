@@ -59,7 +59,7 @@ class Trigger
 
 class Sequencer
 {
- // Sequence parameters to use when in sequence mode. Note that the updateSequence method is a method of the
+    // Sequence parameters to use when in sequence mode. Note that the updateSequence method is a method of the
     //namespace Hardware::Lasers, because we may need to check the states of all the laser objects instantiated.
     struct SequenceParam
     {
@@ -67,6 +67,7 @@ class Sequencer
         uint16_t t_delay_us, t_on_us; // eventually t_off too
         uint16_t eventDecimation;     // the number of trigger pulses that correspond to one cycle of the sequence
     };
+
   public:
     Sequencer() : mySequence(defaultSequence), running(false){};
     Sequencer(SequenceParam _seqParam) : mySequence(_seqParam), running(false) {}
@@ -120,11 +121,10 @@ class Sequencer
     }
 
   private:
-
     const SequenceParam defaultSequence = {
-        0, // delay time (in ms) - note: camera frame rate is about 100Hz, or 10ms period. 
+        0,     // delay time (in ms) - note: camera frame rate is about 100Hz, or 10ms period.
         50000, // time on (in ms)
-        1  // (vent decimation: number of events needed to launch the sequence
+        1      // (vent decimation: number of events needed to launch the sequence
     };
 
     SequenceParam mySequence{defaultSequence};

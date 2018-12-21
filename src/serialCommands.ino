@@ -21,8 +21,10 @@
 #define SET_CARRIER "CARRIER"      // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
 // current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value
 
-#define SET_PARAM_SEQUENCE "SET_SEQPARAM" // Param: laser index, trigger number (-1 for external trigger, otherwise the index of another laser (0-3), t_delay, t_off (in us)
+#define SET_PARAM_SEQUENCE "SET_SEQPARAM" // Param: laser index, t_delay, t_off (in us), trigger decimation
 #define SET_SEQUENCER "SET_SEQ"           // Param: laser index, [0-1] to deactivate/activate sequencer
+#define SET_LASER_TRIGGER "SET_TRIG"      // Param: laser index, trigger number (-1 for external trigger, \
+                                          //otherwise the index of another laser (0-3), trigger mode (0=RISE, 1=FALL, 2=CHANGE)
 
 // b) Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL "PWLASERALL"  // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
@@ -67,8 +69,8 @@
 //6) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
 #define CLEAR_SCENE "CLEAR" // clear the blueprint, and also stop the display
 #define CLEAR_MODE "CLMODE" // [0-1],CLMODE. When set to 0, if we draw a figure it will
-// be ADDED to the current scene. Otherwise drawing first
-// clear the current scene and make a new figure.
+// be ADDED to the current scene. Otherwise drawing first clear the current scene and make a new figure.
+
 // The following commands affect all lasers simultaneously [TODO: per laser]
 #define SET_BLANKING_ALL "BLANKALL" //Figure-to-figure blanking. Param: [0/1]. Affects all lasers.
 #define SET_BLANKING "BLANK"        // per laser fig-to-fig blanking
@@ -157,7 +159,8 @@ void serialEvent()
   }
 }
 
-// ======== PARSE THE MESSAGE ==================================================
+// =============================================================================================
+// ======================== PARSE THE MESSAGE ==================================================
 // NOTE: I tested this throughly and it seems to work faultlessly as for 5.April.2018
 String cmdString;
 uint8_t numArgs;
@@ -374,7 +377,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   bool execFlag = false;
 
   //==========================================================================
-  // A) ====== LASER COMMANDS ================================================
+  //========== LASER COMMANDS ================================================
   //==========================================================================
   if (_cmdString == SET_POWER_LASER_ALL)
   { // Param: 0 to 4096 (12 bit res).
@@ -476,12 +479,46 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_PARAM_SEQUENCE)
   {
-    // Param: (1) laser index, (2) trigger number (-1 for external trigger, otherwise the index of another laser (0-3),
-    //        (3) t_delay, (4) t_off (in us), (5) trigger decimation
+    // Param: (1) laser index
+    //        (2) t_delay
+    //        (3) t_off (in us)
+    //        (4) trigger decimation
     if (_numArgs == 4)
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::LaserArray[argStack[0].toInt()].setSequencerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt());
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SET_LASER_TRIGGER)
+  {
+    // Params: (1) laser index
+    //         (2) trigger number (-1 for external trigger, otherwise the index of another laser (0-3)
+    //         (3) trigger mode (0=RISE, 1=FALL, 2=CHANGE)
+    if (_numArgs == 3)
+    {
+      //PRINTLN("> EXECUTING... ");
+      uint8_t laserIndex = argStack[0].toInt();
+      Hardware::Lasers::LaserArray[laserIndex].setTriggerSource(argStack[1].toInt());
+      Trigger::TriggerMode trigMode;
+      switch (argStack[2].toInt())
+      {
+      case 0:
+        trigMode = Trigger::TRIG_RISE;
+        break;
+      case 1:
+        trigMode = Trigger::TRIG_FALL;
+        break;
+      case 2:
+        trigMode = Trigger::TRIG_CHANGE;
+        break;
+      default:
+        break;
+      }
+      Hardware::Lasers::LaserArray[laserIndex].setTriggerMode(trigMode);
       execFlag = true;
     }
     else
@@ -501,7 +538,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   //==========================================================================
-  // B) ====== OPTOTUNNER COMMANDS  =============================================
+  //=============== OPTOTUNNER COMMANDS  =====================================
   //==========================================================================
 
   else if (_cmdString == SET_POWER_OPTOTUNER_ALL)
@@ -529,7 +566,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   //==========================================================================
-  // C) ====== SCANNER COMMANDS  =============================================
+  //============== SCANNER COMMANDS  =========================================
   //==========================================================================
   else if (_cmdString == START_DISPLAY)
   {
@@ -645,7 +682,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   //==========================================================================
-  // D) ======= POSE PARAMETERS ("OpenGL"-like state machine) ================
+  // ========== POSE PARAMETERS ("OpenGL"-like state machine) ================
   //==========================================================================
   //  * NOTE 1 : This is a very simplified "open-gl" like rendering engine, but
   //    should be handy anyway. It works as follows: the pose parameters are applied
@@ -725,11 +762,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   //==========================================================================
-  // E) ============ FIGURES (check Graphics namespace) ======================
+  //================ FIGURES (check Graphics namespace) ======================
   // * NOTE 1 : after all the figure composition, it is
   // imperative to call to the method Renderer2D::renderFigure().
   // * NOTE 2 : The pose parameters are COMPOSED with the global ones.
-  // * NOTE 3 : Depending on the number of arguments, different pre-sets are used
+  // * NOTE 3 : Depending on the number of args, different pre-sets are used
   //==========================================================================
 
   // == CLEAR SCENE and CLEAR MODE ==========================================
@@ -1112,9 +1149,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   // .........................................................................
 
   //==========================================================================
-  // G) ============  LOW LEVEL COMMANDS ===========================
+  //=====================  LOW LEVEL COMMANDS ================================
   //==========================================================================
-
   else if (_cmdString == SET_DIGITAL_PIN)
   { // Param:pin, state
     if (_numArgs == 2)
