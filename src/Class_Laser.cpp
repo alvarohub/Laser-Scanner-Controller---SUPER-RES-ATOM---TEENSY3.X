@@ -92,9 +92,14 @@ void Laser::setCarrierMode(bool _carrierMode)
 	}
 }
 
-void Laser::setTriggerSource(int8_t _triggerSource) { myState.triggerSource = _triggerSource; }
-int8_t Laser::getTriggerSource() { return (myState.triggerSource); }
+// wrappers for trigger setting for the object laser (we could do away by making myTrigger public, or inheriting of class Trigger - last would be confusing)
+void Laser::setTriggerSource(int8_t _triggerSource) { myTrigger.setTriggerSource(_triggerSource); }
 void Laser::setTriggerMode(Trigger::TriggerMode _triggerMode) { myTrigger.setTriggerMode(_triggerMode); }
+void Laser::setTriggerOffset(uint8_t _offset) { myTrigger.setTriggerOffset(_offset); }
+
+int8_t Laser::getTriggerSource() { return (myTrigger.getTriggerSource()); }
+Trigger::TriggerMode Laser::getTriggerMode() { return(myTrigger.getTriggerMode()); }
+uint8_t Laser::getTriggerOffset() { return(myTrigger.getTriggerOffset()); }
 
 bool Laser::updateReadTrigger(bool _newInput) { return(myTrigger.update(_newInput)); }
 bool Laser::updateReadSequencer(bool _event) { return(mySequencer.update(_event)); }

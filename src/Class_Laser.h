@@ -18,23 +18,22 @@ class Laser
 	static uint8_t myID; // automatically incremented at instantiation (so we can declare a laser array)
 
   public:
-
-// Public struct to store laser state (I will use a
+	// Public struct to store laser state (I will use a
 	// stack to avoid having to save the state whenever we want to try something
 	// or do some complex drawing - similar to "pushStyle" in OF or Processing)
 	struct LaserState
 	{
-		uint16_t power;	// 0-MAX_LASER_POWER
-		bool state;		   // on/off
-		bool carrierMode;  // chopper mode at FREQ_PWM_CARRIER
+		uint16_t power;		// 0-MAX_LASER_POWER
+		bool state;			// on/off
+		bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
 		bool sequencerMode; // this will activate the sequence mode, whose parameters are in the member variable mySequencer.
 		// NOTE1: this variable seems redundant, but it is done to be able to quickly read the laser mode and all other laser states
-		// NOTE2: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still 
+		// NOTE2: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
 		// modulated at the carrier frequency)
 		int8_t triggerSource; // to identify the source to update myTrigger (0 for external, 1-4 for the other laser-states)
-		bool blankingMode; // blank between each figure (for the time being, end of trajectory buffer).
-						   // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
-						   // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
+		bool blankingMode;	// blank between each figure (for the time being, end of trajectory buffer).
+							  // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+							  // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
 	Laser();
@@ -46,7 +45,7 @@ class Laser
 	void setSwitch(bool _state);
 	void setPower(uint16_t _power);
 	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable (could made all private though)
-	
+
 	// Methods similar to the above, but affecting the current LaserState variable myState
 	void setStateSwitch(bool _state);
 	void setStatePower(uint16_t _power);
@@ -57,8 +56,13 @@ class Laser
 	void setBlankingMode(bool _blankingMode);
 
 	void setTriggerSource(int8_t _triggerSource);
-	int8_t getTriggerSource(); 
 	void setTriggerMode(Trigger::TriggerMode _triggerMode); // for the time being, no getTriggerMode method
+	void setTriggerOffset(uint8_t _offset);
+
+	int8_t getTriggerSource();
+	Trigger::TriggerMode getTriggerMode();
+	uint8_t getTriggerOffset();
+
 	void setSequencerParam(uint16_t _t_delay_us, uint16_t t_on_us, uint16_t _eventDecimation);
 
 	bool getStateSwitch();
@@ -103,7 +107,6 @@ class Laser
 		false, // switch (on/off)
 		false, // carrier mode (on/off)
 		false, // sequence mode (on/off)
-		-1, 	   // trigger source (-1 for external input, [0-3] for other laser states)
 		false  // blancking mode (on/off)
 	};
 

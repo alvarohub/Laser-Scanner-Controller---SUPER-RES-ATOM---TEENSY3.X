@@ -483,10 +483,13 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     //        (2) t_delay
     //        (3) t_off (in us)
     //        (4) trigger decimation
-    if (_numArgs == 4)
+    //        (5) offset trigger (number of triggers to wait the first time)
+    if (_numArgs == 5)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::LaserArray[argStack[0].toInt()].setSequencerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt());
+      uint8_t laserIndex = argStack[0].toInt();
+      Hardware::Lasers::LaserArray[laserIndex].setSequencerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt());
+      Hardware::Lasers::LaserArray[laserIndex].setTriggerOffset(argStack[4].toInt());
       execFlag = true;
     }
     else

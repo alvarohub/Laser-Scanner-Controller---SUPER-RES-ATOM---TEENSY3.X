@@ -19,8 +19,15 @@ class Trigger
 
     Trigger() {}
 
+    void setTriggerSource(uint8_t _triggerSource) { triggerSource = _triggerSource; }
     void setTriggerMode(TriggerMode _triggerMode = TRIG_RISE) { triggerMode = _triggerMode; }
-    bool checkEvent() { return (event); }
+    void setTriggerOffset(uint8_t _offset) { offset = _offset; }
+
+    int8_t getTriggerSource() { return (triggerSource); }
+    TriggerMode getTriggerMode() { return(triggerMode); }
+    uint8_t getTriggerOffset() { return(offset); }
+
+    //bool checkEvent() { return (event); }
 
     // I will use pulling in the main loop to check and update the trigger state from the selected input (pin or another boolean),
     // but in the future we could do it using an external interrupt (with a lower priority with respect to the scanner display
@@ -28,7 +35,6 @@ class Trigger
     // ATTENTION: event won't change until the next call to update()
     auto update(bool _newInput)
     {
-
         switch (triggerMode)
         {
         case TRIG_RISE:
@@ -45,12 +51,15 @@ class Trigger
         }
 
         oldInput = _newInput;
+        counterOffset = (counterOffset+1)%offset;
 
-        return (event);
+        return (event&&(!counterOffset)); // trigger only when there is an event and overflow
     }
 
   private:
+    int8_t triggerSource = -1; // trigger source (-1 for external input, [0-3] for other things, like laser states)
     TriggerMode triggerMode = TRIG_RISE;
+    uint8_t offset, counterOffset = 0;
     bool oldInput = false;
     bool event = false;
 };
