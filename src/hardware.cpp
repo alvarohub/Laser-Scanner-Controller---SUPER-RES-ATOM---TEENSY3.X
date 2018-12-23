@@ -116,7 +116,7 @@ void init()
 	// LEGACY INTENSITY/BLANKING. Here it will be used so that it is HIGH whenever the lasers are ON, and OFF otherwise.
 	// For the time being, it will be ON when display engine is running, and OFF otherwise?
 	pinMode(PIN_INTENSITY_BLANKING, OUTPUT);
-	if (Lasers::someLaserOn())
+	if (Lasers::isSomeLaserOn())
 		digitalWrite(PIN_INTENSITY_BLANKING, HIGH);
 	else
 		digitalWrite(PIN_INTENSITY_BLANKING, LOW);
@@ -166,8 +166,8 @@ extern void init()
 
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
-		// Power, switch and carrier are off. Trigger set to 0 (external):
-		LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i], 0);
+		// Power, switch and carrier are off.
+		LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]);
 	}
 
 	PRINTLN("> LASERS READY");
@@ -184,7 +184,7 @@ extern void test()
 	// Scanner::recenterPosRaw();
 
 	pushState(); // save current laser state
-	setCarrierModeAll(false);
+	setStateCarrierAll(false);
 
 	elapsedMillis msTime;
 
@@ -227,32 +227,35 @@ extern void test()
 	//	if (previousState) DisplayScan::startDisplay();
 }
 
-extern void updateLaserSequence()
+extern void updateLaserSequencers()
 {
 	// NOTE: this should be called in the main loop all the time (in the future,
 	// I can use a timer with lower priority than the laser scanning periodic soft interrupt)
-
-	// - QUESTION: ake triggers members of Hardware namespace, as an array of triggers, instead of
-	// of members of the class laser? Then call Hardare::updateTriggers();
+	// NOTE2: I will update the sequencer & trigger EVEN if the sequencer state is OFF (in this case the output of the
+	// sequencer will not affect the state of the laser). This way, when setting the sequencer to ON again, the
+	// sequencer offset will not be broken (to actually do this, we can reset the sequencer/trigger by calling the
+	// restartSequencer() method of the laser class, that will call reset its sequencer AND its trigger. 
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
+		Laser *laser = &(LaserArray[i]);
+		
 		// (a) identify the "source" (input) of the trigger used by each laser and take its value:
 		bool newInput;
-		uint8_t triggerSource = LaserArray[i].getTriggerSource();
+		uint8_t triggerSource = laser->getTriggerSource();
 		if (triggerSource == -1) // this means the input is from the EXTERNAL TRIGGER
-			newInput = digitalRead(PIN_TRIGGER_INPUT);
+			newInput = Gpio::readTriggerInput();
 		else
 			newInput = LaserArray[triggerSource].getStateSwitch();
 
 		// (b) update and read the trigger state:
-		bool event = LaserArray[i].updateReadTrigger(newInput);
-		// (c)  Update the laser states following the predefined sequence for each laser.
-		// Of course, if a laser is not in sequence mode, the sequencer method is ignored.
-		if (LaserArray[i].getSequencerMode())
-		{
-			bool newState = LaserArray[i].updateReadSequencer(event);
-			LaserArray[i].setStateSwitch(newState);
-		}
+		bool triggerEvent = laser->updateReadTrigger(newInput);
+
+		// (c)  Update the sequencer:
+		bool newState = laser->updateReadSequencer(triggerEvent);
+
+		// (d) Check if we need to update the state for this laser following the sequencer (otherwise do nothing):
+		if (laser->getStateSequencer())
+			laser->setStateSwitch(newState);
 	}
 }
 } // namespace Lasers

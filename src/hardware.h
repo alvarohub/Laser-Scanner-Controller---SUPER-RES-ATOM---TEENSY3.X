@@ -56,11 +56,13 @@ inline void setIntensityBlanking(bool _state)
 
 inline void setTriggerOut(bool _state)
 {
+	pinMode(PIN_TRIGGER_OUTPUT, OUTPUT);
 	digitalWrite(PIN_TRIGGER_OUTPUT, _state);
 }
 
 inline bool readTriggerInput()
 {
+	pinMode(PIN_TRIGGER_OUTPUT, INPUT_PULLUP);
 	return (digitalRead(PIN_TRIGGER_INPUT));
 }
 
@@ -151,37 +153,27 @@ extern Laser LaserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
 // NOTE: namespace methods correspond to static methods of the class Laser
 extern void init();
 extern void test();
-extern void updateLaserSequence();
+extern void updateLaserSequencers();
 
-inline void switchOffAll()
-{ // <<-- without affecting the state!
-	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setSwitch(LOW);
+inline void setStateSwitch(uint8_t _laser, bool _state)
+{ // carrier mode overrides this
+	LaserArray[_laser].setStateSwitch(_state);
+	//digitalWrite(pinSwitchLaser[_laser], _state);
 }
-
-inline void switchOnAll()
-{ // <<-- without affecting the state!
-	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setSwitch(HIGH);
-}
-// Methods affecting ALL the lasers in the LaserArray
 inline void setStateSwitchAll(bool _switch)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		LaserArray[i].setStateSwitch(_switch);
 }
-
-inline void setStatePowerAll(uint16_t _power)
-{
+inline void switchOffAll()
+{ // <<-- without affecting the state!
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStatePower(_power);
+		LaserArray[i].setSwitch(LOW);
 }
-
-// Wrappers for independent laser control:
-inline void setStateSwitch(uint8_t _laser, bool _state)
-{ // carrier mode overrides this
-	LaserArray[_laser].setStateSwitch(_state);
-	//digitalWrite(pinSwitchLaser[_laser], _state);
+inline void switchOnAll()
+{ // <<-- without affecting the state!
+	for (uint8_t i = 0; i < NUM_LASERS; i++)
+		LaserArray[i].setSwitch(HIGH);
 }
 
 inline void setStatePower(uint8_t _laser, uint16_t _power)
@@ -189,30 +181,39 @@ inline void setStatePower(uint8_t _laser, uint16_t _power)
 	LaserArray[_laser].setStatePower(_power);
 	//analogWrite(pinPowerLaser[_laser], _power);
 }
-
-inline void setBlankingModeAll(bool _blankingMode)
+inline void setStatePowerAll(uint16_t _power)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setBlankingMode(_blankingMode);
-}
-inline void setBlankingMode(uint8_t _laser, bool _blankingMode)
-{
-	LaserArray[_laser].setBlankingMode(_blankingMode);
+		LaserArray[i].setStatePower(_power);
 }
 
-inline void setCarrierModeAll(bool _carrierMode)
+inline void setStateBlanking(uint8_t _laser, bool _blankingMode)
+{
+	LaserArray[_laser].setStateBlanking(_blankingMode);
+}
+inline void setStateBlankingAll(bool _blankingMode)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setCarrierMode(_carrierMode);
+		LaserArray[i].setStateBlanking(_blankingMode);
 }
-inline void setCarrierMode(uint8_t _laser, bool _carrierMode)
+
+inline void setStateCarrier(uint8_t _laser, bool _carrierMode)
 {
-	LaserArray[_laser].setCarrierMode(_carrierMode);
+	LaserArray[_laser].setStateCarrier(_carrierMode);
+}
+inline void setStateCarrierAll(bool _carrierMode)
+{
+	for (uint8_t i = 0; i < NUM_LASERS; i++)
+		LaserArray[i].setStateCarrier(_carrierMode);
 }
 
-
-//inline void setSequenceMode(uint8_t _laser, bool _running);
-//inline void setSequencerParam(uint16_t _t_delay_us, uint16_t t_on_us, uint16_t _triggerDecimation);
+inline void setStateSequencer(uint8_t _laser, bool _stateSequencer) {
+		LaserArray[_laser].setStateSequencer(_stateSequencer);
+}
+inline void setStateSequencerAll(bool _stateSequencer) {
+	for (uint8_t i = 0; i < NUM_LASERS; i++)
+		LaserArray[i].setStateSequencer(_stateSequencer);
+}
 
 // Other handy methods, more explicit control:
 inline void setStateSwitchRed(bool _state) { LaserArray[RED_LASER].setStateSwitch(_state); }
@@ -234,7 +235,7 @@ inline void setStatePowerCyan(uint16_t _power) { LaserArray[CYAN_LASER].setState
 // NOTE: in the future, use HSV (color wheel):
 // inline void setLaserColor()
 
-inline bool someLaserOn()
+inline bool isSomeLaserOn()
 {
 	bool someLaserOn = false;
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
@@ -246,7 +247,7 @@ inline bool someLaserOn()
 
 inline void updateIntensityBlanking()
 {
-	if (someLaserOn())
+	if (isSomeLaserOn())
 		Hardware::Gpio::setIntensityBlanking(true);
 	else
 		Hardware::Gpio::setIntensityBlanking(false);

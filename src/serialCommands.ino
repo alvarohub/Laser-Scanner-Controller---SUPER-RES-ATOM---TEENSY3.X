@@ -23,8 +23,12 @@
 
 #define SET_PARAM_SEQUENCE "SET_SEQPARAM" // Param: laser index, t_delay, t_off (in us), trigger decimation
 #define SET_SEQUENCER "SET_SEQ"           // Param: laser index, [0-1] to deactivate/activate sequencer
-#define SET_LASER_TRIGGER "SET_TRIG"      // Param: laser index, trigger number (-1 for external trigger, \
+#define SET_SEQUENCER_ALL "SET_SEQ_ALL"
+#define SET_LASER_TRIGGER "SET_TRIG"      // Param: laser index, trigger number (-1 for external trigger, 
                                           //otherwise the index of another laser (0-3), trigger mode (0=RISE, 1=FALL, 2=CHANGE)
+#define RESET_SEQUENCER	  "RST_SEQ"       // Param: none. This is not the same than switching off and on the sequencer: the later does not affect the 
+                                          // actual sequencer/trigger states, but makes the laser unresponsive to the sequencer output. 
+
 
 // b) Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL "PWLASERALL"  // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
@@ -432,7 +436,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setCarrierModeAll(argStack[0].toInt() > 0);
+      Hardware::Lasers::setStateCarrierAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
     else
@@ -444,7 +448,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setCarrierMode(argStack[0].toInt(), argStack[1].toInt() > 0);
+      Hardware::Lasers::setStateCarrier(argStack[0].toInt(), argStack[1].toInt() > 0);
       execFlag = true;
     }
     else
@@ -465,12 +469,24 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_SEQUENCER)
   {
-    // Param: laser index, [0-1] to deactivate/activate sequencer
+    // Param: - laser index,
+    //        - 0/1 to deactivate/activate sequencer
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::LaserArray[argStack[0].toInt()].setSequencerMode(argStack[1].toInt() > 0);
-
+      Hardware::Lasers::setStateSequencer(argStack[0].toInt(), argStack[1].toInt() > 0);
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+  else if (_cmdString == SET_SEQUENCER_ALL)
+  {
+    // Param:  0/1 to deactivate/activate sequencer for all lasers
+    if (_numArgs == 1)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::setStateSequencerAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
     else
@@ -482,14 +498,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     // Param: (1) laser index
     //        (2) t_delay
     //        (3) t_off (in us)
-    //        (4) trigger decimation
-    //        (5) offset trigger (number of triggers to wait the first time)
-    if (_numArgs == 5)
+    if (_numArgs == 3)
     {
       //PRINTLN("> EXECUTING... ");
       uint8_t laserIndex = argStack[0].toInt();
-      Hardware::Lasers::LaserArray[laserIndex].setSequencerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt());
-      Hardware::Lasers::LaserArray[laserIndex].setTriggerOffset(argStack[4].toInt());
+      Hardware::Lasers::LaserArray[laserIndex].setSequencerParam(argStack[1].toInt(), argStack[2].toInt());
       execFlag = true;
     }
     else
@@ -499,29 +512,37 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == SET_LASER_TRIGGER)
   {
     // Params: (1) laser index
-    //         (2) trigger number (-1 for external trigger, otherwise the index of another laser (0-3)
+    //         (2) trigger source (-1 for external trigger, otherwise the index of another laser (0-3)
     //         (3) trigger mode (0=RISE, 1=FALL, 2=CHANGE)
-    if (_numArgs == 3)
+    //         (4) trigger decimation (>0)
+    //         (5) trigger offset
+    if (_numArgs == 5)
     {
       //PRINTLN("> EXECUTING... ");
-      uint8_t laserIndex = argStack[0].toInt();
-      Hardware::Lasers::LaserArray[laserIndex].setTriggerSource(argStack[1].toInt());
-      Trigger::TriggerMode trigMode=Trigger::TRIG_RISE;
-      switch (argStack[2].toInt())
-      {
-      case 0:
-        trigMode = Trigger::TRIG_RISE;
-        break;
-      case 1:
-        trigMode = Trigger::TRIG_FALL;
-        break;
-      case 2:
-        trigMode = Trigger::TRIG_CHANGE;
-        break;
-      default:
-        break;
-      }
-      Hardware::Lasers::LaserArray[laserIndex].setTriggerMode(trigMode);
+
+      //Laser* laser_ptr = &(Hardware::Lasers::LaserArray[argStack[0].toInt()]);
+      //laser_ptr->setTriggerSource(argStack[1].toInt());
+      //laser_ptr->setTriggerMode(argStack[2].toInt());
+      //laser_ptr->setTriggerDecimation(argStack[3].toInt());
+      //laser_ptr->setTriggerOffset(argStack[4].toInt());
+
+      // Trigger method: setTriggerParam(int8_t _source, uint8_t _mode, uint16_t _decimation, uint16_t _offset)
+      Hardware::Lasers::LaserArray[argStack[0].toInt()].setTriggerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt(), argStack[4].toInt());
+
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+
+ else if (_cmdString == RESET_SEQUENCER)
+  {
+    // Param: (1) laser index
+    if (_numArgs == 1)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Lasers::LaserArray[argStack[0].toInt()].restartSequencer();
       execFlag = true;
     }
     else
@@ -645,24 +666,39 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       Laser::LaserState laserState;
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
-        laserState = Hardware::Lasers::LaserArray[k].getLaserState();
+        laserState = Hardware::Lasers::LaserArray[k].getCurrentState();
         PRINT("     ");
         PRINT(Hardware::Lasers::laserNames[k]);
-        PRINT("\t[ power = ");
+        PRINT("\t LASER [ power = ");
         PRINT(laserState.power);
-        PRINT(", state = ");
-        PRINT(laserState.state > 0 ? "on" : "off");
+        PRINT(", switch = ");
+        PRINT(laserState.stateSwitch);
         PRINT(", carrier = ");
-        PRINT(laserState.carrierMode > 0 ? "on" : "off");
-        PRINT(", carrier");
-        PRINT(laserState.sequencerMode > 0 ? "on" : "off");
-        PRINT(", trigger = ");
-        PRINT(laserState.triggerSource);
+        PRINT(laserState.stateCarrier);
+        PRINT(", sequencer = ");
+        PRINT(laserState.stateSequencer);
         PRINT(", blanking = ");
-        PRINT(laserState.blankingMode > 0 ? "on" : "off");
+        PRINT(laserState.stateBlanking);
+        PRINTLN("]");
+
+        Laser *laser = &(Hardware::Lasers::LaserArray[k]);
+        
+        PRINT("\t SEQUENCE (ms) [ t_delay = ");
+        PRINT(laser->t_delay_ms);
+        PRINT(", t_on = ");
+        PRINT(laser->t_on_ms);
+        PRINTLN("]");
+
+        PRINT("\t TRIGGER [ source = ");
+        PRINT(laser->getTriggerSource());
+        PRINT(", mode = ");
+        PRINT(laser->getTriggerMode());
+        PRINT(", decimation = ");
+        PRINT(laser->getTriggerSkipNumEvents());
+        PRINT(", offset = ");
+        PRINT(laser->getTriggerOffsetEvents());
         PRINTLN("]");
       }
-
       execFlag = true;
     }
     else
@@ -793,7 +829,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow)
-      Hardware::Lasers::setBlankingModeAll(argStack[0].toInt() > 0);
+      Hardware::Lasers::setStateBlankingAll(argStack[0].toInt() > 0);
       execFlag = true;
     }
     else
@@ -807,7 +843,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow),
       // OR, we don't use the style stack (I decided for the later for the time being)
-      Hardware::Lasers::setBlankingMode(argStack[0].toInt(), argStack[1].toInt() > 0);
+      Hardware::Lasers::setStateBlanking(argStack[0].toInt(), argStack[1].toInt() > 0);
       execFlag = true;
     }
     else

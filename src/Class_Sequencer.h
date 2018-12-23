@@ -10,137 +10,130 @@ class Trigger
 {
 
   public:
-    enum TriggerMode
-    {
-        TRIG_RISE,
-        TRIG_FALL,
-        TRIG_CHANGE
-    };
 
     Trigger() {}
+    Trigger(int8_t _source, uint8_t _mode, uint16_t _skipNumEvents, uint16_t _offsetEvents) {
+        setTriggerParam(_source, _mode, _skipNumEvents, _offsetEvents);
+    }
 
-    void setTriggerSource(uint8_t _triggerSource) { triggerSource = _triggerSource; }
-    void setTriggerMode(TriggerMode _triggerMode = TRIG_RISE) { triggerMode = _triggerMode; }
-    void setTriggerOffset(uint8_t _offset) { offset = _offset; }
+    void setTriggerParam(int8_t _source, uint8_t _mode, uint16_t _skipNumEvents, uint16_t _offsetEvents) {
+        source = _source;
+        mode = _mode;
+        skipNumEvents = (_skipNumEvents > 0 ? _skipNumEvents : 1); // minimum should be 1
+        offsetEvents = _offsetEvents;
+        counterEvents = -offsetEvents;
+    }
 
-    int8_t getTriggerSource() { return (triggerSource); }
-    TriggerMode getTriggerMode() { return(triggerMode); }
-    uint8_t getTriggerOffset() { return(offset); }
+    void setTriggerSource(int8_t _source) { source = _source; }
+    void setTriggerMode(uint8_t _mode = 0) { mode = _mode; }
+    void setTriggerSkipNumEvents(uint16_t _skipNumEvents) { 
+        skipNumEvents =  (_skipNumEvents > 0 ? _skipNumEvents : 1);
+        counterEvents = -offsetEvents;
+    }
+    void setTriggerOffsetEvents(uint16_t _offsetEvents) { 
+        offsetEvents = _offsetEvents;
+        counterEvents = -offsetEvents;
+    }
 
-    //bool checkEvent() { return (event); }
+    int8_t getTriggerSource() { return (source); }
+    uint8_t getTriggerMode() { return(mode); }
+    uint16_t getTriggerSkipNumEvents() { return (skipNumEvents); }
+    uint16_t getTriggerOffsetEvents() { return(offsetEvents); }
 
     // I will use pulling in the main loop to check and update the trigger state from the selected input (pin or another boolean),
     // but in the future we could do it using an external interrupt (with a lower priority with respect to the scanner display
     // periodic soft interruption).
     // ATTENTION: event won't change until the next call to update()
-    auto update(bool _newInput)
+    auto updateReadTrigger(bool _newInput)
     {
-        switch (triggerMode)
+        bool event = false;
+        bool output = false;
+
+        // First, detect event depending on the selected mode:
+        switch (mode)
         {
-        case TRIG_RISE:
+        case 0: // RISE
             event = (!oldInput) && _newInput;
             break;
-        case TRIG_FALL:
+        case 1: // FALL
             event = oldInput && (!_newInput);
             break;
-        case TRIG_CHANGE:
+        case 2: // CHANGE
             event = (oldInput ^ _newInput); // "^" is an XOR (same than "!="" for binary arguments)
             break;
         default:
             break;
         }
 
-        oldInput = _newInput;
-        counterOffset = (counterOffset+1)%offset;
+        if (event) counterEvents++;
 
-        return (event&&(!counterOffset)); // trigger only when there is an event and overflow
+        if (counterEvents == skipNumEvents + 1) {
+            output = true;
+            counterEvents = 0;
+        }
+
+        oldInput = _newInput;
+
+        return (output); 
+    }
+
+    void resetTrigger() {
+        oldInput = false; //better not to do it?
+        counterEvents = -offsetEvents;
     }
 
   private:
-    int8_t triggerSource = -1; // trigger source (-1 for external input, [0-3] for other things, like laser states)
-    TriggerMode triggerMode = TRIG_RISE;
-    uint8_t offset, counterOffset = 0;
+    int8_t source = -1; // trigger source (-1 for external input, [0-3] for other things, like laser states)
+    uint8_t mode = 0;   // 0 = RISE, 1 = FALL, 2 = CHANGE
+    uint16_t skipNumEvents = 0; // number of events (RISE, FALL or FALL) to ignore before triggering output to high
+    uint8_t offsetEvents = 0;
+    
+    int8_t counterEvents = 0;
     bool oldInput = false;
-    bool event = false;
 };
 
 // ****************************************************************************************************************
 
 class Sequencer
 {
-    // Sequence parameters to use when in sequence mode. Note that the updateSequence method is a method of the
-    //namespace Hardware::Lasers, because we may need to check the states of all the laser objects instantiated.
-    struct SequenceParam
-    {
-        // note: timings are in microseconds!!
-        uint16_t t_delay_us, t_on_us; // eventually t_off too
-        uint16_t eventDecimation;     // the number of trigger pulses that correspond to one cycle of the sequence
-    };
 
   public:
-    Sequencer() : mySequence(defaultSequence), running(false){};
-    Sequencer(SequenceParam _seqParam) : mySequence(_seqParam), running(false) {}
-
-    void setRunningMode(bool _running)
-    {
-        if (_running)
-        {
-            if (!running)
-            { // restart the sequencer parameters
-                eventCounter = 0;
-                timerSequencer = micros();
-            }
-        }
-        running = _running;
+    Sequencer() { timerSequencer = millis() + t_delay_ms + t_on_ms; }
+    Sequencer(uint32_t _t_delay_ms, uint32_t _t_on_ms) {
+        setSequencerParam(_t_delay_ms, _t_on_ms);
+        timerSequencer = millis() + t_delay_ms + t_on_ms; 
     }
 
-    bool getRunningMode()
+    void setSequencerParam(uint32_t _t_delay_ms, uint32_t _t_on_ms)
     {
-        return (running);
+        t_delay_ms = _t_delay_ms;
+        t_on_ms = _t_on_ms;
+        timerSequencer = millis() + _t_delay_ms + _t_on_ms;
     }
 
-    void set(SequenceParam _seqParam)
+    auto updateReadSequencer(bool _triggerEvent) // executed when there is a trigger event (trigger output "true")
     {
-        // NOTE: setting the sequence does not change the running state
-        mySequence = _seqParam;
-    }
-
-    void set(uint16_t _t_delay_us, uint16_t _t_on_us, uint16_t _eventDecimation)
-    {
-        mySequence.t_delay_us = _t_delay_us;
-        mySequence.t_on_us = _t_on_us;
-        mySequence.eventDecimation = _eventDecimation;
-    }
-
-    auto update(bool _event) // executed when there is an event (trigger output "true")
-    {
-
-        if (running && _event)
-        { // otherwise don't change the output nor advance the event counter
-
-            eventCounter = (eventCounter + 1) % mySequence.eventDecimation;
-
-            if (!eventCounter) // overflow
-                timerSequencer = micros();
-
-            output = ((timerSequencer > mySequence.t_delay_us) && (timerSequencer <= mySequence.t_delay_us + mySequence.t_on_us));
-        }
-
+        if (_triggerEvent)  timerSequencer = millis(); // reset timer
+        
+        // Output of the sequencer: ON or OFF (in the future, it can be a struct also containing an analog value - e.g. power ramps)
+        bool output = ((timerSequencer > t_delay_ms) && (timerSequencer <= t_delay_ms + t_on_ms));
+        
         return (output);
     }
 
-  private:
-    const SequenceParam defaultSequence = {
-        0,     // delay time (in ms) - note: camera frame rate is about 100Hz, or 10ms period.
-        50000, // time on (in ms)
-        1      // (vent decimation: number of events needed to launch the sequence
-    };
+     void resetSequencer() {
+        timerSequencer = millis() + t_delay_ms + t_on_ms;
+    }
 
-    SequenceParam mySequence{defaultSequence};
-    uint16_t eventCounter = 0;
-    uint32_t timerSequencer; // reset to micros() each time we receive a trigger signal
-    bool output;             // output of the sequencer: ON or OFF (in the future, it can be a struct also containing an analog value - e.g. power)
-    bool running = false;
+
+   // Sequence parameters (eventually t_off too, or a more complicated sequece using an array)
+    uint32_t t_delay_ms = 0;
+    uint32_t t_on_ms = 50; 
+
+  private:
+    
+    uint32_t timerSequencer; // reset to millis() each time we receive a trigger signal
+ 
 };
 
 #endif
