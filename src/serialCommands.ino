@@ -18,17 +18,16 @@
 // a) Per-Laser:
 #define SET_POWER_LASER "PWLASER"  // Param: laser index, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
 #define SET_SWITCH_LASER "SWLASER" // Param: laser index, [0-1],SWLASER. Set the chopping ultrafast switch. Changes current state.
-#define SET_CARRIER "CARRIER"      // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the
-// current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value
+#define SET_CARRIER "CARRIER"      // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the \
+                                   // current power (filtered PWM), otherwise it will be a 50% PWM [chopping the analog power value
 
 #define SET_PARAM_SEQUENCE "SET_SEQPARAM" // Param: laser index, t_delay, t_off (in us), trigger decimation
 #define SET_SEQUENCER "SET_SEQ"           // Param: laser index, [0-1] to deactivate/activate sequencer
-#define SET_SEQUENCER_ALL "SET_SEQ_ALL"
-#define SET_LASER_TRIGGER "SET_TRIG"      // Param: laser index, trigger number (-1 for external trigger, 
-                                          //otherwise the index of another laser (0-3), trigger mode (0=RISE, 1=FALL, 2=CHANGE)
-#define RESET_SEQUENCER	  "RST_SEQ"       // Param: none. This is not the same than switching off and on the sequencer: the later does not affect the 
-                                          // actual sequencer/trigger states, but makes the laser unresponsive to the sequencer output. 
-
+#define SET_SEQUENCER_ALL "SET_SEQ_ALL"   // Param: [0-1] to deactivate/activate all laser sequencers
+#define SET_LASER_TRIGGER "SET_TRIG"      // Param: laser index, trigger number (-1 for external trigger, \
+                                          // otherwise the index of another laser (0-3), trigger mode (0=RISE, 1=FALL, 2=CHANGE)
+#define RESET_SEQUENCER "RST_SEQ"         // Param: none. This is not the same than switching off and on the sequencer: the later does not affect the \
+                                          // actual sequencer/trigger states, but makes the laser unresponsive to the sequencer output.
 
 // b) Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL "PWLASERALL"  // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
@@ -56,9 +55,9 @@
 #define START_DISPLAY "START"   // start the ISR for the displaying engine
 #define STOP_DISPLAY "STOP"     // stop the displaying ISR
 #define SET_INTERVAL "DT"       // parameter: inter-point time in us (min about 20us)
-#define DISPLAY_STATUS "STATUS" // show various settings. Note that the number of points in the
-// current blueprint (or "figure"), and the size of the
-// displaying buffer may differ because of clipping.
+#define DISPLAY_STATUS "STATUS" // show various settings. Note that the number of points in the \
+                                // current blueprint (or "figure"), and the size of the \
+                                // displaying buffer may differ because of clipping.
 #define SET_SHUTTER "SHUTTER"
 
 // 5) Figures and pose:
@@ -72,8 +71,9 @@
 
 //6) Scene clearing and blanking between objects (only useful when having many figures simultanesouly)
 #define CLEAR_SCENE "CLEAR" // clear the blueprint, and also stop the display
-#define CLEAR_MODE "CLMODE" // [0-1],CLMODE. When set to 0, if we draw a figure it will
-// be ADDED to the current scene. Otherwise drawing first clear the current scene and make a new figure.
+#define CLEAR_MODE "CLMODE" // [0-1],CLMODE. When set to 0, if we draw a figure it will                 \
+                            // be ADDED to the current scene. Otherwise drawing first clear the current \
+                            // scene and make a new figure.
 
 // The following commands affect all lasers simultaneously [TODO: per laser]
 #define SET_BLANKING_ALL "BLANKALL" //Figure-to-figure blanking. Param: [0/1]. Affects all lasers.
@@ -106,7 +106,9 @@
 // =============================================================================
 String messageString;
 #define MAX_LENGTH_STACK 20
-String argStack[MAX_LENGTH_STACK]; // number stack storing numeric parameters for commands (for RPN-like parser). Note that the data is saved as a String - it will be converted to int, float or whatever by the specific method associated with the correnspondant command.
+String argStack[MAX_LENGTH_STACK]; // number stack storing numeric parameters for commands (for RPN-like parser).
+                                   //Note that the data is saved as a String - it will be converted to int, float or whatever
+                                   // by the specific method associated with the correnspondent command.
 String cmd;                        // we will parse one command at a time
 
 enum stateParser
@@ -116,8 +118,7 @@ enum stateParser
   SEPARATOR,
   CMD
 } myState;
-//Note: the name of an unscoped enumeration may be omitted:
-// such declaration only introduces the enumerators into the enclosing scope.
+//Note: the name of an unscoped enumeration may be omitted: such declaration only introduces the enumerators into the enclosing scope.
 
 // Initialization:
 void initSerialCom()
@@ -157,7 +158,7 @@ void serialEvent()
     // serial receiver from the parser, and it simplifies debugging.
     if (inChar == END_PACKET)
     {
-      parseStringMessage(messageString); //parse AND calls the appropiate functions
+      parseStringMessage(messageString); // parse AND calls the appropiate functions
       messageString = "";
     }
   }
@@ -222,7 +223,7 @@ bool parseStringMessage(const String &_messageString)
     // Put letter ('A' to 'Z') in cmdString.
     // => Let's not permit to start writing a command if we did not finish a number or
     // nothing was written before.
-    else if (((val >= 'A') && (val <= 'Z')) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE)
+    else if (((val >= 'A') && (val <= 'Z')) || (val == '_') || (val == ' ')) // accept composing commands with "_" (ex: MAKE_CIRCLE)
     {
 
       if ((myState == START) || (myState == SEPARATOR))
@@ -248,8 +249,8 @@ bool parseStringMessage(const String &_messageString)
     {
       // NOTE: do not permit a number separator AFTER a command, another separator,
       // or nothing: only a separator after a number is legit
-      if (myState == NUMBER)
-      { // no need to test: }&&(argStack[numArgs].length() > 0)) {
+      if (myState == NUMBER) // no need to test: }&&(argStack[numArgs].length() > 0)) {
+      {
         //PRINTLN(" (separator)");
         //PRINT("> ARG n."); PRINT(numArgs); PRINT(" : "); PRINTLN(argStack[numArgs]);
         numArgs++;
@@ -258,7 +259,7 @@ bool parseStringMessage(const String &_messageString)
       else
       { // number separator without previous data, another number separator or command
         PRINTLN("> BAD FORMED PACKET");
-//PRINT_LCD("> BAD FORMED ARG LIST");
+        //PRINT_LCD("> BAD FORMED ARG LIST");
 #ifdef CONTINUE_PARSING
         resetParser(); // reset parsing data, and continue from next character.
 #else
@@ -502,7 +503,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     {
       //PRINTLN("> EXECUTING... ");
       uint8_t laserIndex = argStack[0].toInt();
-      Hardware::Lasers::LaserArray[laserIndex].setSequencerParam(argStack[1].toInt(), argStack[2].toInt());
+      Hardware::Lasers::LaserArray[laserIndex].setSequencerParam(argStack[1].toInt(),
+                                                                 argStack[2].toInt());
       execFlag = true;
     }
     else
@@ -526,8 +528,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //laser_ptr->setTriggerDecimation(argStack[3].toInt());
       //laser_ptr->setTriggerOffset(argStack[4].toInt());
 
-      // Trigger method: setTriggerParam(int8_t _source, uint8_t _mode, uint16_t _decimation, uint16_t _offset)
-      Hardware::Lasers::LaserArray[argStack[0].toInt()].setTriggerParam(argStack[1].toInt(), argStack[2].toInt(), argStack[3].toInt(), argStack[4].toInt());
+      Hardware::Lasers::LaserArray[argStack[0].toInt()].setTriggerParam(argStack[1].toInt(),  // int8_t _source
+                                                                        argStack[2].toInt(),  // uint8_t _mode
+                                                                        argStack[3].toInt(),  // uint16_t _decimation
+                                                                        argStack[4].toInt()); //uint16_t _offset
 
       execFlag = true;
     }
@@ -535,8 +539,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-
- else if (_cmdString == RESET_SEQUENCER)
+  else if (_cmdString == RESET_SEQUENCER)
   {
     // Param: (1) laser index
     if (_numArgs == 1)
@@ -581,7 +584,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::OptoTuners::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
+      Hardware::OptoTuners::setStatePower(argStack[0].toInt(),
+                                          constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
       execFlag = true;
     }
     else
@@ -621,7 +625,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str())); // convert c-string to long, then cast to unsigned int
-      // the method strtoul needs a c-string, so we need to convert the String to that:
+                                                                           // the method strtoul needs a c-string, so we need to
+                                                                           // convert the String to that.
       //DisplayScan::setInterPointTime(strtoul(argStack[0].c_str(),NULL,10); // base 10
       execFlag = true;
     }
@@ -662,7 +667,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       else
         PRINTLN("OFF");
 
-      PRINTLN(" 7-LASERS [power, state, carrier, inter-fig blank]: ");
+      PRINTLN(" 7-LASERS : ");
       Laser::LaserState laserState;
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
@@ -682,7 +687,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         PRINTLN("]");
 
         Laser *laser = &(Hardware::Lasers::LaserArray[k]);
-        
+
         PRINT("\t SEQUENCE (ms) [ t_delay = ");
         PRINT(laser->t_delay_ms);
         PRINT(", t_on = ");

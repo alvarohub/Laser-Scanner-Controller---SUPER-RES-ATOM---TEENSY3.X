@@ -19,19 +19,19 @@ class Trigger
     void setTriggerParam(int8_t _source, uint8_t _mode, uint16_t _skipNumEvents, uint16_t _offsetEvents) {
         source = _source;
         mode = _mode;
-        skipNumEvents = (_skipNumEvents > 0 ? _skipNumEvents : 1); // minimum should be 1
-        offsetEvents = _offsetEvents;
+        skipNumEvents = _skipNumEvents; 
+        offsetEvents =  _offsetEvents;
         counterEvents = -offsetEvents;
     }
 
     void setTriggerSource(int8_t _source) { source = _source; }
     void setTriggerMode(uint8_t _mode = 0) { mode = _mode; }
-    void setTriggerSkipNumEvents(uint16_t _skipNumEvents) { 
-        skipNumEvents =  (_skipNumEvents > 0 ? _skipNumEvents : 1);
+    void setTriggerSkipNumEvents(uint16_t _skipNumEvents) {
+        skipNumEvents = _skipNumEvents;
         counterEvents = -offsetEvents;
     }
     void setTriggerOffsetEvents(uint16_t _offsetEvents) { 
-        offsetEvents = _offsetEvents;
+        offsetEvents =  _offsetEvents;
         counterEvents = -offsetEvents;
     }
 
@@ -43,7 +43,6 @@ class Trigger
     // I will use pulling in the main loop to check and update the trigger state from the selected input (pin or another boolean),
     // but in the future we could do it using an external interrupt (with a lower priority with respect to the scanner display
     // periodic soft interruption).
-    // ATTENTION: event won't change until the next call to update()
     auto updateReadTrigger(bool _newInput)
     {
         bool event = false;
@@ -86,9 +85,9 @@ class Trigger
     int8_t source = -1; // trigger source (-1 for external input, [0-3] for other things, like laser states)
     uint8_t mode = 0;   // 0 = RISE, 1 = FALL, 2 = CHANGE
     uint16_t skipNumEvents = 0; // number of events (RISE, FALL or FALL) to ignore before triggering output to high
-    uint8_t offsetEvents = 0;
+    uint16_t offsetEvents = 0;   // only used because I have a resetTrigger() method
     
-    int8_t counterEvents = 0;
+    int32_t counterEvents = 0;
     bool oldInput = false;
 };
 
@@ -128,7 +127,7 @@ class Sequencer
 
    // Sequence parameters (eventually t_off too, or a more complicated sequece using an array)
     uint32_t t_delay_ms = 0;
-    uint32_t t_on_ms = 50; 
+    uint32_t t_on_ms =    50; 
 
   private:
     
