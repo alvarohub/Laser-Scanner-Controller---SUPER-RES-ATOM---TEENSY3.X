@@ -93,7 +93,7 @@ class Trigger
     int8_t source = -1;         // trigger source (-1 for external input, [0-3] for other things, like laser states)
     uint8_t mode = 0;           // 0 = RISE, 1 = FALL, 2 = CHANGE
     uint16_t skipNumEvents = 0; // number of events (RISE, FALL or FALL) to ignore before triggering output to high
-    uint16_t offsetEvents = 4;  // only used because I have a resetTrigger() method
+    uint16_t offsetEvents = 0;  // only used because I have a resetTrigger() method
 
     int32_t counterEvents = 0;
     bool oldInput = false;
@@ -138,7 +138,7 @@ class Sequencer
 
     // Sequence parameters (eventually t_off too, or a more complicated sequece using an array)
     uint32_t t_delay_ms = 0;
-    uint32_t t_on_ms = 500;
+    uint32_t t_on_ms = 50;
 
   private:
     uint32_t timerSequencer; // reset to millis() each time we receive a trigger signal
