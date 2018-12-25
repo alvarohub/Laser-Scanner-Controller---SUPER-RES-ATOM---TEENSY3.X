@@ -8,12 +8,12 @@
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
+#define PRINT(...) (Hardware::print(__VA_ARGS__))
+#define PRINTLN(...) (Hardware::println(__VA_ARGS__))
+
 #define DEBUG_MODE_SERIAL // by defining this, we can debug on the serial port
 //#define DEBUG_MODE_LCD  // for using the LCD panel
 #define DEBUG_MODE_TFT    // for using the TFT panel
-
-#define PRINT(...)      (Hardware::print(__VA_ARGS__))
-#define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
 
 // #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
 // #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
@@ -135,7 +135,7 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 
 // * TRIGGER PIN (bidirectional?)
 #define PIN_TRIGGER_INPUT   22 // pin 12 in D25 ILDA connector
-#define PIN_TRIGGER_OUTPUT  23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+#define PIN_TRIGGER_OUTPUT  23 // pi 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
 
 // * INTENSITY/BLANKING
 // * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be

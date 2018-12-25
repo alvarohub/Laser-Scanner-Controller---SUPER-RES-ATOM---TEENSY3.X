@@ -64,7 +64,8 @@ void setup() {
 }
 
 // ================== MAIN LOOP ==================
-void loop() {
+void loop()
+{
 
         //  updateSerialCom(); //no need if using a serial event handler!
 
@@ -81,7 +82,5 @@ void loop() {
         //  Graphics::setScaleFactor(0.2+.3*(1.0+cos(2.5*t)));
         // Renderer2D::renderFigure();
 
-
         //delay(200);
-
 }

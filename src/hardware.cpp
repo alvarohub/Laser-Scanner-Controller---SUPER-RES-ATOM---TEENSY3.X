@@ -234,26 +234,26 @@ extern void updateLaserSequencers()
 	// NOTE2: I will update the sequencer & trigger EVEN if the sequencer state is OFF (in this case the output of the
 	// sequencer will not affect the state of the laser). This way, when setting the sequencer to ON again, the
 	// sequencer offset will not be broken (to actually do this, we can reset the sequencer/trigger by calling the
-	// restartSequencer() method of the laser class, that will call reset its sequencer AND its trigger. 
+	// restartSequencer() method of the laser class, that will call reset its sequencer AND its trigger.
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
 		Laser *laser = &(LaserArray[i]);
-		
+
 		// (a) identify the "source" (input) of the trigger used by each laser and take its value:
 		bool newInput;
-		uint8_t triggerSource = laser->getTriggerSource();
-		if (triggerSource == -1) // this means the input is from the EXTERNAL TRIGGER
-			newInput = Gpio::readTriggerInput();
+		int8_t triggerSource = laser->getTriggerSource();
+		if (triggerSource == -1)
+			newInput = Gpio::readTriggerInput(); // this measn the input is from the EXTERNAL TRIGGER
 		else
 			newInput = LaserArray[triggerSource].getStateSwitch();
-
+		
 		// (b) update and read the trigger state:
 		bool triggerEvent = laser->updateReadTrigger(newInput);
 
-		// (c)  Update the sequencer:
+		// (c)  Update the sequencer (regardless of the state of the sequencer -running or not)
 		bool newState = laser->updateReadSequencer(triggerEvent);
 
-		// (d) Check if we need to update the state for this laser following the sequencer (otherwise do nothing):
+		// (d) Check if we need to update the state for this laser following the sequence (otherwise do nothing).
 		if (laser->getStateSequencer())
 			laser->setStateSwitch(newState);
 	}

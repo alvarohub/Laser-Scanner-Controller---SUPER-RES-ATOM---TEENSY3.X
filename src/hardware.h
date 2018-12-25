@@ -130,7 +130,6 @@ inline void setPWMDuty(uint8_t _pin, uint16_t _duty) { analogWrite(_pin, _duty);
 
 } // namespace Gpio
 
-
 namespace Lasers
 {
 
@@ -207,10 +206,12 @@ inline void setStateCarrierAll(bool _carrierMode)
 		LaserArray[i].setStateCarrier(_carrierMode);
 }
 
-inline void setStateSequencer(uint8_t _laser, bool _stateSequencer) {
-		LaserArray[_laser].setStateSequencer(_stateSequencer);
+inline void setStateSequencer(uint8_t _laser, bool _stateSequencer)
+{
+	LaserArray[_laser].setStateSequencer(_stateSequencer);
 }
-inline void setStateSequencerAll(bool _stateSequencer) {
+inline void setStateSequencerAll(bool _stateSequencer)
+{
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		LaserArray[i].setStateSequencer(_stateSequencer);
 }

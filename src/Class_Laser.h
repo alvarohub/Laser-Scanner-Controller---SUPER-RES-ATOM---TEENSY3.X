@@ -40,6 +40,7 @@ class Laser : public Trigger, public Sequencer
 
 	// Low level methods not affecting the current LaserState (myState) - useful for tests.
 	void setSwitch(bool _state);
+	void toggleStateSwitch(); // will be useful for the sequencer.
 	void setPower(uint16_t _power);
 	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable (could made all private though)
 

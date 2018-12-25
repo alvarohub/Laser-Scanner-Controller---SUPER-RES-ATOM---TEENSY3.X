@@ -672,9 +672,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
         laserState = Hardware::Lasers::LaserArray[k].getCurrentState();
-        PRINT("     ");
+        PRINT("\t");
         PRINT(Hardware::Lasers::laserNames[k]);
-        PRINT("\t LASER [ power = ");
+        PRINTLN("  -----------------------------------------------------------------------------");
+        PRINT("\t\t LASER :\t[ power = ");
         PRINT(laserState.power);
         PRINT(", switch = ");
         PRINT(laserState.stateSwitch);
@@ -684,17 +685,17 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         PRINT(laserState.stateSequencer);
         PRINT(", blanking = ");
         PRINT(laserState.stateBlanking);
-        PRINTLN("]");
+        PRINTLN(" ]");
 
         Laser *laser = &(Hardware::Lasers::LaserArray[k]);
 
-        PRINT("\t SEQUENCE (ms) [ t_delay = ");
+        PRINT("\t\t SEQUENCE :\t[ t_delay = ");
         PRINT(laser->t_delay_ms);
         PRINT(", t_on = ");
         PRINT(laser->t_on_ms);
-        PRINTLN("]");
+        PRINTLN(" ] (in ms)");
 
-        PRINT("\t TRIGGER [ source = ");
+        PRINT("\t\t TRIGGER :\t[ source = ");
         PRINT(laser->getTriggerSource());
         PRINT(", mode = ");
         PRINT(laser->getTriggerMode());
@@ -702,7 +703,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         PRINT(laser->getTriggerSkipNumEvents());
         PRINT(", offset = ");
         PRINT(laser->getTriggerOffsetEvents());
-        PRINTLN("]");
+        PRINTLN(" ]");
       }
       execFlag = true;
     }
