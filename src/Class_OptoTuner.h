@@ -7,17 +7,20 @@
 
 // ===========================================================================================================
 
-class OptoTune {
+class OptoTune
+{
 
-		uint16_t power;
+	uint16_t power;
 
-public:
-	OptoTune() {};
-	OptoTune(uint8_t _pinPower) {
+  public:
+	OptoTune(){};
+	OptoTune(uint8_t _pinPower)
+	{
 		init(_pinPower);
 	}
 
-	void init(uint8_t _pinPower) {
+	void init(uint8_t _pinPower)
+	{
 		// NOTE: be careful when assigning the PWM pins here: they should be on the
 		// same flexi-timer so we can set the same PWM frequency. For instance, for pins
 		// 29, 30, this is FTM2.
@@ -27,24 +30,25 @@ public:
 		setStatePower(defaultPower);
 	}
 
-	void setStatePower(uint16_t _power) {
+	void setStatePower(uint16_t _power)
+	{
 		power = _power;
 		analogWrite(pinPower, _power);
 	}
 
-	void setPower(uint16_t _power) { // without change the current state (this is to avoid the state stack)
+	void setPower(uint16_t _power)
+	{ // without change the current state (this is to avoid the state stack)
 		analogWrite(pinPower, _power);
 	}
 
-	void setToCurrentState() {
+	void setToCurrentState()
+	{
 		setStatePower(power);
 	}
 
-private:
-
+  private:
 	uint8_t pinPower;
-	const uint16_t defaultPower = MAX_OPTOTUNE_POWER>>1; // middle of range
-
+	const uint16_t defaultPower = MAX_OPTOTUNE_POWER >> 1; // middle of range
 };
 
 #endif
