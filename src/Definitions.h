@@ -8,25 +8,17 @@
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
+#define PRINT(...) (Hardware::print(__VA_ARGS__))
+#define PRINTLN(...) (Hardware::println(__VA_ARGS__))
+
 #define DEBUG_MODE_SERIAL // by defining this, we can debug on the serial port
 //#define DEBUG_MODE_LCD  // for using the LCD panel
 #define DEBUG_MODE_TFT    // for using the TFT panel
 
+
 #define PRINT(...)      (Hardware::print(__VA_ARGS__))
 #define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
 
-// #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
-// #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
-// #define PRINTLN(...)    ({Serial.println(__VA_ARGS__); Hardware::Lcd::println(__VA_ARGS__);})
-//
-// #if defined DEBUG_MODE_SERIAL && !defined(DEBUG_MODE_LCD)
-// #define PRINT(...)      Serial.print(__VA_ARGS__)
-// #define PRINTLN(...)    Serial.println(__VA_ARGS__)
-//
-// #if !defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
-// # define PRINT(...)     (Hardware::Lcd::print(__VA_ARGS__))
-// # define PRINTLN(...)   (Hardware::Lcd::println(__VA_ARGS__))
-// #endif
 
 /*
 #define PI 3.14159265889
@@ -93,8 +85,10 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
-#define FREQ_PWM_POWER 70000     // for filtering
-#define FREQ_PWM_CARRIER 200000  // this is for chopping the signal (control fast switches)
+
+#define FREQ_PWM_POWER      70000     // for filtering
+#define FREQ_PWM_CARRIER    200000  // this is for chopping the signal (control fast switches)
+
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -128,31 +122,37 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 // * ANALOG PINS (for reading and writing, on TPM1 timer)
 #define PIN_ANALOG_A 16
 #define PIN_ANALOG_B 17
+
 // * DIGITAL PINS:
 #define PIN_DIGITAL_A 31
 #define PIN_DIGITAL_B 32
+
 // * TRIGGER PIN (bidirectional?)
-#define PIN_TRIGGER_INPUT	 22 // pin 12 in D25 ILDA connector
-#define PIN_TRIGGER_OUTPUT 23 // pin 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+#define PIN_TRIGGER_INPUT   22 // pin 12 in D25 ILDA connector
+#define PIN_TRIGGER_OUTPUT  23 // pi 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+
 // * INTENSITY/BLANKING
 // * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be
 // much better if this was done electronically, not using the relatively complex - and easy to broke - logic of my program!
-#define PIN_INTENSITY_BLANKING 15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+#define PIN_INTENSITY_BLANKING  15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+
 // * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
-#define PIN_SHUTTER	14 // this is pin 13 in D25 ILDA connector
+#define PIN_SHUTTER	            14 // this is pin 13 in D25 ILDA connector
 
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
 //NOTE: these pins are listed here for reference, but they are the
 //default pins using in Wire.h.
-#define LCD_SDA 18
-#define LCD_SCL 19
+
+#define LCD_SDA     18
+#define LCD_SCL     19
+
 // 2] TFT display (Adafruit_ST7735)
-#define TFT_SCLK   25    // set these to be whatever pins you like, if using software SPI
-#define TFT_MOSI   26   // set these to be whatever pins you like, if using software SPI
-#define TFT_CS     27
-#define TFT_DC     28
-#define TFT_RST    0 // not used for now, the RST is connected to 5V (Vin)
+#define TFT_SCLK    25    // set these to be whatever pins you like, if using software SPI
+#define TFT_MOSI    26   // set these to be whatever pins you like, if using software SPI
+#define TFT_CS      27
+#define TFT_DC      28
+#define TFT_RST     0 // not used for now, the RST is connected to 5V (Vin)
 
 
 // ************************ OTHER USEFUL MACROS ********************************

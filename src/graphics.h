@@ -55,7 +55,8 @@
 #include "Class_P2.h"
 #include "renderer2D.h"
 
-namespace Graphics {
+namespace Graphics
+{
 
 extern bool clearModeFlag;
 
@@ -66,19 +67,19 @@ extern void setCenter(const P2 &_center);
 extern void setCenter(const float &_x, const float &_y);
 extern void setAngle(const float _angle);
 extern void setScaleFactor(const float _scaleFactor);
-extern void resetGlobalPose();   // this can be done without rendering [~openGL set identity modelview]
+extern void resetGlobalPose(); // this can be done without rendering [~openGL set identity modelview]
 
 extern void setColorRed(bool _state);
 
 // (2) "Scene" setting methods and rendering wrappers:
-extern void clearScene();   // force clear scene
+extern void clearScene(); // force clear scene
 extern void updateScene();
 extern void setClearMode(bool _clearModeFlag);
 extern bool getClearMode();
 //extern void renderFigure(); // unnecessary wrapper, and less clear than
 //calling the Renderer2D (we could then change the rendering engine easily)
 
-extern void addVertex(const P2& _newPoint);
+extern void addVertex(const P2 &_newPoint);
 
 //(3) Basic shapes. We need to pass at least the number of points - we
 // * NOTE1: could have a default "opengl-like" state variable, but it's
@@ -88,67 +89,58 @@ extern void addVertex(const P2& _newPoint);
 // "scenes"]. However, since we are using a very simple renderer, there is
 // no blanking in between them nor special pose... beware!
 extern void drawLine(
-								const P2 &_fromPoint,
-								const float _lenX, const float _lenY,
-								const uint16_t _numPoints
-								);
+	const P2 &_fromPoint,
+	const float _lenX, const float _lenY,
+	const uint16_t _numPoints);
 // Centered:
 extern void drawLine(
-								const float _lenX, const float _lenY,
-								uint16_t const _numPoints
-								);
+	const float _lenX, const float _lenY,
+	uint16_t const _numPoints);
 
 extern void drawCircle(const P2 &_center, const float _radius, const uint16_t _numPoints);
 // Centered:
 extern void drawCircle(const float _radius, const uint16_t _numPoints);
 
 extern void drawRectangle(
-								const P2 &_fromBottomLeftCornerPoint,
-								const float _lenX, const float _lenY,
-								const uint16_t _nx, const uint16_t _ny
-								);
+	const P2 &_fromBottomLeftCornerPoint,
+	const float _lenX, const float _lenY,
+	const uint16_t _nx, const uint16_t _ny);
 // Centered:
 extern void drawRectangle(
-								const float _lenX, const float _lenY,
-								const uint16_t _nx, const uint16_t _ny
-								);
+	const float _lenX, const float _lenY,
+	const uint16_t _nx, const uint16_t _ny);
 
 extern void drawSquare(
-								const P2 &_fromBottomLeftCornerPoint,
-								const float sideLength,
-								const uint16_t _numPointsSide
-								);
+	const P2 &_fromBottomLeftCornerPoint,
+	const float sideLength,
+	const uint16_t _numPointsSide);
 //Centered:
 extern void drawSquare(
-								const float _sideLength,
-								const uint16_t _numPointsSide
-								);
+	const float _sideLength,
+	const uint16_t _numPointsSide);
 
 extern void drawZigZag(
-								const P2 &_fromPoint,
-								const float _lenX, const float _lenY,
-								const uint16_t _nx, const uint16_t _ny
-								);
+	const P2 &_fromPoint,
+	const float _lenX, const float _lenY,
+	const uint16_t _nx, const uint16_t _ny);
 //Centered:
 extern void drawZigZag(
-								const float _lenX, const float _lenY,
-								const uint16_t _nx, const uint16_t _ny
-								);
+	const float _lenX, const float _lenY,
+	const uint16_t _nx, const uint16_t _ny);
 
 // r = _radiusArm * theta
 extern void drawSpiral(
-								const P2 &_center,
-								const float _radiusArm,
-								const float _numTours,
-								const uint16_t _numPoints
-								);
+	const P2 &_center,
+	const float _radiusArm,
+	const float _numTours,
+	const uint16_t _numPoints);
 
 //Centered
 extern void drawSpiral(
-								const float _radiusArm, // r = _radiusArm * theta
-								const float _numTours,
-								const uint16_t _numPoints);
+	const float _radiusArm, // r = _radiusArm * theta
+	const float _numTours,
+	const uint16_t _numPoints);
 
-}  // end namespace
+} // namespace Graphics
 
-	#endif
+#endif

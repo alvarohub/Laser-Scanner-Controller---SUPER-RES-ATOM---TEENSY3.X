@@ -64,10 +64,15 @@ void setup() {
 }
 
 // ================== MAIN LOOP ==================
-void loop() {
+void loop()
+{
 
         //  updateSerialCom(); //no need if using a serial event handler!
 
+        // Update laser sequence (for the lasers that have the sequencer active).
+        // I do this with polling, but in the future I could use an interrupt (with lower priority than 
+        // the periodic software interrupt for the scanner display)
+        Hardware::Lasers::updateLaserSequencers();
 
         //TEST:
 
@@ -77,7 +82,5 @@ void loop() {
         //  Graphics::setScaleFactor(0.2+.3*(1.0+cos(2.5*t)));
         // Renderer2D::renderFigure();
 
-
         //delay(200);
-
 }

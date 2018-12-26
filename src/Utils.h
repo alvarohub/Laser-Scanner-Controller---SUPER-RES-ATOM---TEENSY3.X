@@ -16,12 +16,17 @@ namespace Utils {
 	inline void waitBlink(uint8_t _times) {
 		pinMode(PIN_LED_DEBUG, OUTPUT); //<-- to be able to call this without calling init first
 		for (uint8_t i=0; i<_times; i++) {
-			for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
-			for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
+			for (unsigned long i=0; i<1000000;i++) {
+				digitalWrite(PIN_LED_DEBUG, LOW);
+			}
+			for (unsigned long i=0; i<1000000;i++) {
+				digitalWrite(PIN_LED_DEBUG, HIGH);
+			}
 		}
 	}
-
-
 }
+
+	
+
 
 #endif

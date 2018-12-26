@@ -4,163 +4,90 @@
 #include "Arduino.h"
 #include "Definitions.h"
 #include <vector>
+#include "Class_Sequencer.h"
 #include "Utils.h"
 
 // ===========================================================================================================
 
 // There will be several lasers, so I do a class instead of a namespace.
-// NOTE : the group of lasers is not an object itself, but a namespace. Anotehr option
+// NOTE : the group of lasers is not an object itself, but a namespace. Another option
 // would have been to make the group of laser (array and methods) static methods and variables
 // (in that case, the array could be dynamic - a vector)
-class Laser {
+class Laser : public Trigger, public Sequencer
+{
+	static uint8_t myID; // automatically incremented at instantiation (so we can declare a laser array)
 
-	public:
-
-		// I will create a struct to store laser state: the reason is I will use a
-		// stack to avoid having to save the state whenever we want to try something
-		// or do some complex drawing (very similar to "pushStyle" in OF or
-		// Processing)
-		struct LaserState {
-		uint16_t power;	// 0-MAX_LASER_POWER
-		bool state; 		// on/off
-
-		bool carrierMode;   // chopper mode at FREQ_PWM_CARRIER
-		bool blankingMode;  // blank between each figure (for the time being, end of trajectory buffer).
-		// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
-		// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
+  public:
+	// Public struct to store laser state (I will use a
+	// stack to save/retrieve the state whenever we want to try something
+	// or do some complex drawing - similar to "pushStyle" in OF or Processing)
+	struct LaserState
+	{
+		uint16_t power;		// 0-MAX_LASER_POWER
+		bool stateSwitch;			// on/off
+		bool stateCarrier;   // chopper mode at FREQ_PWM_CARRIER
+		bool stateSequencer; // this will activate/deactivate the sequencer mode
+		// NOTE: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
+		// modulated at the carrier frequency)
+		bool stateBlanking;	// blank between each figure (for the time being, end of trajectory buffer).
+						    // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+						    // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
-	Laser() {};
-	Laser(uint8_t _pinPower, uint8_t _pinSwitch) {
-		init(_pinPower,_pinSwitch);
-	}
+	Laser();
+	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
+	void init(uint8_t _pinPower, uint8_t _pinSwitch);
 
-	void init(uint8_t _pinPower, uint8_t _pinSwitch) {
-		pinPower = _pinPower; // this is analog output (PWM). Does not need to be set (pinMode)
-	    pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
+	// Low level methods not affecting the current LaserState (myState) - useful for tests.
+	void setSwitch(bool _state);
+	void toggleStateSwitch(); // will be useful for the sequencer.
+	void setPower(uint16_t _power);
+	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable (could made all private though)
 
-		//pinMode(_pinPower, OUTPUT); // <<-- no need, it will be used exclusively as a PWM signal
-		//pinMode(_pinSwitch, OUTPUT); // <--- done in setCarrierMode method (if carrier off)
+	// Methods similar to the above, but affecting the current LaserState variable myState
+	void setStateSwitch(bool _state);
+	void setStatePower(uint16_t _power);
+	void setStateCarrier(bool _stateCarrier);
+	void setStateSequencer(bool _seqMode); 
+	void setStateBlanking(bool _blankingMode);
 
-		// setCarrierMode(false); // by default it will *not* be set to "carrier" mode, so the pinSwitch
-		// will be set as OUTPUT
+	// Setting all the variables simultaneously:
+	void setState(LaserState _state);
+	void resetState(); // reset to default state and activate it
 
-		//setStatePower(MAX_LASER_POWER/2); // half power...
-		//setStateSwitch(false);			 // but switched off
+	bool getStateSwitch();
+	uint16_t getStatePower();
+	bool getStateCarrier();
+	bool getStateSequencer();
+	bool getStateBlanking();
 
-		// Set the default laser state:
-		setState(defaultState);
+	void restartSequencer();
 
-		// clear the
-		clearStateStack();
-	}
+	LaserState getCurrentState();
 
-	// Low level methods not affecting the current LaserState (myState):
-	void setSwitch(bool _state) {
-		// Note: if in carrier mode, this action will be IGNORED unless we force
-		// pinMode OUTPUT (it will reverse to PWM when issuing an analoWrite command)
-		pinMode(pinSwitch, OUTPUT);
-		digitalWrite(pinSwitch, _state);
-	}
+	void pushState();
+	void popState();
+	void clearStateStack();
 
-	void setPower(uint16_t _power) {
-		analogWrite(pinPower, _power);
-	}
+	// Update/read methods:
+	void updateBlank(); // will switch off the laser if the stateBlanking is true
 
-	void setStateSwitch(bool _state) {
-		// Note: if in carrier mode, this action will be IGNORED (but the state changes)
-		myState.state = _state;
-		setSwitch(_state);
-	}
+	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
 
-	bool readStateSwitch() {
-		return(myState.state);
-	}
-
-	void setStatePower(uint16_t _power) {
-		myState.power = _power;
-		analogWrite(pinPower, _power);
-	}
-
-	void setCarrierMode( bool _carrierMode) { // note: the carrier is a square wave (pwm, 50% or adjusted at 58% or so
-	// to account for an asymetry between the time it takes to switch ON and switch OFF of the lasers,
-	// with a pwm frequency that is tunneable - by default 100kHz).
-	// It "modulates" the current laser power (another PWM per-laser at FREQ_PWM_CARRIER of
-	// about 70kHz, with a low pass filter)
-		myState.carrierMode = _carrierMode;
-		if (!_carrierMode) {
-			pinMode(pinSwitch, OUTPUT); // by doing this, we re-enable digital control.
-			//digitalWrite(pinSwitch, LOW); // set to LOW when stopping PWM cycles?
-		} else {
-			// note: the resolution of all PWM signals is RES_PWM, defaulting to 12 (see "Definitions.h"), or 4095
-			analogWrite(pinSwitch, 0.58*2048); // it is not exactly 50% because of the different time it takes to switch the
-			// lasers ON or OFF
-		}
-	}
-
-	void setBlankingMode( bool _blankingMode) {
-		myState.blankingMode = _blankingMode;
-	}
-
-	void updateBlank() {
-		if (myState.blankingMode) {
-			pinMode(pinSwitch, OUTPUT); //setToCurrentState will make it go back to PWM if necessary
-			digitalWrite(pinSwitch, LOW);
-		// ATTN: no change to current state!!
-	}
-	}
-
-	void setState(LaserState _state) {
-		myState=_state;
-		setToCurrentState();
-	}
-
-	LaserState getLaserState() {return(myState);}
-
-	bool setToCurrentState() {
-		setCarrierMode(myState.carrierMode); // done before setting the switch state, as it will do pinMode output IF carrier off
-		digitalWrite(pinSwitch, myState.state);
-		analogWrite(pinPower, myState.power);
-		setBlankingMode(myState.blankingMode);
-		return(myState.state);
-	}
-
-	void pushState() {
-		laserState_Stack.push_back(myState);
-	}
-	void popState() {
-		setState(laserState_Stack.back());
-		laserState_Stack.pop_back();
-	}
-
-	void clearStateStack() {
-		laserState_Stack.clear();
-	}
-
-	LaserState myState;
-
-private:
-
-	// NOTE: methods that affect all the objects from this class could access
-	// all the objects by having a static vector<> or a static array and a static
-	// index counter. However, since all the Hardware namespaces are in one place,
-	// instead of using static class methods, I will have extern functions in the
-	// Laser namespace (hence the commenting of the following lines)
-	// // Set Power PWM frequency and resolution:
-	// static void setPowerFrequencyPWM(uint16_t); // affect all power-pwm frequencies
-	// static void setPowerResolutionPWM(uint8_t); // affects all power-pwm lasers
-	//
-	// // Carrier (when used). NOTE: it could be something different from a square wave, 50% duty ratio!
-	// static void setCarrierFrequencyPWM(uint16_t);
-	// static void setCarrierResolutionPWM(uint8_t _resBits = 10); // in bits.
-	// static void setCarrierDutyCycle(uint8_t _val = 512);
+  private:
 
 	uint8_t pinPower, pinSwitch;
 
-	// Default laser state: [ half power, switched OFF, carrier OFF, inter-figure blanking ON]
+	// Default laser state:
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
-	const LaserState defaultState = {2000, false, false, true};
+	const LaserState defaultState = {
+		2000,  // power (0-4095)
+		false, // switch (on/off)
+		false, // carrier mode (on/off)
+		false, // sequencer mode (on/off)
+		false  // blancking mode (on/off)
+	};
 
 	std::vector<LaserState> laserState_Stack;
 
