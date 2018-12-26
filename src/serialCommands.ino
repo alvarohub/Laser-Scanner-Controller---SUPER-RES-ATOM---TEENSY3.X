@@ -16,6 +16,7 @@
 // 1) Laser commands:
 
 // a) Per-Laser:
+
 #define SET_POWER_LASER "PWLASER"  // Param: laser index, 0 to MAX_LASER_POWER (0-4095, 12 bit res). Changes current state.
 #define SET_SWITCH_LASER "SWLASER" // Param: laser index, [0-1],SWLASER. Set the chopping ultrafast switch. Changes current state.
 #define SET_CARRIER "CARRIER"      // laser num + 0/1 where 0 means no carrier: when switch open, the laser shines continuously at the \
@@ -28,7 +29,6 @@
                                           // otherwise the index of another laser (0-3), trigger mode (0=RISE, 1=FALL, 2=CHANGE)
 #define RESET_SEQUENCER "RST_SEQ"         // Param: none. This is not the same than switching off and on the sequencer: the later does not affect the \
                                           // actual sequencer/trigger states, but makes the laser unresponsive to the sequencer output.
-
 // b) Simultaneously affecting all lasers:
 #define SET_POWER_LASER_ALL "PWLASERALL"  // Param: 0 to MAX_LASER_POWER (0-4095, 12 bit res). TODO: per laser.
 #define SET_SWITCH_LASER_ALL "SWLASERALL" // Param: [0-1],SWLASER. Will open/close the laser ultrafast switch.
@@ -669,6 +669,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
       PRINTLN(" 7-LASERS : ");
       Laser::LaserState laserState;
+
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
         laserState = Hardware::Lasers::LaserArray[k].getCurrentState();
@@ -704,6 +705,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         PRINT(", offset = ");
         PRINT(laser->getTriggerOffsetEvents());
         PRINTLN(" ]");
+
       }
       execFlag = true;
     }

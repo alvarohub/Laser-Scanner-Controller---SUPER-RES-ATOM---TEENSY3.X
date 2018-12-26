@@ -15,18 +15,10 @@
 //#define DEBUG_MODE_LCD  // for using the LCD panel
 #define DEBUG_MODE_TFT    // for using the TFT panel
 
-// #if defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
-// #define PRINT(...)      ({Serial.print(__VA_ARGS__); Hardware::Lcd::print(__VA_ARGS__);})
-// #define PRINTLN(...)    ({Serial.println(__VA_ARGS__); Hardware::Lcd::println(__VA_ARGS__);})
-//
-// #if defined DEBUG_MODE_SERIAL && !defined(DEBUG_MODE_LCD)
-// #define PRINT(...)      Serial.print(__VA_ARGS__)
-// #define PRINTLN(...)    Serial.println(__VA_ARGS__)
-//
-// #if !defined DEBUG_MODE_SERIAL && defined DEBUG_MODE_LCD
-// # define PRINT(...)     (Hardware::Lcd::print(__VA_ARGS__))
-// # define PRINTLN(...)   (Hardware::Lcd::println(__VA_ARGS__))
-// #endif
+
+#define PRINT(...)      (Hardware::print(__VA_ARGS__))
+#define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
+
 
 /*
 #define PI 3.14159265889
@@ -93,8 +85,10 @@
 
 // For setting the things below, check here:
 // https://www.pjrc.com/teensy/td_pulse.html
+
 #define FREQ_PWM_POWER      70000     // for filtering
 #define FREQ_PWM_CARRIER    200000  // this is for chopping the signal (control fast switches)
+
 #define RES_PWM  12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
@@ -149,8 +143,10 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
 //NOTE: these pins are listed here for reference, but they are the
 //default pins using in Wire.h.
+
 #define LCD_SDA     18
 #define LCD_SCL     19
+
 // 2] TFT display (Adafruit_ST7735)
 #define TFT_SCLK    25    // set these to be whatever pins you like, if using software SPI
 #define TFT_MOSI    26   // set these to be whatever pins you like, if using software SPI
