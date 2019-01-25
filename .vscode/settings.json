@@ -5,7 +5,10 @@
     },
     "C_Cpp.intelliSenseEngineFallback": "Tag Parser",
     "terminal.integrated.env.linux": {
-        "PATH": "/home/usuario/.platformio/penv/bin:/home/usuario/.platformio/penv:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/home/usuario/.nvm/versions/node/v5.0.0/bin:/home/usuario/bin:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+        "PATH": "/home/usuario/.platformio/penv/bin:/home/usuario/.platformio/penv:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/home/usuario/.toolsforai/RuntimeSDK/cntk/cntk/bin:/home/usuario/.nvm/versions/node/v5.0.0/bin:/home/usuario/bin:~/anaconda3/bin:/usr/bin/pythonsite-packages/tensorflow:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
         "PLATFORMIO_CALLER": "vscode"
     },
+    "python.pythonPath": "/Users/alvaro/anaconda3/bin/python",
+    "python.linting.pylintEnabled": true,
+    "C_Cpp.dimInactiveRegions": true,
 }

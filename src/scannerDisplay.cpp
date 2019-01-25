@@ -59,16 +59,15 @@ namespace DisplayScan {
 
     // Set ISR priority?
     // * NOTE 1 : lower numbers are higher priority, with 0 the highest and 255 the lowest.
-    // Most other interrupts default to 128, millis() and micros() are priority 32.
+    //  Most other interrupts default to 128, millis() and micros() are priority 32.
     //  As a general guideline, interrupt routines that run longer should be given lower
-    //　priority (higher numerical values).
+    //  priority (higher numerical values).
     // * NOTE 2 : priority should be set after begin  - meaning it has to be set every time we stop
     // and restart??? I put it in "startDisplay()" method then.
     // Check here for details:
     //        - https://www.pjrc.com/teensy/td_timing_IntervalTimer.html
     //        - https://forum.pjrc.com/archive/index.php/t-26642.html
-    // scannerTimer.priority(112); // lower than millis/micros but higher than "most others",
-    // including
+    // scannerTimer.priority(112); // 112 to lower than millis/micros but higher than others... or higher than millis/micros?
   }
 
 uint32_t getInterPointTime() {return(dt);}
@@ -86,6 +85,7 @@ uint32_t getInterPointBlankingMode() {return(interpointBlanking);}
   void startDisplay() {
     if (!running) { // otherwise do nothing, the ISR is already running
       if ( scannerTimer.begin(displayISR, dt) ) {
+        // Priority: lower than millis/micros but higher than "most others", in particular the clock to produce the camera trigger
         scannerTimer.priority(112);
         running = true;
         resetWaitingTimers();
@@ -232,8 +232,8 @@ uint32_t getInterPointBlankingMode() {return(interpointBlanking);}
           //Hardware::Lasers::pushState();
           for (uint8_t k = 0; k< NUM_LASERS; k++) {
             // switch laser off if blankingMode set (regardless of the mode - carrier or continuous)
-            //if (Hardware::Lasers::LaserArray[k].myState.blankingMode) Hardware::Lasers::LaserArray[k].setSwitch(false);
-            Hardware::Lasers::LaserArray[k].updateBlank(); // will only blank IF blanking mode true.
+            //if (Hardware::Lasers::laserArray[k].myState.blankingMode) Hardware::Lasers::laserArray[k].setSwitch(false);
+            Hardware::Lasers::laserArray[k].updateBlank(); // will only blank IF blanking mode true.
           }
         }
         // otherwise do nothing, but keep checking if the buffer gets filled with something.
@@ -332,8 +332,8 @@ uint32_t getInterPointBlankingMode() {return(interpointBlanking);}
           // We WERE in the last point [TODO: this is not the right condition for a generic "end of figure"...]
           for (uint8_t k = 0; k< NUM_LASERS; k++) {
             // Switch laser off if blankingMode set [regardless of the mode - carrier or continuous]
-            //if (Hardware::Lasers::LaserArray[k].myState.blankingMode) Hardware::Lasers::LaserArray[k].setSwitch(false);
-            Hardware::Lasers::LaserArray[k].updateBlank(); // will only blank IF blanking mode true.
+            //if (Hardware::Lasers::laserArray[k].myState.blankingMode) Hardware::Lasers::laserArray[k].setSwitch(false);
+            Hardware::Lasers::laserArray[k].updateBlank(); // will only blank IF blanking mode true.
             // NOTE: we don't do inter-point blanking here! this is "true" blanking (between figures)
           }
           stateDisplayEngine = STATE_START_BLANKING;

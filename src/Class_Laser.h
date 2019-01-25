@@ -13,9 +13,8 @@
 // NOTE : the group of lasers is not an object itself, but a namespace. Another option
 // would have been to make the group of laser (array and methods) static methods and variables
 // (in that case, the array could be dynamic - a vector)
-class Laser : public Trigger, public Sequencer
+class Laser : public receiverModule
 {
-	static uint8_t myID; // automatically incremented at instantiation (so we can declare a laser array)
 
   public:
 	// Public struct to store laser state (I will use a
@@ -26,7 +25,6 @@ class Laser : public Trigger, public Sequencer
 		uint16_t power;		// 0-MAX_LASER_POWER
 		bool stateSwitch;			// on/off
 		bool stateCarrier;   // chopper mode at FREQ_PWM_CARRIER
-		bool stateSequencer; // this will activate/deactivate the sequencer mode
 		// NOTE: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
 		// modulated at the carrier frequency)
 		bool stateBlanking;	// blank between each figure (for the time being, end of trajectory buffer).
@@ -37,6 +35,7 @@ class Laser : public Trigger, public Sequencer
 	Laser();
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
 	void init(uint8_t _pinPower, uint8_t _pinSwitch);
+	String getName();
 
 	// Low level methods not affecting the current LaserState (myState) - useful for tests.
 	void setSwitch(bool _state);
@@ -48,7 +47,7 @@ class Laser : public Trigger, public Sequencer
 	void setStateSwitch(bool _state);
 	void setStatePower(uint16_t _power);
 	void setStateCarrier(bool _stateCarrier);
-	void setStateSequencer(bool _seqMode); 
+	void setStateSequencer(bool _seqMode);
 	void setStateBlanking(bool _blankingMode);
 
 	// Setting all the variables simultaneously:
@@ -61,8 +60,6 @@ class Laser : public Trigger, public Sequencer
 	bool getStateSequencer();
 	bool getStateBlanking();
 
-	void restartSequencer();
-
 	LaserState getCurrentState();
 
 	void pushState();
@@ -73,6 +70,12 @@ class Laser : public Trigger, public Sequencer
 	void updateBlank(); // will switch off the laser if the stateBlanking is true
 
 	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
+
+	// *********** OVERRIDEN METHODS OF THE BASE CLASS receiverModule ******************
+	bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
+	void action() {
+		setStateSwitch(state); // reminder: state is a variable of the base class
+	}
 
   private:
 
@@ -85,11 +88,13 @@ class Laser : public Trigger, public Sequencer
 		2000,  // power (0-4095)
 		false, // switch (on/off)
 		false, // carrier mode (on/off)
-		false, // sequencer mode (on/off)
 		false  // blancking mode (on/off)
 	};
 
 	std::vector<LaserState> laserState_Stack;
+
+	static uint8_t id_count; // automatically incremented at instantiation
+	uint8_t myID;
 
 	/* NOTES:
 	- Even if the laser has analog control, a digital pin may be used for fast

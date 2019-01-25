@@ -9,6 +9,10 @@
 #include "Class_Sequencer.h"
 #include "Utils.h"
 
+#ifdef USING_SD_CARD
+#include <SD.h>
+#endif
+
 #ifdef DEBUG_MODE_LCD
 #include "Wire.h"
 #include "rgb_lcd.h"
@@ -27,14 +31,14 @@ namespace Hardware
 {
 
 // Hardware initialization (Gpios, Laser and scanners:)
-extern void init();
+void init();
 
 //Software reset: better than using the RST pin (noisy?)
 extern void resetBoard();
 
-extern void blinkLed(uint8_t _pinLed, uint8_t _times);
-extern void blinkLedDebug(uint8_t _times);
-extern void blinkLedMessage(uint8_t _times);
+extern void blinkLed(uint8_t _pinLed, uint8_t _times, uint32_t _periodMicros);
+extern void blinkLedDebug(uint8_t _times, uint32_t _periodMicros = 1000000); // default period of 1s
+extern void blinkLedMessage(uint8_t _times, uint32_t _periodMicros = 1000000);
 
 extern void print(String _string);
 extern void println(String _string);
@@ -130,107 +134,156 @@ inline void setPWMDuty(uint8_t _pin, uint16_t _duty) { analogWrite(_pin, _duty);
 
 } // namespace Gpio
 
+// ====================================================================================
+// ============================ NAMESPACE CLOCKS ======================================
+namespace Clocks
+{
+// there can be one or more clocks:
+extern Clock arrayClock[NUM_CLOCKS];
+// rem: no need to call to an init() clock function - this will be done using start()
+extern void setStateAllClocks(bool _startStop);
+extern void resetAllClocks();
+
+} // namespace Clocks
+
+// ====================================================================================
+// ======================= NAMESPACE EXTERNAL TRIGGERS INPUT(S) =======================
+// NOTE: for the time being, only one input and one output, but there can be more!
+namespace ExtTriggers
+{
+extern InputTrigger arrayTriggerIn[NUM_EXT_TRIGGERS_IN];
+extern OutputTrigger arrayTriggerOut[NUM_EXT_TRIGGERS_OUT];
+} // namespace ExtTriggers
+
+// ====================================================================================
+// ======================= NAMESPACE TRIGGER EVENT DETECTORS ==========================
+// NOTE: for the time being, only one input and one output, but there can be more!
+namespace TriggerProcessors
+{
+extern TriggerProcessor arrayTriggerProcessor[NUM_TRG_PROCESSORS];
+}
+
+// ====================================================================================
+// ============================ NAMESPACE PULSE SHAPERS ("Pulsars") ===================
+namespace Pulsars
+{
+extern Pulsar arrayPulsar[NUM_PULSARS];
+}
+
+// ====================================================================================
+// ============================ NAMESPACE SEQUENCER ===================================
+/* This namespace contain methods to store and build the sequencer graph, as well as update and
+refresh all its components. The "sequencer" contain an array of modules; the algorithm
+basically goes through all the instantiated modules (lasers, clocks, etc) that are active
+in the sequencer pipeline, call update(), followed by refresh().
+Graphs can be non fully connected (i.e. this is similar to have several "sequencer" evolving at
+the same time) and cyclic.
+*/
+namespace Sequencer
+{
+
+extern std::vector<Module> vectorModules;
+extern bool activeSequencer; // this is useful to stop the whole sequencer instead of
+// having to stop (i.e. bypass) each module.
+
+extern Module *getModulePtr(uint8_t _classID, uint8_t _index);
+extern Module *getModulePtr(String _className, uint8_t _index);
+
+extern void setState(bool _active); // activate/deactivate sequencer
+extern bool getState();
+
+extern void reset();
+
+extern void addModulePipeline(Module *ptr_newModule);
+extern void clearPipeline();
+
+extern void displaySequencerStatus();
+
+extern void update();
+
+} // namespace Sequencer
+
+// ====================================================================================
+// ========================  NAMESPACE LASERS =========================================
 namespace Lasers
 {
 
-enum LaserName
-{
-	RED_LASER = 0,
-	GREEN_LASER,
-	BLUE_LASER,
-	YELLOW_LASER,
-	CYAN_LASER
-};
-
-const String laserNames[NUM_LASERS] = {"RED", "GREEN", "BLUE", "D-BLUE"};
-
-extern Laser LaserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
-// note: the laser IDs (used for sequence triggering) will be automatically created
-// from the class static variable "myID" which is incremented at each instantiation.
+extern Laser laserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
+									 // note: the laser IDs (used for sequence triggering) will be automatically created
+									 // from the class static variable "myID" which is incremented at each instantiation.
 
 // ****************** METHODS ********************
 // NOTE: namespace methods correspond to static methods of the class Laser
-extern void init();
+void init();
 extern void test();
-extern void updateLaserSequencers();
 
 inline void setStateSwitch(uint8_t _laser, bool _state)
 { // carrier mode overrides this
-	LaserArray[_laser].setStateSwitch(_state);
+	laserArray[_laser].setStateSwitch(_state);
 	//digitalWrite(pinSwitchLaser[_laser], _state);
 }
 inline void setStateSwitchAll(bool _switch)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStateSwitch(_switch);
+		laserArray[i].setStateSwitch(_switch);
 }
 inline void switchOffAll()
 { // <<-- without affecting the state!
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setSwitch(LOW);
+		laserArray[i].setSwitch(LOW);
 }
 inline void switchOnAll()
 { // <<-- without affecting the state!
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setSwitch(HIGH);
+		laserArray[i].setSwitch(HIGH);
 }
 
 inline void setStatePower(uint8_t _laser, uint16_t _power)
 {
-	LaserArray[_laser].setStatePower(_power);
+	laserArray[_laser].setStatePower(_power);
 	//analogWrite(pinPowerLaser[_laser], _power);
 }
 inline void setStatePowerAll(uint16_t _power)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStatePower(_power);
+		laserArray[i].setStatePower(_power);
 }
 
 inline void setStateBlanking(uint8_t _laser, bool _blankingMode)
 {
-	LaserArray[_laser].setStateBlanking(_blankingMode);
+	laserArray[_laser].setStateBlanking(_blankingMode);
 }
 inline void setStateBlankingAll(bool _blankingMode)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStateBlanking(_blankingMode);
+		laserArray[i].setStateBlanking(_blankingMode);
 }
 
 inline void setStateCarrier(uint8_t _laser, bool _carrierMode)
 {
-	LaserArray[_laser].setStateCarrier(_carrierMode);
+	laserArray[_laser].setStateCarrier(_carrierMode);
 }
 inline void setStateCarrierAll(bool _carrierMode)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStateCarrier(_carrierMode);
-}
-
-inline void setStateSequencer(uint8_t _laser, bool _stateSequencer)
-{
-	LaserArray[_laser].setStateSequencer(_stateSequencer);
-}
-inline void setStateSequencerAll(bool _stateSequencer)
-{
-	for (uint8_t i = 0; i < NUM_LASERS; i++)
-		LaserArray[i].setStateSequencer(_stateSequencer);
+		laserArray[i].setStateCarrier(_carrierMode);
 }
 
 // Other handy methods, more explicit control:
-inline void setStateSwitchRed(bool _state) { LaserArray[RED_LASER].setStateSwitch(_state); }
-inline void setStatePowerRed(uint16_t _power) { LaserArray[RED_LASER].setStatePower(_power); }
+inline void setStateSwitchRed(bool _state) { laserArray[RED_LASER].setStateSwitch(_state); }
+inline void setStatePowerRed(uint16_t _power) { laserArray[RED_LASER].setStatePower(_power); }
 
-inline void setStateSwitchGreen(bool _state) { LaserArray[BLUE_LASER].setStateSwitch(_state); }
-inline void setStatePowerGreen(uint16_t _power) { LaserArray[BLUE_LASER].setStatePower(_power); }
+inline void setStateSwitchGreen(bool _state) { laserArray[BLUE_LASER].setStateSwitch(_state); }
+inline void setStatePowerGreen(uint16_t _power) { laserArray[BLUE_LASER].setStatePower(_power); }
 
-inline void setStateSwitchBlue(bool _state) { LaserArray[GREEN_LASER].setStateSwitch(_state); }
-inline void setStatePowerBlue(uint16_t _power) { LaserArray[GREEN_LASER].setStatePower(_power); }
+inline void setStateSwitchBlue(bool _state) { laserArray[GREEN_LASER].setStateSwitch(_state); }
+inline void setStatePowerBlue(uint16_t _power) { laserArray[GREEN_LASER].setStatePower(_power); }
 
-inline void setStateSwitchYellow(bool _state) { LaserArray[YELLOW_LASER].setStateSwitch(_state); }
-inline void setStatePowerYellow(uint16_t _power) { LaserArray[YELLOW_LASER].setStatePower(_power); }
+inline void setStateSwitchYellow(bool _state) { laserArray[YELLOW_LASER].setStateSwitch(_state); }
+inline void setStatePowerYellow(uint16_t _power) { laserArray[YELLOW_LASER].setStatePower(_power); }
 
-inline void setStateSwitchCyan(bool _state) { LaserArray[CYAN_LASER].setStateSwitch(_state); }
-inline void setStatePowerCyan(uint16_t _power) { LaserArray[CYAN_LASER].setStatePower(_power); }
+inline void setStateSwitchCyan(bool _state) { laserArray[CYAN_LASER].setStateSwitch(_state); }
+inline void setStatePowerCyan(uint16_t _power) { laserArray[CYAN_LASER].setStatePower(_power); }
 
 // TODO: Composite colors (simultaneous laser manipulation)
 // NOTE: in the future, use HSV (color wheel):
@@ -241,7 +294,7 @@ inline bool isSomeLaserOn()
 	bool someLaserOn = false;
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
 	{
-		someLaserOn |= LaserArray[k].getStateSwitch();
+		someLaserOn |= laserArray[k].getStateSwitch();
 	}
 	return (someLaserOn);
 }
@@ -258,7 +311,7 @@ inline void setToCurrentState()
 {
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
 	{
-		LaserArray[k].setToCurrentState();
+		laserArray[k].setToCurrentState();
 	}
 	updateIntensityBlanking();
 }
@@ -267,17 +320,17 @@ inline void setToCurrentState()
 inline void pushState()
 {
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
-		LaserArray[k].pushState();
+		laserArray[k].pushState();
 }
 inline void popState()
 {
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
-		LaserArray[k].popState();
+		laserArray[k].popState();
 }
 inline void clearStateStack()
 {
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
-		LaserArray[k].clearStateStack();
+		laserArray[k].clearStateStack();
 }
 
 } // namespace Lasers
@@ -294,7 +347,7 @@ extern OptoTune OptoTuneArray[NUM_OPTOTUNERS];
 
 // ****************** METHODS ********************
 // NOTE: namespace methods correspond to static methods of the class OptoTune
-extern void init();
+void init();
 extern void test();
 
 inline void setStatePowerAll(uint16_t _power)
@@ -339,7 +392,7 @@ inline void setStatePowerOptoB(uint16_t _power) { OptoTuneArray[OPTOTUNE_B].setS
 
 namespace Scanner
 {
-extern void init();
+void init();
 
 //Set mirrors - no constrain, no viewport transform [we assume the "renderer" did that already]:
 inline void setPosRaw(int16_t _posX, int16_t _posY)
@@ -359,7 +412,7 @@ inline void recenterPosRaw()
 inline void mapViewport(P2 &_point, float _minX, float _maxX, float _minY, float _maxY)
 {
 	_point.x = (_point.x - _minX) * (MAX_MIRRORS_ADX - MIN_MIRRORS_ADX) / (_maxX - _minX) + MIN_MIRRORS_ADX;
-	// NOTE: the map function in arduno uses long(s), not floats!!
+	// NOTE: the map function in arduino uses long(s), not floats!!
 	_point.y = (_point.y - _minY) * (MAX_MIRRORS_ADY - MIN_MIRRORS_ADY) / (_maxY - _minY) + MIN_MIRRORS_ADY;
 }
 
@@ -423,6 +476,18 @@ extern void println(String text);
 
 #endif
 } // namespace Tft
+
+// *********** SD CARD STUFF *******************************
+namespace SDCard
+{
+
+const int chipSelect = BUILTIN_SDCARD;
+extern void init();
+extern String readScript(const String _nameFile);
+
+extern bool saveScript(String _nameFile);
+
+} // namespace SDCard
 
 } // namespace Hardware
 

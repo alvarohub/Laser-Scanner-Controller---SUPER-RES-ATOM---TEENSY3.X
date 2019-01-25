@@ -1,12 +1,17 @@
 #include "Class_Laser.h"
 
-uint8_t Laser::myID = 0; // we should start by 1 (I will use this for trigger selection)
+uint8_t Laser::id_count = 0;
 
-Laser::Laser() { myID++; };
+Laser::Laser()
+{
+	myID = id_count;
+	id_count++;
+};
 Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
 {
 	init(_pinPower, _pinSwitch);
-	myID++;
+	myID = id_count;
+	id_count++;
 }
 
 void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
@@ -17,15 +22,13 @@ void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 	// Set the default laser state:
 	// setState(defaultState); //... now using C++11 member initialization method
 
-	resetSequencer();
 	clearStateStack();
 }
 
-void Laser::restartSequencer()
-{
-	resetTrigger();
-	resetSequencer();
-}
+String Laser::getName() {
+	return (laserNames[myID]);
+	//return ("LSR" + String(myID));
+	}
 
 void Laser::setSwitch(bool _state)
 {
@@ -74,17 +77,14 @@ uint16_t Laser::getStatePower() { return (myState.power); }
 
 void Laser::setStateCarrier(bool _stateCarrier)
 { // NOTE: the carrier is a square wave (pwm, 50% or adjusted at 58% or so
-	// to account for an asymetry between the time it takes to switch ON and switch OFF of the lasers,
-	// with a pwm frequency that is tunneable - by default 100kHz).
+	// to account for an asymmetry between the time it takes to switch ON and switch OFF of the lasers,
+	// with a pwm frequency that is tuneable - by default 100kHz).
 	// It "modulates" the current laser power (another PWM per-laser at FREQ_PWM_CARRIER of
 	// about 70kHz, with a low pass filter)
 	myState.stateCarrier = _stateCarrier;
 	setSwitch(myState.stateSwitch);
 }
 bool Laser::getStateCarrier() { return (myState.stateCarrier); }
-
-void Laser::setStateSequencer(bool _seqState) { myState.stateSequencer = _seqState; }
-bool Laser::getStateSequencer() { return (myState.stateSequencer); }
 
 void Laser::setStateBlanking(bool _blankingMode) { myState.stateBlanking = _blankingMode; }
 bool Laser::getStateBlanking() { return (myState.stateBlanking); }
@@ -97,8 +97,7 @@ void Laser::updateBlank()
 	// ATTN: no change to current state, so setToCurrentState will make it go back to PWM carrier if necessary
 }
 
-void Laser::setState(LaserState _state)
-{
+void Laser::setState(LaserState _state) {
 	myState = _state;
 	setToCurrentState();
 }
@@ -113,7 +112,6 @@ void Laser::setToCurrentState()
 	setStateSwitch(myState.stateSwitch);
 	setStateCarrier(myState.stateCarrier);
 	setStatePower(myState.power);
-	setStateSequencer(myState.stateSequencer);
 	setStateBlanking(myState.stateBlanking);
 }
 Laser::LaserState Laser::getCurrentState() { return (myState); }

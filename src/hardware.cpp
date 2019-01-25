@@ -3,80 +3,20 @@
 namespace Hardware
 {
 
-void print(String _string)
-{
-#if defined DEBUG_MODE_SERIAL
-	Serial.print(_string);
-#endif
-
-#if defined DEBUG_MODE_LCD
-	Lcd::print(_string);
-#endif
-
-#if defined DEBUG_MODE_TFT
-	Tft::print(_string);
-#endif
-}
-
-extern void println(String _string)
-{
-#if defined DEBUG_MODE_SERIAL
-	Serial.println(_string);
-#endif
-
-#if defined DEBUG_MODE_LCD
-	Lcd::println(_string);
-#endif
-
-#if defined DEBUG_MODE_TFT
-	Tft::println(_string);
-#endif
-}
-
-// Basic Harware namespace methods
-void blinkLed(uint8_t _pinLed, uint8_t _times)
-{
-	// Non blocking blink! Avoid to use delay() too
-	elapsedMicros usec = 0;
-	for (uint8_t i = 0; i < _times; i++)
-	{
-
-		// Use a loop, or elapsedMicros [see: https://www.pjrc.com/teensy/teensy31.html]
-		// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, LOW);}
-		// for (unsigned long i=0; i<1000000;i++) { digitalWrite(PIN_LED_DEBUG, HIGH);}
-
-		digitalWrite(_pinLed, HIGH);
-		while (usec < 500000)
-		{
-		} // half a second
-		usec = 0;
-		digitalWrite(_pinLed, LOW);
-		while (usec < 500000)
-		{
-		} // half a second
-		usec = 0;
-	}
-}
-
-void blinkLedDebug(uint8_t _times)
-{
-	blinkLed(PIN_LED_DEBUG, _times);
-}
-void blinkLedMessage(uint8_t _times)
-{
-	blinkLed(PIN_LED_MESSAGE, _times);
-}
-
+// ==================================================================================
+// ============================ Basic Harware namespace methods =====================
 void init()
 {
-	//initSerial(); // make a namespace for serial? TODO
-
 #ifdef DEBUG_MODE_LCD
 	Lcd::init();
 #endif
 
 #ifdef DEBUG_MODE_TFT
 	Tft::init();
+#endif
+
+#ifdef USING_SD_CARD
+	SDCard::init();
 #endif
 
 	Gpio::init();
@@ -91,8 +31,74 @@ void resetBoard()
 	SCB_AIRCR = 0x05FA0004; // software reset on Teensy 3.X
 }
 
-// ************************************************************************************************************************
-// ************************************************************************************************************************
+void blinkLed(uint8_t _pinLed, uint8_t _times, uint32_t _periodMicros)
+{
+	// Non blocking blink! Avoid to use delay() too
+
+	pinMode(_pinLed, OUTPUT); // method can be called for a pin different from debug or message
+	elapsedMicros usec = 0;
+	for (uint8_t i = 0; i < _times; i++)
+	{
+		digitalWrite(_pinLed, HIGH);
+		while (usec < _periodMicros/2)
+		{
+		}
+		usec = 0;
+		digitalWrite(_pinLed, LOW);
+		while (usec < _periodMicros/2)
+		{
+		}
+		usec = 0;
+	}
+}
+
+void blinkLedDebug(uint8_t _times, uint32_t _periodMicros)
+{
+	blinkLed(PIN_LED_DEBUG, _times, _periodMicros);
+}
+void blinkLedMessage(uint8_t _times, uint32_t _periodMicros)
+{
+	blinkLed(PIN_LED_MESSAGE, _times, _periodMicros);
+}
+
+void print(String _string)
+{
+	if (Utils::verboseMode)
+	{
+#if defined DEBUG_MODE_SERIAL
+		Serial.print(_string);
+#endif
+
+#if defined DEBUG_MODE_LCD
+		Lcd::print(_string);
+#endif
+
+#if defined DEBUG_MODE_TFT
+		Tft::print(_string);
+#endif
+	}
+}
+
+void println(String _string)
+{
+	if (Utils::verboseMode)
+	{
+#if defined DEBUG_MODE_SERIAL
+		Serial.println(_string);
+#endif
+
+#if defined DEBUG_MODE_LCD
+		Lcd::println(_string);
+#endif
+
+#if defined DEBUG_MODE_TFT
+		Tft::println(_string);
+#endif
+	}
+}
+
+// ********************************************************************************************************
+// **********************************************************************************************************
 
 namespace Gpio
 {
@@ -107,9 +113,9 @@ void init()
 	pinMode(PIN_LED_MESSAGE, OUTPUT);
 	digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
-	// Multi-purpose external triggers (NOTE: they are not associated necessarily with a microcontroller interrupt,
+	// Multi-purpose  al triggers (NOTE: they are not associated necessarily with a microcontroller interrupt,
 	// but it may be important for some experiments?). BTW, practically ALL Teensy3.6 pins can be configured as
-	// external interrupts, and set using the classic Arduino methods "attachInterrupt()"...
+	//  al interrupts, and set using the classic Arduino methods "attachInterrupt()"...
 	pinMode(PIN_TRIGGER_OUTPUT, OUTPUT);
 	pinMode(PIN_TRIGGER_INPUT, INPUT_PULLUP);
 
@@ -129,31 +135,217 @@ void init()
 	analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer.
 
 	// Setting mode for the digital pins (PIN_DIGITAL_A and B):
-	// unnecesary, the mode is re-selected when using the wrapping methods.
+	// unnecessary, the mode is re-selected when using the wrapping methods.
 
 	analogWriteResolution(RES_PWM); // 12 is 0 to 4095 [we could have a ANALOG_RESOLUTION define or const, and do the log]
-	// NOTE : this affects the resolution on ALL the PWM channels (could be differnt, since there are many independent
+	// NOTE : this affects the resolution on ALL the PWM channels (could be different, since there are many independent
 	// timers, but that's the way the library works now). Note that I will set the resolution MANY times (in the init for lasers,
 	// optotuners, etc) even if for the time being this is redundant; however in the future, the library can be updated and have
-	// a different resolution for each flexi-timer. Fortunately, the carrier pwm uses a fized 50% duty cycle, so
+	// a different resolution for each flexi-timer. Fortunately, the carrier pwm uses a fixed 50% duty cycle, so
 	// with a 12 bit resolution we just make the duty cycle equal to 2047 (and even if this resolution is too large for
 	// the "carrier" high freq pwm, the library will map it into the correct value - and will be able to do so properly,
 	// since we just need to be in the middle of the range)
+
+	// Teensy 3.6 has USB host power controlled by PTE6:
+	PORTE_PCR6 = PORT_PCR_MUX(1);
+	GPIOE_PDDR |= (1 << 6);
+	GPIOE_PSOR = (1 << 6); // turn on USB host power
+	delay(10);
 
 	PRINTLN("> GPIOs READY");
 }
 
 } // namespace Gpio
 
-// ************************************************************************************************************************
-// ************************************************************************************************************************
+// ====================================================================================
+// ============================ NAMESPACE CLOCK =======================================
+namespace Clocks
+{
+Clock arrayClock[NUM_CLOCKS];
+void setStateAllClocks(bool _startStop)
+{
+	for (uint8_t k = 1; k < NUM_CLOCKS; k++)
+	{
+		arrayClock[k].setState(_startStop);
+	}
+}
 
+void resetAllClocks()
+{
+	for (uint8_t k = 1; k < NUM_CLOCKS; k++)
+	{
+		arrayClock[k].reset();
+	}
+}
+
+} // namespace Clocks
+
+// ====================================================================================
+// ======================= NAMESPACE  AL TRIGGERS INPUT(S) =======================
+namespace ExtTriggers
+{
+
+OutputTrigger arrayTriggerOut[NUM_EXT_TRIGGERS_OUT];
+InputTrigger arrayTriggerIn[NUM_EXT_TRIGGERS_IN];
+
+} // namespace ExtTriggers
+
+// ====================================================================================
+// ======================= NAMESPACE TRIGGER EVENT DETECTORS ==========================
+namespace TriggerProcessors
+{
+TriggerProcessor arrayTriggerProcessor[NUM_TRG_PROCESSORS];
+}
+
+// ====================================================================================
+// ============================ NAMESPACE PULSE SHAPERS ("Pulsars") ===================
+namespace Pulsars
+{
+Pulsar arrayPulsar[NUM_PULSARS];
+}
+
+// ====================================================================================
+// ==== NAMESPACE SEQUENCER (only one but can encompass many independent pipelines ====
+namespace Sequencer
+{
+using namespace Hardware::Clocks;
+using namespace Hardware::ExtTriggers;
+using namespace Hardware::TriggerProcessors;
+using namespace Hardware::Pulsars;
+using namespace Hardware::Lasers;
+
+std::vector<Module *> vectorPtrModules;
+bool activeSequencer = false;
+
+void setState(bool _active)
+{
+	activeSequencer = _active;
+}
+
+bool getState() { return (activeSequencer); }
+
+void reset()
+{
+	// reset all the modules in the sequencer pipeline
+	for (auto ptr_module : vectorPtrModules)
+		ptr_module->reset();
+}
+
+// class code : {0 = clocks, 1 = ext trigger in,
+//				 2 = ext trigger out, 3 = laser,
+//				 4 = shaper, 5 = trigger processor},
+// followed by the index of the module (for the external triggers, it is always 0, but in the future there may be more)
+Module *getModulePtr(uint8_t _classID, uint8_t _index)
+{
+	switch (_classID)
+	{
+	case 0: // clocks
+		return (&(arrayClock[_index % NUM_CLOCKS]));
+		break;
+	case 1: // external trigger In
+		return (&(arrayTriggerIn[_index % NUM_EXT_TRIGGERS_IN]));
+		break;
+	case 2: // external trigger Out
+		return (&(arrayTriggerOut[_index % NUM_EXT_TRIGGERS_OUT]));
+		break;
+	case 3: // laser
+		return (&(laserArray[_index % NUM_LASERS]));
+		break;
+	case 4: //pulsar shaper
+		return (&(arrayPulsar[_index % NUM_PULSARS]));
+		break;
+	case 5: // trigger processor
+		return (&(arrayTriggerProcessor[_index % NUM_TRG_PROCESSORS]));
+		break;
+	default:
+		return (NULL);
+		break;
+	}
+}
+
+// overloaded method to use strings names:
+Module *getModulePtr(String _className, uint8_t _index)
+{
+	return (getModulePtr(Utils::getIndexClassFromName(_className), _index));
+}
+
+void clearPipeline()
+{
+	vectorPtrModules.clear();
+}
+
+void addModulePipeline(Module *ptr_newModule)
+{
+	// Check if the module is not in vectorPtrModule so as not to add it twice:
+	// NOTE: seems that std::find(v.begin(), v.end, x) is not implemented in STL arduino framework?
+	bool isThere = false;
+	for (auto ptr_module : vectorPtrModules)
+	{
+		if (ptr_module == ptr_newModule)
+			isThere = true;
+		break;
+	}
+
+	if (!isThere)
+		vectorPtrModules.push_back(ptr_newModule);
+}
+
+void update()
+{
+	if (activeSequencer)
+	{
+		for (auto ptr_module : vectorPtrModules)
+			ptr_module->action();
+		for (auto ptr_module : vectorPtrModules)
+			ptr_module->update();
+		for (auto ptr_module : vectorPtrModules)
+			ptr_module->refresh();
+	}
+}
+
+void displaySequencerStatus()
+{
+
+	// We cannot just go through the vector of modules sequentially if
+	// we want to show the ordered pipeline. Instead we need to go navigate
+	// using the module links... but there may be more than one sequential pipeline,
+	// or branches! so there is not so simple to represent the tree(s). Since
+	// this function is mainly designed to corroborate the commands, it will just
+	// list the modules and their connections, instead of a chain.
+
+	String msg = (getState() ? "ON" : "OFF");
+	PRINTLN("   1-Sequencer state : " + msg);
+
+	if (vectorPtrModules.empty())
+		PRINTLN("  2-Pipeline : EMPTY");
+	else
+	{
+		PRINTLN("  2-Pipeline ( size = "+String(vectorPtrModules.size()) + " )" );
+
+		for (auto ptr_module : vectorPtrModules)
+		{
+			String nameThisModule = ptr_module->getName() + ptr_module->getParamString();
+			String nameFromModule{""};
+			Module *ptr_fromModule = ptr_module->getPtrModuleFrom(); // NULL if there is no input module
+			if (ptr_fromModule != NULL)
+			{ // this means that this module has input
+				nameFromModule = ptr_fromModule->getName() + ptr_fromModule->getParamString() + " >> ";
+			}
+			PRINTLN("    " + nameFromModule + nameThisModule);
+		}
+	}
+}
+
+} // namespace Sequencer
+
+// ====================================================================================
+// ================================ NAMESPACE LASERS ==================================
 namespace Lasers
 {
 
-Laser LaserArray[NUM_LASERS]; // definition external
+Laser laserArray[NUM_LASERS];
 
-extern void init()
+void init()
 {
 
 	// Set the PWM frequency for all the power pwm pins (need to set only on one):
@@ -167,13 +359,13 @@ extern void init()
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
 		// Power, switch and carrier are off.
-		LaserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]);
+		laserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]);
 	}
 
 	PRINTLN("> LASERS READY");
 }
 
-extern void test()
+void test()
 { // Switch lasers one by one and try a power ramp on each of these:
 	// TODO: have a state variable for current color (in graphics.h), with a push/pop method
 
@@ -227,37 +419,6 @@ extern void test()
 	//	if (previousState) DisplayScan::startDisplay();
 }
 
-extern void updateLaserSequencers()
-{
-	// NOTE: this should be called in the main loop all the time (in the future,
-	// I can use a timer with lower priority than the laser scanning periodic soft interrupt)
-	// NOTE2: I will update the sequencer & trigger EVEN if the sequencer state is OFF (in this case the output of the
-	// sequencer will not affect the state of the laser). This way, when setting the sequencer to ON again, the
-	// sequencer offset will not be broken (to actually do this, we can reset the sequencer/trigger by calling the
-	// restartSequencer() method of the laser class, that will call reset its sequencer AND its trigger.
-	for (uint8_t i = 0; i < NUM_LASERS; i++)
-	{
-		Laser *laser = &(LaserArray[i]);
-
-		// (a) identify the "source" (input) of the trigger used by each laser and take its value:
-		bool newInput;
-		int8_t triggerSource = laser->getTriggerSource();
-		if (triggerSource == -1)
-			newInput = Gpio::readTriggerInput(); // this measn the input is from the EXTERNAL TRIGGER
-		else
-			newInput = LaserArray[triggerSource].getStateSwitch();
-		
-		// (b) update and read the trigger state:
-		bool triggerEvent = laser->updateReadTrigger(newInput);
-
-		// (c)  Update the sequencer (regardless of the state of the sequencer -running or not)
-		bool newState = laser->updateReadSequencer(triggerEvent);
-
-		// (d) Check if we need to update the state for this laser following the sequence (otherwise do nothing).
-		if (laser->getStateSequencer())
-			laser->setStateSwitch(newState);
-	}
-}
 } // namespace Lasers
 
 // ************************************************************************************************************************
@@ -268,7 +429,7 @@ namespace OptoTuners
 
 OptoTune OptoTuneArray[NUM_OPTOTUNERS];
 
-extern void init()
+void init()
 {
 
 	// Set the PWM frequency for all the optotune pwm pins (need to set only on one of the outputs, since both optotune pins, {29, 30} are
@@ -288,7 +449,7 @@ extern void init()
 	PRINTLN("> OPTOTUNERS READY");
 }
 
-extern void test()
+void test()
 {
 
 	elapsedMillis msTime;
@@ -331,7 +492,7 @@ namespace Scanner
 
 void init()
 {
-	// RENCENTER mirror and fill BOTH buffers with the central position too:
+	// RECENTER mirror and fill BOTH buffers with the central position too:
 	recenterPosRaw();
 	PRINTLN("> SCANNERS READY");
 }
@@ -366,7 +527,6 @@ void testMirrorRange(uint16_t _durationSec)
 
 	while (msec < (_durationSec * 1000))
 	{
-
 		// Make a square 50x50 points side:
 		do
 		{
@@ -550,7 +710,7 @@ namespace Tft
 #ifdef DEBUG_MODE_TFT
 
 //uint8_t row=0, col=0;
-// extern Adafruit_ST7735 *tft = new Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+//   Adafruit_ST7735 *tft = new Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 uint8_t row = 0, col = 0;
 
@@ -598,5 +758,19 @@ void setPixel(uint16_t x, uint16_t y)
 }
 #endif
 } // namespace Tft
+
+namespace SDCard
+{
+
+void init()
+{
+
+	if (!SD.begin(chipSelect))
+		PRINTLN("> NO SD CARD or INIT FAILURE");
+	else
+		PRINTLN("> SD CARD PRESENT");
+}
+
+} // namespace SDCard
 
 } // namespace Hardware

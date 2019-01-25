@@ -8,32 +8,11 @@
 
 #include "Arduino.h" // <-- has a lot of #defines and instantiated variables already
 
-#define PRINT(...) (Hardware::print(__VA_ARGS__))
-#define PRINTLN(...) (Hardware::println(__VA_ARGS__))
-
-#define DEBUG_MODE_SERIAL // by defining this, we can debug on the serial port
-//#define DEBUG_MODE_LCD  // for using the LCD panel
-#define DEBUG_MODE_TFT    // for using the TFT panel
-
-
-#define PRINT(...)      (Hardware::print(__VA_ARGS__))
-#define PRINTLN(...)    (Hardware::println(__VA_ARGS__))
-
-
 /*
 #define PI 3.14159265889
 #define DEG_TO_RAD  (0.01745) // = PI/180.0
 #define RAD_TO_DEG (57.29578) // = 180.0/PI
 */
-
-// ==================== PACKET ENCAPSULATION:
-#define NUMBER_SEPARATOR    ','
-#define COMMAND_SEPARATOR   '@'  // continue parsing after CMD (useful to concatenate commands)
-#define END_PACKET          '\n' // newline (ASCII value 10). NOTE: without anything else, this repeat GOOD command.
-#define LINE_FEED_IGNORE    13   // line feed: ignored and continue parsing
-
-// ==================== SPEED COMMUNICATION:
-#define SERIAL_BAUDRATE 38400
 
 // ========================= RENDERER ==========================================
 // IMPORTANT: for the time being, we will NOT use a vector<> array, so we need
@@ -64,7 +43,7 @@
 #endif
 
 //3) ======================= LED indicators (digital) ==========================
-#define PIN_LED_DEBUG   13 // 13 is the buil-in led
+#define PIN_LED_DEBUG   13 // 13 is the built-in led
 #define PIN_LED_MESSAGE 24
 
 // ========================= GALVANOMETERS Mirrors =============================
@@ -110,8 +89,29 @@ const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36, 38, 37};// 14, 7, 2};
 const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pins controlled by FTM2
 #define FREQ_PWM_OPTOTUNE 65000  // PWM frequency for filtering
 // #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
-// affect ALL the timers... ackwards, as it could be per-timer group.
+// affect ALL the timers... awkward, as it could be per-timer group.
 #define MAX_OPTOTUNE_POWER 4095 // TODO: normalize for the control commands (wrapper)
+
+// ======================== SEQUENCER MODULES =====================================
+#define NUM_MODULE_CLASSES 6
+
+// ======================== INTERNAL CLOCKS  =====================================
+// NOTE: the number is arbitrary. I Use 4 just in case we want to use one for each laser
+// and one for the camera (there could be more, in case of more complex pipeline graphs)
+#define NUM_CLOCKS 4 // (just in case, )
+
+// ======================== EXTERNAL TRIGGERS (input and outputs)  ===============
+// Only one of each for the time being:
+#define NUM_EXT_TRIGGERS_IN 1
+#define NUM_EXT_TRIGGERS_OUT 1
+
+// ======================== TRIGGER EVENT PROCESSORS  ============================
+// Arbitrary number (like the clocks):
+#define NUM_TRG_PROCESSORS 4
+
+// ======================== PULSARS (PULSE SHAPERS) ==============================
+// Arbitrary number...
+#define NUM_PULSARS 4
 
 // =========== OTHER PWM pins exposed in the D25 connector  ====================
 // NOTE : there is yet no wrapper associated to these pins: they are
@@ -154,6 +154,20 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 #define TFT_DC      28
 #define TFT_RST     0 // not used for now, the RST is connected to 5V (Vin)
 
+
+// ======= Useful string definitions to access hardware elements ================
+namespace Definitions {
+    
+// * LASERS:
+const String laserNames[NUM_LASERS]{"red", "green", "blue", "deep_blue"};
+
+// * SEQUENCER MODULES:
+// NOTE: unfortunately there is no implementation of stl::map in Arduino
+//const std::map<String, int> classMap = {{"clock", 0}, {"in", 1}, {"out", 2}, {"laser", 3}, {"pul", 4}, {"trg", 5}};
+// ... so I will need to traverse the array to find the index:
+const String classNames[NUM_MODULE_CLASSES]{"clk","in", "out", "las", "pul", "trg"};
+
+}
 
 // ************************ OTHER USEFUL MACROS ********************************
 // Size of an array of anything (careful: this doesn't work if array is allocated dynamically)
