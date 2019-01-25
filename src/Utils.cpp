@@ -43,7 +43,7 @@ int8_t getIndexLaserFromName(String _str)
 	int8_t index = 0;
 	for (uint8_t k = 0; k < NUM_LASERS; k++)
 	{
-		if (_str == laserNames[k])
+		if (_str == Definitions::laserNames[k])
 		{
 			index = k;
 			break;
@@ -58,7 +58,7 @@ int8_t getIndexClassFromName(String _str)
 	int8_t index = 0;
 	for (uint8_t k = 0; k < NUM_MODULE_CLASSES; k++)
 	{
-		if (_str == classNames[k])
+		if (_str == Definitions::classNames[k])
 		{
 			index = k;
 			break;
