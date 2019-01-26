@@ -75,25 +75,22 @@
 
 //Power pins (PWM): analog value come from filtered PWM outputs
 // PWM pins to control the laser power on flexitimer FTM0 (pins 5,6,9,10,20,21,22,23)
-const uint8_t pinPowerLaser[NUM_LASERS] = {5,6,9,10};//,20, 21, 22, 23};
+const uint8_t pinPowerLaser[NUM_LASERS]{5,6,9,10};//,20, 21, 22, 23};
 
 // Digital pins to open/close each laser channel very fast. These pins should be used as DIGITAL OUTPUT or
 // as PWM - to generate a carrier for instance. Using the lasers in "carrier" mode does not precludes
 // inter-sprite or inter-point complete blanking.
 // PWM pins on FTM3 (pins 2,7,8,14,38,37,36,35)
-const uint8_t pinSwitchLaser[NUM_LASERS] = {35, 36, 38, 37};// 14, 7, 2};
+const uint8_t pinSwitchLaser[NUM_LASERS]{35, 36, 38, 37};// 14, 7, 2};
 
 // ======================== OPTOTUNE stuff =====================================
 // NOTE: these PWM pins will NOT be chopped by a fast ON/OFF switch pin (the "carrier")
 #define NUM_OPTOTUNERS 2
-const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pins controlled by FTM2
+const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS]{29, 30}; // these are PWM pins controlled by FTM2
 #define FREQ_PWM_OPTOTUNE 65000  // PWM frequency for filtering
 // #define RES_PWM_OPTOTUNE  12 // in the current Stoffregen library, the pwm resolution seems to
 // affect ALL the timers... awkward, as it could be per-timer group.
 #define MAX_OPTOTUNE_POWER 4095 // TODO: normalize for the control commands (wrapper)
-
-// ======================== SEQUENCER MODULES =====================================
-#define NUM_MODULE_CLASSES 6
 
 // ======================== INTERNAL CLOCKS  =====================================
 // NOTE: the number is arbitrary. I Use 4 just in case we want to use one for each laser
@@ -134,7 +131,7 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 // * INTENSITY/BLANKING
 // * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be
 // much better if this was done electronically, not using the relatively complex - and easy to broke - logic of my program!
-#define PIN_INTENSITY_BLANKING  15// in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
+#define PIN_INTENSITY_BLANKING  15 // in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
 
 // * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
 #define PIN_SHUTTER	            14 // this is pin 13 in D25 ILDA connector
@@ -154,10 +151,13 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS] = {29, 30}; // these are PWM pin
 #define TFT_DC      28
 #define TFT_RST     0 // not used for now, the RST is connected to 5V (Vin)
 
-
 // ======= Useful string definitions to access hardware elements ================
+// NOTE1: I aggregate these here in case we want to change the keywords quickly
+// NOTE2: They could be in the hardware namespace or perhaps even better in the messageParser
+// namespace, but I may use these string names throught the program.
 namespace Definitions {
-    
+
+
 // * LASERS:
 const String laserNames[NUM_LASERS]{"red", "green", "blue", "deep_blue"};
 
@@ -165,11 +165,18 @@ const String laserNames[NUM_LASERS]{"red", "green", "blue", "deep_blue"};
 // NOTE: unfortunately there is no implementation of stl::map in Arduino
 //const std::map<String, int> classMap = {{"clock", 0}, {"in", 1}, {"out", 2}, {"laser", 3}, {"pul", 4}, {"trg", 5}};
 // ... so I will need to traverse the array to find the index:
+#define NUM_MODULE_CLASSES 6
 const String classNames[NUM_MODULE_CLASSES]{"clk","in", "out", "las", "pul", "trg"};
 
-}
+// * TRIGGER MODES:
+#define NUM_TRIG_MODES 3
+const String trgModeNames[NUM_TRIG_MODES]{"rise", "fall", "change"};
 
-// ************************ OTHER USEFUL MACROS ********************************
+// * binary values ON/OFF:
+const String binaryNames[2]{"on", "off"};
+
+}
+//=========================== OTHER USEFUL MACROS ===============================
 // Size of an array of anything (careful: this doesn't work if array is allocated dynamically)
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 #define INRANGE(x, a, b) ( ( (x)>(a) && (x)<(b) ) ? 1 : 0 )

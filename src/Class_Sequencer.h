@@ -295,7 +295,7 @@ class OutputTrigger : public receiverModule
 
     String getName()
     {
-        return ("OUT[" + String(myID)+"]");
+        return ("OUT[" + String(myID) + "]");
     }
 
     void setOutputPin(uint8_t _outputPin)
@@ -326,19 +326,12 @@ class TriggerProcessor : public receiverModule
 {
 
   public:
-    enum TrgMode
-    {
-        TRG_RISE = 0,
-        TRG_FALL,
-        TRG_CHANGE
-    };
-
     TriggerProcessor()
     {
         init();
         reset();
     }
-    TriggerProcessor(TrgMode _mode,
+    TriggerProcessor(uint8_t _mode,
                      uint16_t _continuousNumEvents,
                      uint16_t _skipNumEvents,
                      uint16_t _offsetEvents)
@@ -361,7 +354,7 @@ class TriggerProcessor : public receiverModule
 
     String getParamString()
     {
-        return ("{" + String(mode) + ", " + String(continuousNumEvents) + ", " + String(skipNumEvents) + ", " + String(offsetEvents) + "}");
+        return ("{" + Definitions::trgModeNames[mode] + ", " + String(continuousNumEvents) + ", " + String(skipNumEvents) + ", " + String(offsetEvents) + "}");
     }
 
     void reset()
@@ -371,12 +364,12 @@ class TriggerProcessor : public receiverModule
         stateMachine = NO_SKIPPING_STATE;
     }
 
-    void setParam(TrgMode _mode,
+    void setParam(uint8_t _mode,
                   uint16_t _continuousNumEvents,
                   uint16_t _skipNumEvents,
                   uint16_t _offsetEvents)
     {
-        mode = _mode;
+        setMode(_mode);
         continuousNumEvents = _continuousNumEvents;
         skipNumEvents = _skipNumEvents;
         offsetEvents = _offsetEvents;
@@ -384,11 +377,12 @@ class TriggerProcessor : public receiverModule
         reset();
     }
 
-    void setMode(TrgMode _mode = TRG_RISE)
+    void setMode(uint8_t _mode)
     {
         mode = _mode;
         reset();
     }
+
     void setBurst(uint16_t _continuousNumEvents)
     {
         continuousNumEvents = _continuousNumEvents;
@@ -406,9 +400,9 @@ class TriggerProcessor : public receiverModule
         reset();
     }
 
-    TrgMode getMode()
+    String getMode()
     {
-        return (mode);
+        return (Definitions::trgModeNames[mode]);
     }
     uint16_t getBurst()
     {
@@ -433,13 +427,13 @@ class TriggerProcessor : public receiverModule
         // Then, detect event depending on the selected mode:
         switch (mode)
         {
-        case TRG_RISE:
+        case 0:
             event = (!state) && _inputVal;
             break;
-        case TRG_FALL:
+        case 1:
             event = state && (!_inputVal);
             break;
-        case TRG_CHANGE:
+        case 2:
             // "^" is an XOR (same than "!="" for binary arguments)
             event = (state ^ _inputVal);
             break;
@@ -481,13 +475,16 @@ class TriggerProcessor : public receiverModule
     }
 
   private:
+  // will put this in Definitions namespace in case we can change the keywords
+   // const String trgModeNames[3]{"rise", "fall", "change"};
+
     enum StateMachine
     {
         NO_SKIPPING_STATE,
         SKIPPING_STATE
     };
 
-    TrgMode mode = TRG_RISE;
+    uint8_t mode = 0; // default is RISE
     // NOTE: by setting continuousNumEvents to 1 and skipNumEvents to 0, there is
     // no skip and the TriggerProcessor is continuous.
     uint16_t continuousNumEvents = 1;

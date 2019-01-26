@@ -4,7 +4,7 @@ namespace Parser
 {
 
 bool recordingScript = false;
-String recordedMessageString;
+String scriptStringInMemory;
 
 enum stateParser
 {
@@ -16,11 +16,88 @@ enum stateParser
 //Note: the name of an un-scoped enumeration may be omitted:
 // such declaration only introduces the enumerators into the enclosing scope.
 
+// =============================================================================
+//  ======== USEFUL CONVERSION METHODS =========================================
+int8_t toBool(const String _str)
+{
+  int8_t val = -1;
+
+  if (Utils::isNumber(_str))
+    val = _str.toInt() > 0;
+  else if (_str == "on")
+    val = 1;
+  else if (_str == "off")
+    val = 0;
+
+  return (val);
+}
+
+int8_t toClassID(const String _str)
+{
+  int8_t val = -1;
+
+  if (Utils::isNumber(_str))
+    val = _str.toInt();
+  else if (Utils::isSmallCaps(_str))
+  {
+    for (int8_t k = 0; k < NUM_MODULE_CLASSES; k++)
+    {
+      if (_str == Definitions::classNames[k])
+      {
+        val = k;
+        break;
+      }
+    }
+  }
+  return (val);
+}
+
+int8_t toLaserID(const String _str)
+{
+  int8_t val = -1;
+
+  if (Utils::isNumber(_str))
+    val = _str.toInt();
+  else if (Utils::isSmallCaps(_str))
+  {
+    for (int8_t k = 0; k < NUM_LASERS; k++)
+    {
+      if (_str == Definitions::laserNames[k])
+      {
+        val = k;
+        break;
+      }
+    }
+  }
+  return (val);
+}
+
+int8_t toTrgMode(String _str)
+{
+  int8_t val = -1;
+
+  if (Utils::isNumber(_str))
+    val = _str.toInt();
+  else if (Utils::isSmallCaps(_str))
+  {
+    for (int8_t k = 0; k < NUM_TRIG_MODES; k++)
+    {
+      if (_str == Definitions::trgModeNames[k])
+      {
+        val = k;
+        break;
+      }
+    }
+  }
+  return (val);
+}
+
+// =============================================================================
 // ======== PARSE THE MESSAGE ==================================================
 
 void beginRecordingScript()
 {
-  recordedMessageString = "";
+  scriptStringInMemory = "";
   recordingScript = true;
 }
 void endRecordingScript()
@@ -28,13 +105,17 @@ void endRecordingScript()
   recordingScript = false;
 }
 
+void addRecordingScript()
+{
+  recordingScript = true;
+}
+
 // The following function will read the file and produce the messageString to
 // send to the parser, exactly as if it where typed on the serial port.
 String readScript(String _nameFile)
 {
   _nameFile += ".txt";
-  PRINTLN(" ");
-  PRINTLN("  ** Reading script: " + _nameFile);
+  PRINTLN("-- READING : " + _nameFile);
 
   File myFile;
   myFile = SD.open(_nameFile.c_str());
@@ -69,9 +150,9 @@ bool saveScript(String _nameFile)
   // if the file opened okay, write verbatim what we have in
   if (myFile)
   {
-    for (uint32_t k = 0; k < recordedMessageString.length(); k++)
+    for (uint32_t k = 0; k < scriptStringInMemory.length(); k++)
     {
-      myFile.print((char)recordedMessageString[k]);
+      myFile.print((char)scriptStringInMemory[k]);
     }
     //myFile.print(END_CMD);
     myFile.close();
@@ -111,14 +192,19 @@ bool parseStringMessage(const String &_messageString)
     for (uint8_t i = 0; i < SIZE_CMD_STACK; i++)
       argStack[i] = "";
     cmdString = "";
-    cmdExecuted = false; // = true; // we will "AND" this with every command correctly parsed in the string
     myState = START;
   };
 
   // ================= START PARSING ========================
   //PRINTLN("START PARSING MESSAGE");
   messageString = _messageString;
-  resetParser();
+
+  resetParser(); // reset parsing the first time (attn: there can be many commands INSIDE the messageString,
+                 // so the collected arguments and command should be reset after each individual command interpretation and
+                 // execution!)
+
+  bool scriptExecuted = true; // initialized to true before string parsing : it will be "ANDed" with each cmdExecuted.
+                              // NOTE: cmdExecuted does not need to be set here, it will be set when a single command is executed (correctly or not)
 
   // Note: messageString contains the END_CMD (char), otherwise we wouldn't be here;
   // So, going through the for-loop with the condition i < messageString.length()
@@ -130,7 +216,7 @@ bool parseStringMessage(const String &_messageString)
     // PRINT("Received message: ");
     // if (val == END_CMD)
     //   PRINT("CR (end command)");
-    //else if (val == LINE_FEED_IGNORE)
+    // else if (val == LINE_FEED_IGNORE)
     //   PRINT("LF (ignore)");
     // else
     //   PRINT((char)val);
@@ -140,10 +226,11 @@ bool parseStringMessage(const String &_messageString)
     // ************ GATHER ARGUMENTS:
     // Put ASCII characters for a number (base 10) plus '-' and '.' to form floats and negative numbers ('/' must be
     // excluded) in the current argument in the stack, as well as non-capital letters (can be parameters too)
-    if ((( (val >= '-') && (val <= '9') ) || ((val >= 'a') && (val <= 'z'))) && (val != '/'))
+    if ((((val >= '-') && (val <= '9')) || ((val >= 'a') && (val <= 'z'))) && (val != '/'))
     {
       if ((myState == START) || (myState == SEPARATOR))
         myState = NUMBER;
+
       if (myState == NUMBER)
       { // it could be in CMD state...
         argStack[numArgs] += val;
@@ -159,10 +246,11 @@ bool parseStringMessage(const String &_messageString)
     // ************ GATHER COMMAND:
     // Put letter ('A' to 'Z') in cmdString.
     // => Let's not permit to start writing a command if we did not finish a number or nothing was written before.
-    else if (((val >= 'A') && (val <= 'Z')) || (val == '_') || (val == ' ')) // the last is for composing commands with underscore (ex: MAKE_CIRCLE) or spaces.
+    else if (((val >= 'A') && (val <= 'Z')) || (val == '_'))
     {
       if ((myState == START) || (myState == SEPARATOR))
         myState = CMD;
+
       if (myState == CMD)
       { // Could be in NUMBER state
         cmdString += val;
@@ -233,6 +321,8 @@ bool parseStringMessage(const String &_messageString)
         // * Note 1 : state == CMD here implies cmdString.length() > 0
         // * Note 2 : we don't check argument number, can be anything including nothing.
 
+        cmdExecuted = false;
+        //PRINTLN(" ");
         PRINT("> EXEC: ");
 
         // Retrieve the whole atomic command string (for checking and for saving into oldAtomicCommandString
@@ -253,11 +343,13 @@ bool parseStringMessage(const String &_messageString)
         // *********************************************************
         // *********************************************************
 
-        if (cmdExecuted) // if succesfully executed:
+        if (cmdExecuted) // if THIS particular command was succesfully executed:
         {
+          scriptExecuted = scriptExecuted && cmdExecuted; // this way we can know if there was an error in the middle of
+          // a script, without stopping it.
           // NOTE: ignore and don't record START_REC_SCRIPT and END_REC_SCRIPT commands!
           // (could be useful, but handling that becomes convoluted)
-          if ((cmdString != START_REC_SCRIPT) && (cmdString != END_REC_SCRIPT))
+          if ((cmdString != START_REC_SCRIPT) && (cmdString != END_REC_SCRIPT) && (cmdString != ADD_REC_SCRIPT))
           {
             // 1) Save properly parsed and executed command string in oldAtomicCommandString for repetition upon "ENTER":
             oldAtomicCommandString = atomicCommandString;
@@ -265,7 +357,7 @@ bool parseStringMessage(const String &_messageString)
             // 2) Also, save it in the recording string if in recording mode:
             if (recordingScript)
             {
-              recordedMessageString += atomicCommandString; // NOTE: each message has an END_CMD, which is a newlin (\n),
+              scriptStringInMemory += atomicCommandString; // NOTE: each message has an END_CMD, which is a newlin (\n),
               // so each command in the saved file will be in a different row.
             }
           }
@@ -280,7 +372,8 @@ bool parseStringMessage(const String &_messageString)
         }
 
         // NOTE: commands can be concatenated AFTER and END_CMD in case of input from something else than a terminal,
-        // so we need to restart parsing from here (will only happen when input string is stored in memory or sent from OSC, etc)
+        // so we need to restart parsing from here (will only happen when input string is stored in RAM, the file
+        // system (SD card) or sent from MQTT, Ethernet, OSC, etc)
         resetParser();
       }
       else
@@ -289,7 +382,8 @@ bool parseStringMessage(const String &_messageString)
         break;
       }
     }
-    else if (val == LINE_FEED_IGNORE)
+    // ignore these characters:
+    else if ((val == LINE_FEED_IGNORE) || (val == ' '))
     {
       // do nothing with this, continue parsing
     }
@@ -304,7 +398,7 @@ bool parseStringMessage(const String &_messageString)
     }
   } // end parse for-loop
 
-  return (cmdExecuted);
+  return (scriptExecuted); // NOTE: if there is only one command, this is equal to return(cmdExecuted)
 }
 
 // =============================================================================
@@ -324,10 +418,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
   if (_cmdString == SET_POWER_LASER_ALL)
   { // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_LASER_POWER));
+      Hardware::Lasers::setStatePowerAll(argStack[0].toInt());
       execFlag = true;
     }
     else
@@ -336,15 +430,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_POWER_LASER)
   { // Param: laser number or name, power (0 to 4096, 12 bit res).
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&&Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
-      if (Utils::isNumber(argStack[0]))
-      {
-        Hardware::Lasers::setStatePower(getIndexLaserFromName(argStack[0]), constrain(argStack[1].toInt(), 0, MAX_LASER_POWER));
-      }
-      else
-        Hardware::Lasers::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_LASER_POWER));
+      Hardware::Lasers::setStatePower(toLaserID(argStack[0]), argStack[1].toInt());
       execFlag = true;
     }
     else
@@ -352,11 +441,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   else if (_cmdString == SET_SWITCH_LASER_ALL)
-  { // Param: 0 to 4096 (12 bit res).
+  { // Param: 0/1 or "on"/"off"
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setStateSwitchAll(argStack[0].toInt() > 0);
+      Hardware::Lasers::setStateSwitchAll(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -364,18 +453,12 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   else if (_cmdString == SET_SWITCH_LASER)
-  { // Param: 0 to 4096 (12 bit res).
+  { // Param: laser number or name, 0/1 or "on"/"off"
 
     if (_numArgs == 2)
     //PRINTLN("> EXECUTING... ");
     {
-      if (Utils::isNumber(argStack[0]))
-      {
-        Hardware::Lasers::setStateSwitch(argStack[0].toInt(), argStack[1].toInt() > 0);
-      }
-      else
-        Hardware::Lasers::setStateSwitch(getIndexLaserFromName(argStack[0]), argStack[1].toInt() > 0);
-
+      Hardware::Lasers::setStateSwitch(toLaserID(argStack[0]), toBool(argStack[1]));
       execFlag = true;
     }
     else
@@ -387,7 +470,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Lasers::setStateCarrierAll(argStack[0].toInt() > 0);
+      Hardware::Lasers::setStateCarrierAll(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -399,13 +482,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-       if (Utils::isNumber(argStack[0]))
-      {
-        Hardware::Lasers::setStateCarrier(argStack[0].toInt(), argStack[1].toInt() > 0);
-      }
-      else
-       Hardware::Lasers::setStateCarrier(getIndexLaserFromName(argStack[0]), argStack[1].toInt() > 0);
-
+      Hardware::Lasers::setStateCarrier(toLaserID(argStack[0]), argStack[1]);
       execFlag = true;
     }
     else
@@ -417,7 +494,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setShutter(argStack[0].toInt() > 0);
+      Hardware::Gpio::setShutter(argStack[0]);
       execFlag = true;
     }
     else
@@ -444,7 +521,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //#define SET_CLOCK_PERIOD "SET_CLK_PERIOD" // Param: {clk_id, period in ms}
   else if (_cmdString == SET_CLOCK_PERIOD)
   {
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&&Utils::isNumber(argStack[0])&&Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Clocks::arrayClock[argStack[0].toInt()].setPeriodMs(argStack[1].toInt());
@@ -455,7 +532,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
   else if (_cmdString == SET_CLOCK_STATE)
   {
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&&Utils::isNumber(argStack[0])&&Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Clocks::arrayClock[argStack[0].toInt()].setState(argStack[1].toInt());
@@ -469,7 +546,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Clocks::setStateAllClocks(argStack[0].toInt());
+      Hardware::Clocks::setStateAllClocks(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -477,7 +554,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
   else if (_cmdString == RST_CLOCK)
   {
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Clocks::arrayClock[argStack[0].toInt()].reset();
@@ -500,16 +577,23 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   // TRIGGER PROCESSOR parameter configuration:
   //#define SET_TRG_PROC "SET_TRG_PROC"
-  // Param: {proc_id [0-NUM_TRG_PROCESSORS], mode trigger=[0,1,2], burst=[0...], skip=[0...], delay=[0...]}
-  // where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
+  // Param: { proc_id = [0-NUM_TRG_PROCESSORS],
+  //          mode trigger=[0,1,2] (or "rise", "fall", "change")
+  //          burst=[0...],        (positive integer)
+  //          skip=[0...],         (positive integer)
+  //          delay=[0...]         (positive integer)
+  // }
   else if (_cmdString == SET_TRG_PROC)
   {
+    using namespace Hardware::TriggerProcessors;
     if (_numArgs == 5)
     {
       //PRINTLN("> EXECUTING... ");
-
-      TriggerProcessor *ptr_trgProc = &(Hardware::TriggerProcessors::arrayTriggerProcessor[argStack[0].toInt()]);
-      ptr_trgProc->setMode(static_cast<TriggerProcessor::TrgMode>(argStack[1].toInt()));
+      // Get pointer to the processor object:
+      TriggerProcessor *ptr_trgProc = &(arrayTriggerProcessor[argStack[0].toInt()]);
+      // Set parameters:
+      //ptr_trgProc->setMode(static_cast<TrgMode>(argStack[1].toInt()));
+      ptr_trgProc->setMode(toTrgMode(argStack[1])); // can be numeric or string
       ptr_trgProc->setBurst(argStack[2].toInt());
       ptr_trgProc->setSkip(argStack[3].toInt());
       ptr_trgProc->setOffset(argStack[4].toInt());
@@ -541,7 +625,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Sequencer::setState(argStack[0].toInt());
+      Hardware::Sequencer::setState(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -567,7 +651,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-      Module *ptr_newModule = getModulePtr(argStack[0], argStack[1].toInt()); // note: this function is overloaded to
+      Module *ptr_newModule = getModulePtr(toClassID(argStack[0]), argStack[1].toInt()); // note: this function is overloaded to
       // take strings or numbers parameters
       addModulePipeline(ptr_newModule); // checks if already there...
       execFlag = true;
@@ -585,10 +669,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 4)
     {
       //PRINTLN("> EXECUTING... ");
-      //Module *ptr_ModuleFrom = getModulePtr(argStack[0].toInt(), argStack[1].toInt());
-      //Module *ptr_ModuleTo = getModulePtr(argStack[2].toInt(), argStack[3].toInt());
-      Module *ptr_ModuleFrom = getModulePtrFromString(argStack[0], argStack[1].toInt());
-      Module *ptr_ModuleTo = getModulePtrFromString(argStack[2], argStack[3].toInt());
+      Module *ptr_ModuleFrom = getModulePtr(toClassID(argStack[0]), argStack[1].toInt());
+      Module *ptr_ModuleTo = getModulePtr(toClassID(argStack[2]), argStack[3].toInt());
 
       // Add both modules to the pipeline automatically or it is better to add it first and then make the links?
       // I will add them automatically for now since we won't be doing soon branching pipelines (TODO: better handling of
@@ -613,10 +695,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       for (uint8_t k = 0; k < _numArgs / 2 - 1; k++)
       {
-        //Module *ptr_ModuleFrom = getModulePtr(argStack[2 * k].toInt(), argStack[2 * k + 1].toInt());
-        //Module *ptr_ModuleTo = getModulePtr(argStack[2 * k + 2].toInt(), argStack[2 * k + 3].toInt());
-        Module *ptr_ModuleFrom = getModulePtrFromString(argStack[2 * k], argStack[2 * k + 1].toInt());
-        Module *ptr_ModuleTo = getModulePtrFromString(argStack[2 * k + 2], argStack[2 * k + 3].toInt());
+        Module *ptr_ModuleFrom = getModulePtr(toClassID(argStack[2 * k]), argStack[2 * k + 1].toInt());
+        Module *ptr_ModuleTo = getModulePtr(toClassID(argStack[2 * k + 2]), argStack[2 * k + 3].toInt());
 
         // Again, for the time being add the modules too:
         addModulePipeline(ptr_ModuleFrom);
@@ -663,10 +743,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
   else if (_cmdString == SET_POWER_OPTOTUNER_ALL)
   { // Param: 0 to 4096 (12 bit res).
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::OptoTuners::setStatePowerAll(constrain(argStack[0].toInt(), 0, MAX_OPTOTUNE_POWER));
+      Hardware::OptoTuners::setStatePowerAll(argStack[0].toInt());
       execFlag = true;
     }
     else
@@ -678,7 +758,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 2)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::OptoTuners::setStatePower(argStack[0].toInt(), constrain(argStack[1].toInt(), 0, MAX_OPTOTUNE_POWER));
+      Hardware::OptoTuners::setStatePower(argStack[0].toInt(), argStack[1].toInt());
       execFlag = true;
     }
     else
@@ -717,7 +797,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str())); // convert c-string to long, then cast to unsigned int
+      DisplayScan::setInterPointTime(argStack[0].toInt());
+      //DisplayScan::setInterPointTime((uint16_t)atol(argStack[0].c_str()));
+      // convert c-string to long, then cast to unsigned int
       // the method strtoul needs a c-string, so we need to convert the String to that:
       //DisplayScan::setInterPointTime(strtoul(argStack[0].c_str(),NULL,10); // base 10
       execFlag = true;
@@ -894,7 +976,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Graphics::setClearMode(argStack[0].toInt() > 0);
+      Graphics::setClearMode(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -908,7 +990,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow)
-      Hardware::Lasers::setStateBlankingAll(argStack[0].toInt() > 0);
+      Hardware::Lasers::setStateBlankingAll(toBool(argStack[0]) );
       execFlag = true;
     }
     else
@@ -922,7 +1004,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow),
       // OR, we don't use the style stack (I decided for the later for the time being)
-      Hardware::Lasers::setStateBlanking(argStack[0].toInt(), argStack[1].toInt() > 0);
+      Hardware::Lasers::setStateBlanking(toLaserID(argStack[0]), toBool(argStack[1]));
       execFlag = true;
     }
     else
@@ -936,7 +1018,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      DisplayScan::setInterPointBlankingMode(argStack[0].toInt() > 0);
+      DisplayScan::setInterPointBlankingMode(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -1256,10 +1338,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_DIGITAL_PIN)
   { // Param:pin, state
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), argStack[1].toInt());
+      Hardware::Gpio::setDigitalPin(argStack[0].toInt(), toBool(argStack[1]));
       execFlag = true;
     }
     else
@@ -1272,7 +1354,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setDigitalPinA(argStack[0].toInt());
+      Hardware::Gpio::setDigitalPinA(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -1284,7 +1366,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if (_numArgs == 1)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setDigitalPinB(argStack[0].toInt());
+      Hardware::Gpio::setDigitalPinB(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -1321,7 +1403,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_ANALOG_A)
   { // Param: duty cycle (0-4095)
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinA(argStack[0].toInt());
@@ -1333,7 +1415,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_ANALOG_B)
   { // Param: duty cycle (0-4095)
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinB(argStack[0].toInt());
@@ -1385,7 +1467,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == TEST_MIRRORS_RANGE)
   {
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       // ...
@@ -1394,13 +1476,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //            if it was working. A the LIFO stack for ISR state could come handy...
       // * NOTE 2 : power and switch of lasers is modified. Again, a stack for laser
       //            attributes would be great.
-      Hardware::Lasers::pushState();
-      Hardware::Lasers::setStateSwitchRed(true);
-      Hardware::Lasers::setStatePowerRed(1000);
-      Hardware::Lasers::setStateSwitchGreen(true);
-      Hardware::Lasers::setStatePowerGreen(1000);
-      Hardware::Lasers::setStateSwitchBlue(true);
-      Hardware::Lasers::setStatePowerBlue(1000);
+
       Hardware::Scanner::testMirrorRange(argStack[0].toInt());
       Hardware::Lasers::popState();
 
@@ -1413,16 +1489,13 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == TEST_CIRCLE_RANGE)
   {
 
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::pushState();
-      Hardware::Lasers::setStateSwitchRed(true);
-      Hardware::Lasers::setStatePowerRed(1000);
-      Hardware::Lasers::setStateSwitchGreen(true);
-      Hardware::Lasers::setStatePowerGreen(1000);
-      Hardware::Lasers::setStateSwitchBlue(true);
-      Hardware::Lasers::setStatePowerBlue(1000);
+      Hardware::Lasers::setStatePowerAll(1000);
+      Hardware::Lasers::setStateSwitchAll(true);
+
       Hardware::Scanner::testCircleRange(argStack[0].toInt());
       Hardware::Lasers::popState();
 
@@ -1435,17 +1508,13 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == TEST_CROSS_RANGE)
   {
 
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
 
       Hardware::Lasers::pushState();
-      Hardware::Lasers::setStateSwitchRed(true);
-      Hardware::Lasers::setStatePowerRed(1000);
-      Hardware::Lasers::setStateSwitchGreen(true);
-      Hardware::Lasers::setStatePowerGreen(1000);
-      Hardware::Lasers::setStateSwitchBlue(true);
-      Hardware::Lasers::setStatePowerBlue(1000);
+      Hardware::Lasers::setStatePowerAll(1000);
+      Hardware::Lasers::setStateSwitchAll(true);
       Hardware::Scanner::testCrossRange(argStack[0].toInt());
       Hardware::Lasers::popState();
 
@@ -1457,20 +1526,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   // 8) ADVANCED COMMANDS **************************************************************************************
 
-  //#define EXECUTE_SCRIPT "SCRIPT" // { N = 0..}. Will exectue a script in the file system (micro SD)
-  // with name "N.txt". The commands should each be separated by a line feed.
-  else if (_cmdString == EXECUTE_SCRIPT)
+  else if (_cmdString == LOAD_SCRIPT)
   {
-    if (_numArgs == 0)
-    {
-      PRINTLN("> EXECUTING RECORDED SCRIPT: ");
-      PRINTLN("  ------------------------------ ");
-      PRINT(recordedMessageString); // MUST end with END_CMD (which is end of line too...)
-      PRINTLN("  ------------------------------ ");
-      execFlag = parseStringMessage(recordedMessageString);
-      execFlag = true;
-    }
-    else if (_numArgs == 1)
+    if (_numArgs == 1)
     {
       String nameFile = argStack[0];
 
@@ -1482,22 +1540,54 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       }
       else
       {
-        PRINTLN("  ** Content:: ");
-        PRINTLN("  ------------------------------ ");
+        PRINTLN("------------ SCRIPT LOADED IN MEM :");
         PRINT(msgString);
-        PRINTLN("  ------------------------------ ");
-        PRINTLN(" ");
-        PRINTLN("  ** Executing script: ");
-        PRINTLN("  ------------------------------ ");
-
-        // Parse AND calls the appropiate functions (note: if msgString is the error prompt, the parser will
-        // naturally return false).
-        // NOTE: A bad parsing or command error will also produce and execution flag error.
-        execFlag = parseStringMessage(msgString);
+        scriptStringInMemory = msgString;
         execFlag = true;
+        PRINTLN("-----------------------------------");
+      }
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
 
-        PRINTLN("  ------------------------------ ");
-        PRINTLN("  ** End execution script. ");
+  else if (_cmdString == EXECUTE_SCRIPT)
+  {
+    if (_numArgs == 0)
+    {
+      PRINTLN("------------- CURRENT CODE IN MEM :");
+      PRINT(scriptStringInMemory); // MUST end with END_CMD (which is end of line too...)
+      PRINTLN("-----------------------------------");
+      PRINTLN("-- EXECUTING : ");
+      // NOTE: A bad parsing or command error will produce and execution error INSIDE the script, but
+      // it does not mean the EXECUTE_SCRIPT command was a failure.
+      // We have therefore two options: signal that there was an error in the script (this can only
+      // happen if the scrupt was loaded from an SD card and created on a PC), or just through "OK". The first is
+      // better - otherwise we will ALWAYS throw "OK"... But we can signal this with a proper message.
+      execFlag = parseStringMessage(scriptStringInMemory);
+      if (execFlag)
+        PRINTLN("----------- END FAULTLESS EXECUTION");
+      else
+        PRINTLN("------------------- END WITH ERRORS");
+    }
+    else if (_numArgs == 1)
+    {
+      String scriptString = readScript(argStack[0]);
+      if (scriptString == "error")
+        PRINTLN("> LOAD ERROR ");
+      else
+      {
+        PRINTLN("--- SCRIPT LOADED IN MEM TO EXECUTE:");
+        PRINT(scriptString); // MUST end with END_CMD (which is end of line too...)
+        PRINTLN("-----------------------------------");
+        PRINTLN("-- EXECUTING : ");
+        ;
+        // NOTE: A bad parsing or command error will also produce and execution flag error.
+        execFlag = parseStringMessage(scriptString);
+        if (execFlag)
+          PRINTLN("----------- END FAULTLESS EXECUTION");
+        else
+          PRINTLN("------------------- END WITH ERRORS");
       }
     }
     else
@@ -1528,6 +1618,18 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
+  // add more commands to the recorded script
+  else if (_cmdString == ADD_REC_SCRIPT)
+  {
+    if (_numArgs == 0)
+    {
+      addRecordingScript();
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
   //#define SAVE_SCRIPT "SAVE_SCRIPT"
   else if (_cmdString == SAVE_SCRIPT)
   {
@@ -1539,13 +1641,40 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
+  else if (_cmdString == LIST_SD_PRM)
+  {
+    if (_numArgs == 0)
+    {
+      File root;
+      root = SD.open("/");
+      Hardware::SDCard::printDirectory(root, 0);
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  else if (_cmdString == SHOW_MEM_PRM)
+  {
+    if (_numArgs == 0)
+    {
+      PRINTLN("-- CURRENT SCRIPT CODE IN MEMORY :");
+      PRINTLN("---------------------------------- ");
+      PRINT(scriptStringInMemory);
+      PRINTLN("---------------------------------- ");
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
   //10) DEBUG COMMANDS  ****************************************************************************************
   // #define VERBOSE_MODE "VERBOSE"
   else if (_cmdString == VERBOSE_MODE)
   {
     if (_numArgs == 1)
     {
-      Utils::setVerboseMode(argStack[0].toInt());
+      Utils::setVerboseMode(toBool(argStack[0]));
       execFlag = false;
     }
     else
@@ -1562,6 +1691,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   // Finally, return the execution flag (TODO: different codes, and a String explaining the error)
   return execFlag;
-}
+} // namespace Parser
 
 } // namespace Parser

@@ -9,6 +9,9 @@
 #include "scannerDisplay.h"
 #include "graphics.h"
 
+// TODO: IT WOULD BE MUCH BETTER TO HAVE ALL THESE defines as const in the messageParser namespace to
+// void conflicts!
+
 /********************************************************************************************************
 *********************************************************************************************************
                                   PARSING PROTOCOL
@@ -23,14 +26,18 @@
 ********************************************************************************************************
                                        COMMAND LIST
 ********************************************************************************************************/
+// TODO: a parser more like the one I used in the NEURAL project, but better: the command object should
+// have a parameter struct with its name, its own parameter stack, number of args, and error strings...
+
+
 // NOTATION:
-// laser index:             laser_id  = [0-4]
-// optotuner index:         opto_id   = [0-1]
-// clock index:             clk_id    = [0-4]
-// trigger processor:       proc_id   = [0-4]
-// pulse shaper index:      shaper_id = [0-4]
-// Ext input trigger:       trgIn_id  = [0]  (unique for the time being)
-// Ext output trigger:      trgOut_id = [0]  (unique for the time being)
+// laser index or laser name:    laser_id  = [0-4], laser name = ["red", "green", "blue", "deep_blue"]
+// optotuner index:              opto_id   = [0-1]
+// clock index:                  clk_id    = [0-4]
+// trigger processor:            proc_id   = [0-4]
+// pulse shaper index:           shaper_id = [0-4]
+// Ext input trigger:            trgIn_id  = [0]  (unique for the time being)
+// Ext output trigger:           trgOut_id = [0]  (unique for the time being)
 
 //************************************************************************************************************
 // 1) LASERS *************************************************************************************************
@@ -38,8 +45,8 @@
 // a) Per-Laser:
 #define SET_POWER_LASER "PWLASER"  // Param: {laser_id, 0-4095}. Changes current power state.
 #define SET_SWITCH_LASER "SWLASER" // Param: {laser_id, 0/1}. Set the laser switch state.
-#define SET_CARRIER "CARRIER"      // Param: {laser_id, 0/1}, where 0 means no carrier. When switch open, the laser \
-                                   // shines continuously at the current power (filtered PWM), otherwise it will be \
+#define SET_CARRIER "CARRIER"      // Param: {laser_id, 0/1}, where 0 means no carrier. When switch open, the laser
+                                   // shines continuously at the current power (filtered PWM), otherwise it will be
                                    // a 50% PWM [chopping the analog power value]
 
 // b) Simultaneously affecting all lasers:
@@ -93,7 +100,7 @@
 #define RST_ALL_CLOCKS "RST_CLK_ALL"            // No parameters.
 
 // TRIGGER PROCESSOR parameter configuration:
-#define SET_TRG_PROC "SET_TRG_PROC" // Param: {proc_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], delay=[0...]} \
+#define SET_TRG_PROC "SET_TRG_PROC" // Param: {proc_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], delay=[0...]}
                                     // where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
 
 // PULSE SHAPER parameter configuration:
@@ -101,9 +108,9 @@
 
 // SEQUENCER activation/deactivation:
 #define SET_SEQUENCER_STATE "SET_SEQ_STATE" // Param: {0/1}. Deactivate/activate sequencer.
-#define RESET_SEQUENCER "RST_SEQ"           // Param: none. This is not the same than switching on/off the sequencer;  \
-                                            // instead, it will call the reset() method for all the modules (basically \
-                                            // restarting the clock, and resetting the trigger processors so the delay \
+#define RESET_SEQUENCER "RST_SEQ"           // Param: none. This is not the same than switching on/off the sequencer;
+                                            // instead, it will call the reset() method for all the modules (basically
+                                            // restarting the clock, and resetting the trigger processors so the delay
                                             // can be taken into account again)
 
 // SEQUENCER BUILDING:
@@ -137,6 +144,7 @@
 #define SET_SEQUENCER_CHAIN "SET_SEQ_CHAIN" // Param: {module1 class and index, module two class and index, ...}
 // For example, to do the same thing described above:
 //    0,SET_SEQ_STATE
+//    CLEAR_SEQ       <<-- very important if one does not want to add to the previous sequencer!
 //    0,1,5,3,3,2,SET_SEQ_CHAIN
 //    1,SET_SEQ_STATE
 
@@ -174,8 +182,8 @@
 #define START_DISPLAY "START"   // Start the ISR for the displaying engine
 #define STOP_DISPLAY "STOP"     // Stop the displaying ISR
 #define SET_INTERVAL "DT"       // Param: {inter-point time in us (min about 20us)}
-#define DISPLAY_STATUS "STATUS" // Echo various settings to the serial port.                             \
-                                // Note that the number of points in the current blueprint (or "figure") \
+#define DISPLAY_STATUS "STATUS" // Echo various settings to the serial port.
+                                // Note that the number of points in the current blueprint (or "figure")
                                 // and the size of the displaying buffer may differ because of clipping.
 #define SET_SHUTTER "SHUTTER"   // Param:: {0/1}. Set the shutter state.
 
@@ -213,7 +221,7 @@
 #define LINE_TEST "LITEST"
 #define CIRCLE_TEST "CITEST"  // no parameters: makes a circle.
 #define SQUARE_TEST "SQTEST"  // no parameters: makes a square
-#define COMPOSITE_TEST "MIRE" // no parameters: cross and squares (will automatically launch START) \
+#define COMPOSITE_TEST "MIRE" // no parameters: cross and squares (will automatically launch START)
                               // NOTE: we may see the blanking problem here because it is a composite figure
 
 //************************************************************************************************************
@@ -228,14 +236,22 @@
 //************************************************************************************************************
 // 8) ADVANCED COMMANDS **************************************************************************************
 
-#define EXECUTE_SCRIPT "EXE_SCRIPT" // Param: if none, it will execute the current recorded script; otherwise \
-                                    //it takes an argument name (number or non-capital letters ok) and        \
+#define EXECUTE_SCRIPT "EXE_PRM" // Param: if none, it will execute the current recorded script; otherwise
+                                    //it takes an argument name (number or non-capital letters ok) and
                                     // will attempt to exectue the script "name".txt" in the file system (micro SD)
 
-// TODO:
-#define START_REC_SCRIPT "BEGIN_SCRIPT"
-#define END_REC_SCRIPT "END_SCRIPT"
-#define SAVE_SCRIPT "SAVE_SCRIPT"
+// RECORD SCRIPT being input from serial port:
+#define START_REC_SCRIPT "BEGIN_PRM"
+#define END_REC_SCRIPT "END_PRM"
+#define ADD_REC_SCRIPT "ADD_PRM" // does not reset the previous recorded script
+
+// LOAD or SAVE script in memory
+#define LOAD_SCRIPT "LOAD_PRM"
+#define SAVE_SCRIPT "SAVE_PRM"
+
+// LIST SCRIPTS in SD card
+#define LIST_SD_PRM  "LIST_SD_PRM" //TODO: discriminate scripts from other files?
+#define SHOW_MEM_PRM "SHOW_PRM"
 
 //10) DEBUG COMMANDS  ****************************************************************************************
 #define VERBOSE_MODE "VERBOSE"
@@ -263,6 +279,13 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]);
 void resetParser();
 void beginRecordingScript();
 void endRecordingScript();
+
+// Kind of STL map... sadly, no implemenation of maps in STL arduino
+// These methods affect the red laser if no match (TODO: return -1 and check error)
+int8_t toBool(String _str);
+int8_t toClassID(String _str);
+int8_t toLaserID(String _str);
+int8_t toTrgMode(String _str);
 
 } // namespace Parser
 

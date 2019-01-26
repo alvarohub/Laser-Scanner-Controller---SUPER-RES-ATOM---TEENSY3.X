@@ -32,13 +32,13 @@ class OptoTune
 
 	void setStatePower(uint16_t _power)
 	{
-		power = _power;
-		analogWrite(pinPower, _power);
+		power = constrain(_power, 0, MAX_OPTOTUNE_POWER);
+		analogWrite(pinPower, power);
 	}
 
 	void setPower(uint16_t _power)
 	{ // without change the current state (this is to avoid the state stack)
-		analogWrite(pinPower, _power);
+		analogWrite(pinPower, constrain(_power, 0, MAX_OPTOTUNE_POWER));
 	}
 
 	void setToCurrentState()

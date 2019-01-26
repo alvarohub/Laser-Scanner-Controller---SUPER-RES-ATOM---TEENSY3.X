@@ -22,14 +22,14 @@ class Laser : public receiverModule
 	// or do some complex drawing - similar to "pushStyle" in OF or Processing)
 	struct LaserState
 	{
-		uint16_t power;		// 0-MAX_LASER_POWER
-		bool stateSwitch;			// on/off
-		bool stateCarrier;   // chopper mode at FREQ_PWM_CARRIER
+		uint16_t power;	// 0-MAX_LASER_POWER
+		bool stateSwitch;  // on/off
+		bool stateCarrier; // chopper mode at FREQ_PWM_CARRIER
 		// NOTE: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
 		// modulated at the carrier frequency)
-		bool stateBlanking;	// blank between each figure (for the time being, end of trajectory buffer).
-						    // NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
-						    // common to all lasers and could be a static class variable (but now is a DisplayScan variable).
+		bool stateBlanking; // blank between each figure (for the time being, end of trajectory buffer).
+							// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+							// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
 	Laser();
@@ -69,15 +69,15 @@ class Laser : public receiverModule
 	// Update/read methods:
 	void updateBlank(); // will switch off the laser if the stateBlanking is true
 
-	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
-
 	// *********** OVERRIDEN METHODS OF THE BASE CLASS receiverModule ******************
 	bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
-	void action() {
+	void action()
+	{
 		setStateSwitch(state); // reminder: state is a variable of the base class
 	}
 
   private:
+	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
 
 	uint8_t pinPower, pinSwitch;
 

@@ -1,3 +1,5 @@
+
+
 // * If the incoming character is a packet terminator, proceed to parse the data.
     // The advantages of doing this instead of parsing for EACH command, is that we can
     // have a generic string parser [we can then use ANY other protocol to form the
@@ -12,9 +14,6 @@ bool debugTFTActive = false;
 extern void setDebugSerial(bool _active);
 extern void setDebugLCD(bool _active);
 extern void setDebugTFT(bool _active);
-
-
-
 
 void buildPipeline() // must be called each time we add or modify a module interconnection
 {

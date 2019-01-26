@@ -95,12 +95,10 @@ inline void setAnalogPinA(uint16_t _duty)
 {
 	return (analogWrite(PIN_ANALOG_A, _duty));
 }
-
 inline uint16_t readAnalogPinA()
 {
 	return (analogRead(PIN_ANALOG_A));
 }
-
 inline void setDigitalPinB(bool _state)
 {
 	pinMode(PIN_DIGITAL_B, OUTPUT); // it could have been used as input!
@@ -113,12 +111,10 @@ inline bool readDigitalPinB()
 	pinMode(PIN_DIGITAL_B, INPUT); // it could have been used as output!
 	return (digitalRead(PIN_DIGITAL_B));
 }
-
 inline void setAnalogPinB(uint16_t _duty)
 {
 	return (analogWrite(PIN_ANALOG_B, _duty));
 }
-
 inline uint16_t readAnalogPinB()
 {
 	return (analogRead(PIN_ANALOG_B));
@@ -187,7 +183,6 @@ extern bool activeSequencer; // this is useful to stop the whole sequencer inste
 // having to stop (i.e. bypass) each module.
 
 extern Module *getModulePtr(uint8_t _classID, uint8_t _index);
-extern Module *getModulePtr(String _className, uint8_t _index);
 
 extern void setState(bool _active); // activate/deactivate sequencer
 extern bool getState();
@@ -217,16 +212,19 @@ extern Laser laserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
 void init();
 extern void test();
 
-inline void setStateSwitch(uint8_t _laser, bool _state)
-{ // carrier mode overrides this
-	laserArray[_laser].setStateSwitch(_state);
-	//digitalWrite(pinSwitchLaser[_laser], _state);
+inline void setStateSwitch(int8_t _laserIndex, bool _state)
+{
+	// NOTE: carrier mode overrides this.
+	if (_laserIndex > 0) // otherwise do nothing
+		laserArray[_laserIndex].setStateSwitch(_state);
 }
+
 inline void setStateSwitchAll(bool _switch)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		laserArray[i].setStateSwitch(_switch);
 }
+
 inline void switchOffAll()
 { // <<-- without affecting the state!
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
@@ -238,9 +236,10 @@ inline void switchOnAll()
 		laserArray[i].setSwitch(HIGH);
 }
 
-inline void setStatePower(uint8_t _laser, uint16_t _power)
+inline void setStatePower(int8_t _laserIndex, uint16_t _power)
 {
-	laserArray[_laser].setStatePower(_power);
+	if (_laserIndex > 0) // otherwise do nothing
+		laserArray[_laserIndex].setStatePower(_power);
 	//analogWrite(pinPowerLaser[_laser], _power);
 }
 inline void setStatePowerAll(uint16_t _power)
@@ -249,41 +248,29 @@ inline void setStatePowerAll(uint16_t _power)
 		laserArray[i].setStatePower(_power);
 }
 
-inline void setStateBlanking(uint8_t _laser, bool _blankingMode)
+inline void setStateBlanking(int8_t _laserIndex, bool _blankingMode)
 {
-	laserArray[_laser].setStateBlanking(_blankingMode);
+	if (_laserIndex > 0) // otherwise do nothing
+		laserArray[_laserIndex].setStateBlanking(_blankingMode);
 }
+
 inline void setStateBlankingAll(bool _blankingMode)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		laserArray[i].setStateBlanking(_blankingMode);
 }
 
-inline void setStateCarrier(uint8_t _laser, bool _carrierMode)
+inline void setStateCarrier(int8_t _laserIndex, bool _carrierMode)
 {
-	laserArray[_laser].setStateCarrier(_carrierMode);
+	if (_laserIndex > 0)
+		laserArray[_laserIndex].setStateCarrier(_carrierMode);
 }
+
 inline void setStateCarrierAll(bool _carrierMode)
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		laserArray[i].setStateCarrier(_carrierMode);
 }
-
-// Other handy methods, more explicit control:
-inline void setStateSwitchRed(bool _state) { laserArray[RED_LASER].setStateSwitch(_state); }
-inline void setStatePowerRed(uint16_t _power) { laserArray[RED_LASER].setStatePower(_power); }
-
-inline void setStateSwitchGreen(bool _state) { laserArray[BLUE_LASER].setStateSwitch(_state); }
-inline void setStatePowerGreen(uint16_t _power) { laserArray[BLUE_LASER].setStatePower(_power); }
-
-inline void setStateSwitchBlue(bool _state) { laserArray[GREEN_LASER].setStateSwitch(_state); }
-inline void setStatePowerBlue(uint16_t _power) { laserArray[GREEN_LASER].setStatePower(_power); }
-
-inline void setStateSwitchYellow(bool _state) { laserArray[YELLOW_LASER].setStateSwitch(_state); }
-inline void setStatePowerYellow(uint16_t _power) { laserArray[YELLOW_LASER].setStatePower(_power); }
-
-inline void setStateSwitchCyan(bool _state) { laserArray[CYAN_LASER].setStateSwitch(_state); }
-inline void setStatePowerCyan(uint16_t _power) { laserArray[CYAN_LASER].setStatePower(_power); }
 
 // TODO: Composite colors (simultaneous laser manipulation)
 // NOTE: in the future, use HSV (color wheel):
@@ -486,6 +473,8 @@ extern void init();
 extern String readScript(const String _nameFile);
 
 extern bool saveScript(String _nameFile);
+
+extern void printDirectory(File dir, uint8_t numTabs);
 
 } // namespace SDCard
 

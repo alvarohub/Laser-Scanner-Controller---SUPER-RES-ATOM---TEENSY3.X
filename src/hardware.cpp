@@ -40,12 +40,12 @@ void blinkLed(uint8_t _pinLed, uint8_t _times, uint32_t _periodMicros)
 	for (uint8_t i = 0; i < _times; i++)
 	{
 		digitalWrite(_pinLed, HIGH);
-		while (usec < _periodMicros/2)
+		while (usec < _periodMicros / 2)
 		{
 		}
 		usec = 0;
 		digitalWrite(_pinLed, LOW);
-		while (usec < _periodMicros/2)
+		while (usec < _periodMicros / 2)
 		{
 		}
 		usec = 0;
@@ -263,12 +263,6 @@ Module *getModulePtr(uint8_t _classID, uint8_t _index)
 	}
 }
 
-// overloaded method to use strings names:
-Module *getModulePtr(String _className, uint8_t _index)
-{
-	return (getModulePtr(Utils::getIndexClassFromName(_className), _index));
-}
-
 void clearPipeline()
 {
 	vectorPtrModules.clear();
@@ -276,7 +270,8 @@ void clearPipeline()
 
 void addModulePipeline(Module *ptr_newModule)
 {
-	// Check if the module is not in vectorPtrModule so as not to add it twice:
+	if (ptr_newModule!=NULL) {
+		// Check if the module is not in vectorPtrModule so as not to add it twice:
 	// NOTE: seems that std::find(v.begin(), v.end, x) is not implemented in STL arduino framework?
 	bool isThere = false;
 	for (auto ptr_module : vectorPtrModules)
@@ -288,6 +283,7 @@ void addModulePipeline(Module *ptr_newModule)
 
 	if (!isThere)
 		vectorPtrModules.push_back(ptr_newModule);
+	}
 }
 
 void update()
@@ -314,25 +310,23 @@ void displaySequencerStatus()
 	// list the modules and their connections, instead of a chain.
 
 	String msg = (getState() ? "ON" : "OFF");
-	PRINTLN("   1-Sequencer state : " + msg);
+	PRINTLN("  1-Sequencer state : " + msg);
 
 	if (vectorPtrModules.empty())
 		PRINTLN("  2-Pipeline : EMPTY");
 	else
 	{
-		PRINTLN("  2-Pipeline ( size = "+String(vectorPtrModules.size()) + " )" );
+		PRINTLN("  2-Pipeline length : " + String(vectorPtrModules.size()) + " modules");
 
 		for (auto ptr_module : vectorPtrModules)
 		{
-			String nameThisModule = ptr_module->getName() + ptr_module->getParamString();
-			String nameFromModule{""};
 			Module *ptr_fromModule = ptr_module->getPtrModuleFrom(); // NULL if there is no input module
 			if (ptr_fromModule != NULL)
-			{ // this means that this module has input
-				nameFromModule = ptr_fromModule->getName() + ptr_fromModule->getParamString() + " >> ";
-			}
-			PRINTLN("    " + nameFromModule + nameThisModule);
+				PRINT(ptr_fromModule->getName() + ptr_fromModule->getParamString() + " >> ");
 		}
+		// And finally the last module itself:
+
+		PRINTLN(vectorPtrModules.back()->getName() + vectorPtrModules.back()->getParamString());
 	}
 }
 
@@ -769,6 +763,39 @@ void init()
 		PRINTLN("> NO SD CARD or INIT FAILURE");
 	else
 		PRINTLN("> SD CARD PRESENT");
+}
+
+void printDirectory(File dir, uint8_t numTabs)
+{
+	while (true)
+	{
+		File entry = dir.openNextFile();
+
+		if (!entry)
+		{
+			// no more files
+			break;
+		}
+
+		for (uint8_t i = 0; i < numTabs; i++)
+			PRINT('\t');
+
+		PRINT(entry.name());
+
+		if (entry.isDirectory())
+		{
+			PRINTLN("/");
+			printDirectory(entry, numTabs + 1);
+		}
+		else
+		{
+			// files have sizes, directories do not
+			PRINT("\t\t");
+			PRINTLN(String(entry.size()));
+		}
+
+		entry.close();
+	}
 }
 
 } // namespace SDCard

@@ -7,7 +7,7 @@
 #include "Definitions.h" // Program constants and MACROS (including hardware stuff)
 
 // Use digitalWriteFast instead of digitalWrite? (uncomment to use default one in Arduino.h)
-#define digitalWrite(PIN, VAL) (__builtin_constant_p(PIN) ? digitalWriteFast(PIN, VAL) : (digitalWrite)(PIN, VAL))
+#define digitalWrite(PIN, VAL) ( __builtin_constant_p(PIN) ? digitalWriteFast(PIN, (VAL)) : (digitalWrite)(PIN, (VAL)) )
 
 #define DEFAULT_VERBOSE_MODE true // can be changed by sofware (using Utils:setVerboseMode(...))
 
@@ -38,13 +38,7 @@ extern void setVerboseMode(bool _active);
 
 extern bool isNumber(String _str);
 extern bool isDigit(char _val);
-
 extern bool isSmallCaps(String _arg);
-
-// Kind of STL map... sadly, no implemenation of maps in STL arduino
-// return -1 if it could not find the laser index from the name (error)
-extern int8_t getIndexLaserFromName(String _str);
-extern int8_t getIndexClassFromName(String _str);
 
 } // namespace Utils
 #endif

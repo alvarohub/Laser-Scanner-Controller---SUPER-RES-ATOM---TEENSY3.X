@@ -25,10 +25,10 @@ void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 	clearStateStack();
 }
 
-String Laser::getName() {
-	return (laserNames[myID]);
-	//return ("LSR" + String(myID));
-	}
+String Laser::getName()
+{
+	return ("LSR" + String(myID) + "(" + Definitions::laserNames[myID] + ")");
+}
 
 void Laser::setSwitch(bool _state)
 {
@@ -37,7 +37,7 @@ void Laser::setSwitch(bool _state)
 		if (!_state)
 		{
 			// Note: if in carrier mode, digitalWrite will be IGNORED unless we force
-			// pinMode OUTPUT (it will reverse to PWM when issuing an analoWrite command)
+			// pinMode OUTPUT (it will reverse to PWM when issuing an analogWrite command)
 			pinMode(pinSwitch, OUTPUT);
 			digitalWrite(pinSwitch, LOW);
 		}
@@ -50,7 +50,10 @@ void Laser::setSwitch(bool _state)
 	}
 }
 
-void Laser::setPower(uint16_t _power) { analogWrite(pinPower, _power); }
+void Laser::setPower(uint16_t _power)
+{
+	analogWrite(pinPower, constrain(_power, 0, MAX_LASER_POWER));
+}
 
 void Laser::setStateSwitch(bool _state)
 {
@@ -70,7 +73,7 @@ void Laser::toggleStateSwitch()
 
 void Laser::setStatePower(uint16_t _power)
 {
-	myState.power = _power;
+	myState.power = constrain(_power, 0, MAX_LASER_POWER);
 	analogWrite(pinPower, _power);
 }
 uint16_t Laser::getStatePower() { return (myState.power); }
@@ -97,7 +100,8 @@ void Laser::updateBlank()
 	// ATTN: no change to current state, so setToCurrentState will make it go back to PWM carrier if necessary
 }
 
-void Laser::setState(LaserState _state) {
+void Laser::setState(LaserState _state)
+{
 	myState = _state;
 	setToCurrentState();
 }
