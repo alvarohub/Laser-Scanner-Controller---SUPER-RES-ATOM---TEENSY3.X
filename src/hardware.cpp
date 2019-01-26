@@ -270,19 +270,23 @@ void clearPipeline()
 
 void addModulePipeline(Module *ptr_newModule)
 {
-	if (ptr_newModule!=NULL) {
-		// Check if the module is not in vectorPtrModule so as not to add it twice:
-	// NOTE: seems that std::find(v.begin(), v.end, x) is not implemented in STL arduino framework?
-	bool isThere = false;
-	for (auto ptr_module : vectorPtrModules)
+	if (ptr_newModule != NULL)
 	{
-		if (ptr_module == ptr_newModule)
-			isThere = true;
-		break;
-	}
+		// Check if the module is not in vectorPtrModule so as not to add it twice:
+		// NOTE: seems that std::find(v.begin(), v.end, x) is not implemented in STL arduino framework?
+		bool isThere = false;
+		for (auto ptr_module : vectorPtrModules)
+		{
+			//if (ptr_module->isEqual(ptr_newModule))
+			if (ptr_module==ptr_newModule)// comparing pointers directly works, no need to use "isEqual"
+			{
+				isThere = true;
+				break;
+			}
+		}
 
-	if (!isThere)
-		vectorPtrModules.push_back(ptr_newModule);
+		if (!isThere)
+			vectorPtrModules.push_back(ptr_newModule);
 	}
 }
 

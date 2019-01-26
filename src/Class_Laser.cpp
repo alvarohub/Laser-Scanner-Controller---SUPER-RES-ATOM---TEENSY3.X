@@ -27,7 +27,7 @@ void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 
 String Laser::getName()
 {
-	return ("LSR" + String(myID) + "(" + Definitions::laserNames[myID] + ")");
+	return ("LSR[" + String(myID) + "/" + Definitions::laserNames[myID] + "]");
 }
 
 void Laser::setSwitch(bool _state)

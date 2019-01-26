@@ -3,7 +3,7 @@
         "PATH": "/Users/alvaro/.platformio/penv/bin:/Users/alvaro/.platformio/penv:/Users/alvaro/anaconda3/bin:/usr/local/bin:/Users/alvaro/Library/Android/sdk/platform-tools:/Users/alvaro/Library/Android/sdk/tools:/Applications/anaconda/bin:/usr/local/opt/python/libexec/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/opt/local/bin:/opt/local/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/texbin:/opt/X11/bin",
         "PLATFORMIO_CALLER": "vscode"
     },
-    "C_Cpp.intelliSenseEngineFallback": "Tag Parser",
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
     "terminal.integrated.env.linux": {
         "PATH": "/home/usuario/.platformio/penv/bin:/home/usuario/.platformio/penv:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/home/usuario/.toolsforai/RuntimeSDK/cntk/cntk/bin:/home/usuario/.nvm/versions/node/v5.0.0/bin:/home/usuario/bin:~/anaconda3/bin:/usr/bin/pythonsite-packages/tensorflow:/home/usuario/.local/share/umake/bin:/home/usuario/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
         "PLATFORMIO_CALLER": "vscode"

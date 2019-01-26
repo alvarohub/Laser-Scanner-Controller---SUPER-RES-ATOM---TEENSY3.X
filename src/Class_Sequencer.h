@@ -55,6 +55,12 @@ class Module
     Module() : ptr_fromModule(NULL), active(true), state(false), myName("*") {}
     virtual ~Module(){};
 
+    bool isEqual(Module *_toPtr)
+    {
+        bool eq = _toPtr->getName() == getName();
+        return (eq); // simple comparison of String objects
+    }
+
     virtual String getName() { return (""); } // not pure virtual because of the intermediate class receiverModule
     virtual String getParamString() { return (""); }
 
@@ -301,7 +307,7 @@ class OutputTrigger : public receiverModule
     void setOutputPin(uint8_t _outputPin)
     {
         outputTriggerPin = _outputPin;
-        init();
+        pinMode(outputTriggerPin, OUTPUT);
     }
     uint8_t getOutputPin() { return (outputTriggerPin); }
 
@@ -475,8 +481,8 @@ class TriggerProcessor : public receiverModule
     }
 
   private:
-  // will put this in Definitions namespace in case we can change the keywords
-   // const String trgModeNames[3]{"rise", "fall", "change"};
+    // will put this in Definitions namespace in case we can change the keywords
+    // const String trgModeNames[3]{"rise", "fall", "change"};
 
     enum StateMachine
     {

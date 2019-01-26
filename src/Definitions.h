@@ -98,9 +98,9 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS]{29, 30}; // these are PWM pins c
 #define NUM_CLOCKS 4 // (just in case, )
 
 // ======================== EXTERNAL TRIGGERS (input and outputs)  ===============
-// Only one of each for the time being:
-#define NUM_EXT_TRIGGERS_IN 1
-#define NUM_EXT_TRIGGERS_OUT 1
+// Only one of each for the time being are available on hardware
+#define NUM_EXT_TRIGGERS_IN 4
+#define NUM_EXT_TRIGGERS_OUT 4
 
 // ======================== TRIGGER EVENT PROCESSORS  ============================
 // Arbitrary number (like the clocks):

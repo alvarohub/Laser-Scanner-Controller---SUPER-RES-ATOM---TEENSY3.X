@@ -698,9 +698,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         Module *ptr_ModuleFrom = getModulePtr(toClassID(argStack[2 * k]), argStack[2 * k + 1].toInt());
         Module *ptr_ModuleTo = getModulePtr(toClassID(argStack[2 * k + 2]), argStack[2 * k + 3].toInt());
 
-        // Again, for the time being add the modules too:
+        // these methods add to the vector of pointers only if the pointers where not there
         addModulePipeline(ptr_ModuleFrom);
         addModulePipeline(ptr_ModuleTo);
+
         ptr_ModuleTo->setInputLink(ptr_ModuleFrom);
       }
       execFlag = true;
