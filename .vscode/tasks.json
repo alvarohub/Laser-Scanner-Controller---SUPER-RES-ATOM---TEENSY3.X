@@ -11,6 +11,18 @@
             ]
         },
         {
+            "type": "shell",
+            "command": "platformio",
+            "args": [
+                "run",
+                "--verbose"
+            ],
+            "problemMatcher": [
+                "$platformio"
+            ],
+            "label": "PlatformIO: Verbose Build"
+        },
+        {
             "type": "PlatformIO",
             "task": "Monitor",
             "problemMatcher": [
@@ -27,4 +39,3 @@
         }
     ]
 }
-

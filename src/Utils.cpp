@@ -29,6 +29,7 @@ bool isSmallCaps(const String _arg)
 			ismall = false;
 		break;
 	}
+	return (ismall);
 }
 
 bool isNumber(const String _str)

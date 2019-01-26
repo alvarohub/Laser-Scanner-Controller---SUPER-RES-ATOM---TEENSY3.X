@@ -15,7 +15,7 @@
 /********************************************************************************************************
 *********************************************************************************************************
                                   PARSING PROTOCOL
-//*******************************************************************************************************/
+*******************************************************************************************************/
 // NOTE: The Enter key sends a CR character (carriage return, Ctrl+M, numerical value 13 = 0x0d = 015).
 #define ARG_SEPARATOR ','
 #define END_CMD '\n'          // End command (CARRIAGE RETURN, ASCII 13). Without anything else,
@@ -200,7 +200,7 @@
 
 //b) Scene clearing and blanking between objects (only useful when having many figures simultaneously)
 #define CLEAR_SCENE "CLEAR" // clear the blueprint, and also stop the display
-#define CLEAR_MODE "CLMODE" // Param: {0/1}. When set to 0, if we draw a figure it will be ADDED to the current scene. \
+#define CLEAR_MODE "CLMODE" // Param: {0/1}. When set to 0, if we draw a figure it will be ADDED to the current scene.
                             // Otherwise a drawing first clear the canvas and make a new figure.
 
 // The following commands affect all lasers simultaneously [TODO: per laser?]
