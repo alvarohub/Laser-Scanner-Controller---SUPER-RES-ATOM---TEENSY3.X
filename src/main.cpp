@@ -78,8 +78,12 @@ void loop()
 
   //  updateSerialCom(); //no need if using a serial event handler!
 
+  // Update clocks (if they are active) independently of the state of the sequencer (can
+  // be useful to test with leds, etc)
+  Hardware::Clocks::arrayClock[0].update();
+
   // Update sequencer (if it is inactive, the call will return immediately)
-  //Hardware::Sequencer::update();
+  Hardware::Sequencer::update();
 
   //TEST:
   // float t= 1.0*millis()/1000;

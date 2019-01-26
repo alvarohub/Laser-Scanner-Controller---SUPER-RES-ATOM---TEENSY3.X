@@ -418,7 +418,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
   if (_cmdString == SET_POWER_LASER_ALL)
   { // Param: 0 to 4096 (12 bit res).
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePowerAll(argStack[0].toInt());
@@ -430,7 +430,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_POWER_LASER)
   { // Param: laser number or name, power (0 to 4096, 12 bit res).
-    if ((_numArgs == 2)&&Utils::isNumber(argStack[1]))
+    if ((_numArgs == 2) && Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::setStatePower(toLaserID(argStack[0]), argStack[1].toInt());
@@ -518,10 +518,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
 
   // CLOCK parameter configuration:
-  //#define SET_CLOCK_PERIOD "SET_CLK_PERIOD" // Param: {clk_id, period in ms}
+  //#define SET_CLOCK_PERIOD "SET_PERIOD_CLK" // Param: {clk_id, period in ms}
   else if (_cmdString == SET_CLOCK_PERIOD)
   {
-    if ((_numArgs == 2)&&Utils::isNumber(argStack[0])&&Utils::isNumber(argStack[1]))
+    if ((_numArgs == 2) && Utils::isNumber(argStack[0]) && Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Clocks::arrayClock[argStack[0].toInt()].setPeriodMs(argStack[1].toInt());
@@ -532,10 +532,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
   else if (_cmdString == SET_CLOCK_STATE)
   {
-    if ((_numArgs == 2)&&Utils::isNumber(argStack[0])&&Utils::isNumber(argStack[1]))
+    if ((_numArgs == 2) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Clocks::arrayClock[argStack[0].toInt()].setState(argStack[1].toInt());
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].setState( toBool(argStack[1]) );
       execFlag = true;
     }
     else
@@ -554,7 +554,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
   else if (_cmdString == RST_CLOCK)
   {
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Clocks::arrayClock[argStack[0].toInt()].reset();
@@ -576,14 +576,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // TRIGGER PROCESSOR parameter configuration:
-  //#define SET_TRG_PROC "SET_TRG_PROC"
-  // Param: { proc_id = [0-NUM_TRG_PROCESSORS],
+  //#define SET_PRC "SET_PRC"
+  // Param: { trg_id = [0-NUM_TRG_PROCESSORS],
   //          mode trigger=[0,1,2] (or "rise", "fall", "change")
   //          burst=[0...],        (positive integer)
   //          skip=[0...],         (positive integer)
   //          delay=[0...]         (positive integer)
   // }
-  else if (_cmdString == SET_TRG_PROC)
+  else if (_cmdString == SET_TRIGGER_PROCESSOR)
   {
     using namespace Hardware::TriggerProcessors;
     if (_numArgs == 5)
@@ -605,8 +605,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // PULSE SHAPER parameter configuration:
-  // #define SET_PULSE_SHAPER_PARAM "SET_PULSE_SHAPE" // Param: {shaper_id, t_off, t_on}, with times in ms
-  else if (_cmdString == SET_PULSE_SHAPER_PARAM)
+  // #define SET_TRIGGER_PROCESSOR "SET_TRGPRC" // Param: {shaper_id, t_off, t_on}, with times in ms
+  else if (_cmdString == SET_TRIGGER_PROCESSOR)
   {
     if (_numArgs == 3)
     {
@@ -619,7 +619,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // SEQUENCER activation/deactivation:
-  // #define SET_SEQUENCER_STATE   "SET_SEQ_STATE"   // Param: {0/1}. Deactivate/activate sequencer.
+  // #define SET_SEQUENCER_STATE   "SET_STATE_SEQ"   // Param: {0/1}. Deactivate/activate sequencer.
   else if (_cmdString == SET_SEQUENCER_STATE)
   {
     if (_numArgs == 1)
@@ -631,6 +631,33 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
+
+  // #define START_SEQUENCER	      "START_SEQ"
+  else if (_cmdString == START_SEQUENCER)
+  {
+    if (_numArgs == 0)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Sequencer::setState(true);
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  //#define STOP_SEQUENCER	      "STOP_SEQ"
+  else if (_cmdString == STOP_SEQUENCER)
+  {
+    if (_numArgs == 0)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Sequencer::setState(false);
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
   else if (_cmdString == RESET_SEQUENCER)
   {
     if (_numArgs == 0)
@@ -661,7 +688,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // a) Interconnect two modules: mod_from (must have an output) to mod_to (must accept input)
-  // #define SET_SEQUENCER_LINK "SET_SEQ_LINK" // Param: {mod_from class code [0-5] and index in the class [depends],
+  // #define SET_SEQUENCER_LINK "SET_LNK_SEQ" // Param: {mod_from class code [0-5] and index in the class [depends],
   //                                                      mod_to class code [0-5] and index in the class [depends]}
   else if (_cmdString == SET_SEQUENCER_LINK)
   {
@@ -686,7 +713,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // b) Create a chain of interconnected modules at once:
-  //#define SET_SEQUENCER_CHAIN "SET_SEQ_CHAIN" // Param: {module1 class and index, module two class and index, ...}
+  //#define SET_SEQUENCER_CHAIN "SET_CHAIN_SEQ" // Param: {module1 class and index, module two class and index, ...}
   else if (_cmdString == SET_SEQUENCER_CHAIN)
   {
     using namespace Hardware::Sequencer;
@@ -744,7 +771,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //==========================================================================
   else if (_cmdString == SET_POWER_OPTOTUNER_ALL)
   { // Param: 0 to 4096 (12 bit res).
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePowerAll(argStack[0].toInt());
@@ -991,7 +1018,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
       // the style stack, or we may run into overflows because the variable affects the program flow)
-      Hardware::Lasers::setStateBlankingAll(toBool(argStack[0]) );
+      Hardware::Lasers::setStateBlankingAll(toBool(argStack[0]));
       execFlag = true;
     }
     else
@@ -1339,7 +1366,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_DIGITAL_PIN)
   { // Param:pin, state
-    if ((_numArgs == 2)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 2) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPin(argStack[0].toInt(), toBool(argStack[1]));
@@ -1404,7 +1431,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_ANALOG_A)
   { // Param: duty cycle (0-4095)
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinA(argStack[0].toInt());
@@ -1416,7 +1443,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_ANALOG_B)
   { // Param: duty cycle (0-4095)
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setAnalogPinB(argStack[0].toInt());
@@ -1468,7 +1495,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == TEST_MIRRORS_RANGE)
   {
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       // ...
@@ -1490,7 +1517,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == TEST_CIRCLE_RANGE)
   {
 
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::pushState();
@@ -1509,7 +1536,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == TEST_CROSS_RANGE)
   {
 
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
 

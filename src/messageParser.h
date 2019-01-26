@@ -34,7 +34,7 @@
 // laser index or laser name:    laser_id  = [0-4], laser name = ["red", "green", "blue", "deep_blue"]
 // optotuner index:              opto_id   = [0-1]
 // clock index:                  clk_id    = [0-4]
-// trigger processor:            proc_id   = [0-4]
+// trigger processor:            trg_id   = [0-4]
 // pulse shaper index:           shaper_id = [0-4]
 // Ext input trigger:            trgIn_id  = [0]  (unique for the time being)
 // Ext output trigger:           trgOut_id = [0]  (unique for the time being)
@@ -93,25 +93,31 @@
    using the setting methods described below.*/
 
 // CLOCK parameter configuration:
-#define SET_CLOCK_PERIOD "SET_CLK_PERIOD"       // Param: {clk_id, period in ms}
-#define SET_CLOCK_STATE "SET_CLK_STATE"         // Param: {clk_id, 0/1}. Switch the clock off/on
-#define SET_CLOCK_STATE_ALL "SET_CLK_STATE_ALL" // Param: {0/1}. Switch all clocks off/on
-#define RST_CLOCK "RST_CLK"                     // Param: {clk_id}. Reset clock.
-#define RST_ALL_CLOCKS "RST_CLK_ALL"            // No parameters.
+#define SET_CLOCK_PERIOD      "SET_PERIOD_CLK"       // Param: {clk_id, period in ms}
+#define SET_CLOCK_STATE       "SET_STATE_CLK"         // Param: {clk_id, 0/1}. Switch the clock off/on
+#define SET_CLOCK_STATE_ALL   "SET_STATE_CLK_ALL" // Param: {0/1}. Switch all clocks off/on
+#define RST_CLOCK             "RST_CLK"                     // Param: {clk_id}. Reset clock.
+#define RST_ALL_CLOCKS        "RST_CLK_ALL"            // No parameters.
 
 // TRIGGER PROCESSOR parameter configuration:
-#define SET_TRG_PROC "SET_TRG_PROC" // Param: {proc_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], delay=[0...]}
-                                    // where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
-
-// PULSE SHAPER parameter configuration:
-#define SET_PULSE_SHAPER_PARAM "SET_PULSE_SHAPE" // Param: {shaper_id, t_off, t_on}, with times in ms
+// Param: {trg_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], offset=[0...]}
+// where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
+#define SET_TRIGGER_PROCESSOR "SET_PRC"
+// TODO: setting parameters independently
 
 // SEQUENCER activation/deactivation:
-#define SET_SEQUENCER_STATE "SET_SEQ_STATE" // Param: {0/1}. Deactivate/activate sequencer.
-#define RESET_SEQUENCER "RST_SEQ"           // Param: none. This is not the same than switching on/off the sequencer;
+#define SET_SEQUENCER_STATE   "SET_STATE_SEQ" // Param: {0/1}. Deactivate/activate sequencer.
+#define START_SEQUENCER	      "START_SEQ"
+#define STOP_SEQUENCER	      "STOP_SEQ"
+#define RESET_SEQUENCER       "RST_SEQ"           // Param: none. This is not the same than switching on/off the sequencer;
                                             // instead, it will call the reset() method for all the modules (basically
                                             // restarting the clock, and resetting the trigger processors so the delay
                                             // can be taken into account again)
+
+// TODO: STATUS_CLK
+// TODO: LED_CLK on/off
+
+// TODO: a "LED" module or "digital output module" (very useful for checks!!)
 
 // SEQUENCER BUILDING:
 // This is the more tedious part given the elementary parser - we need to identify each module by its index, but also
@@ -122,7 +128,7 @@
 //                1 = in (ext trigger in)
 //                2 = out (ext trigger out)
 //                3 = las (laser)
-//                4 = pul (pulse shaper)
+//                4 = prc (pulse shaper)
 //                5 = trg (trigger processor)
 //
 // followed by the index of the module (for the external triggers, it is always 0, but in the future there may be more)
@@ -131,22 +137,22 @@
 #define ADD_SEQUENCER_MODULE "ADD_SEQ_MODULE" // Param: {mod_from class code [0-5] and index in the class}
 
 // b) Interconnect two modules: mod_from (must have an output) to mod_to (must accept input)
-#define SET_SEQUENCER_LINK "SET_SEQ_LINK" // Param: {mod_from class code [0-5] and index in the class [depends],
+#define SET_SEQUENCER_LINK "SET_LNK_SEQ" // Param: {mod_from class code [0-5] and index in the class [depends],
 //                                                   mod_to class code [0-5] and index in the class [depends]}
 
 // For example, to connect the clock number 1 to the trigger processor 3, and then the latter to the laser 2 we do:
-//    0,SET_SEQ_STATE              <-- deactivate the sequencer to avoid weird results
-//    0,1,5,3,SET_SEQ_LINK         <-- connects the clock (class 0) number 1 to the trigger processor (class 5) number 3
-//    5,3,3,2,SET_SEQ_LINK         <-- connects the trigger processor 3 to the laser (class 3) number 2
-//    1,SET_SEQ_STATE              <-- reactivate the sequencer
+//    0,SET_STATE_SEQ              <-- deactivate the sequencer to avoid weird results
+//    0,1,5,3,SET_LNK_SEQ         <-- connects the clock (class 0) number 1 to the trigger processor (class 5) number 3
+//    5,3,3,2,SET_LNK_SEQ         <-- connects the trigger processor 3 to the laser (class 3) number 2
+//    1,SET_STATE_SEQ              <-- reactivate the sequencer
 
 // c) Create a chain of interconnected modules at once:
-#define SET_SEQUENCER_CHAIN "SET_SEQ_CHAIN" // Param: {module1 class and index, module two class and index, ...}
+#define SET_SEQUENCER_CHAIN "SET_CHAIN_SEQ" // Param: {module1 class and index, module two class and index, ...}
 // For example, to do the same thing described above:
-//    0,SET_SEQ_STATE
+//    0,SET_STATE_SEQ
 //    CLEAR_SEQ       <<-- very important if one does not want to add to the previous sequencer!
-//    0,1,5,3,3,2,SET_SEQ_CHAIN
-//    1,SET_SEQ_STATE
+//    0,1,5,3,3,2,SET_CHAIN_SEQ
+//    1,SET_STATE_SEQ
 
 // d) Disconnect ALL links (aka, delete the sequencer pipeline). Not the same than reset or deactivate the sequencer!
 // NOTE: clearing the pipeline and then building it again is much more simple than disconnecting the modules and then

@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "PlatformIO",
+            "task": "Monitor",
+            "problemMatcher": [
+                "$platformio"
+            ],
+            "presentation": {
+                "panel": "new",
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "type": "PlatformIO",
+            "task": "Verbose Build",
+            "problemMatcher": [
+                "$platformio"
+            ]
+        }
+    ]
+}

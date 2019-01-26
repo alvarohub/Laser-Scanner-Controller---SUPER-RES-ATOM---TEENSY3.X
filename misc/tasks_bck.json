@@ -6,6 +6,7 @@
         {
             "type": "PlatformIO",
             "task": "Build",
+
             "problemMatcher": [
                 "$platformio"
             ]
@@ -29,10 +30,10 @@
                 "$platformio"
             ],
             "presentation": {
+                "panel": "new",
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
-                "panel": "shared",
                 "showReuseMessage": true,
                 "clear": true
             }

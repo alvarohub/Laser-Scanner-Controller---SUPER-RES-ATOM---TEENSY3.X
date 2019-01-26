@@ -143,6 +143,7 @@ class Clock : public Module
 
     void init()
     {
+        active = true; // for tests!!!
         myID = id_count;
         id_count++;
         reset();
@@ -166,20 +167,28 @@ class Clock : public Module
 
     void reset() { clockTimer = millis(); }
 
-    bool getState()
+    bool getState() // getstate can be called at any time, from everywhere in the program (not in main loop
+    // for instance)
+    {
+        update();
+        return (state);
+    }
+
+    // NOTE: action(), update() and refresh() do not need to be overriden here, but update can be useful
+    // to check the clock working regardless of the sequencer state:
+    void update()
     {
         if (active && (millis() - clockTimer > periodMs))
         {
             state = !state;
+            clockTimer = millis();
+           // digitalWrite(PIN_LED_MESSAGE, state);
         } // otherwise don't change the current state
-        return (state);
     }
-
-    // NOTE: action(), update() and refresh() do not need to be overriden here
     // ==================================================================================================
 
   private:
-    uint32_t periodMs = 10; // in ms
+    uint32_t periodMs = 400; // in ms
     uint32_t clockTimer;
     static uint8_t id_count;
     uint8_t myID;
@@ -270,8 +279,9 @@ class receiverModule : public Module
     }
 
     // ****** THIS METHOD WILL BE OVERRIDEN by some CHILDREN of receiverModule ********
-    // The following method will compute the value of the nextState boolean variable:
-    virtual bool computeNextState(bool _inputVal) { return (false); }
+    // The following method will compute the value of the nextState boolean variable.
+    // NOTE: if not overriden, the value will just pass through.
+    virtual bool computeNextState(bool _inputVal) { return (_inputVal); }
     // **********************************************************************************
 
   protected:
@@ -311,6 +321,12 @@ class OutputTrigger : public receiverModule
     }
     uint8_t getOutputPin() { return (outputTriggerPin); }
 
+    // Trigger output will have an additional method for checking: setState:
+    void setState(bool _state) {
+        state = _state;
+        action();
+    }
+
     // ******************** OVERRIDDEN METHODS OF THE BASE CLASS **************************************
     //  getState() is not overridden: we don't read the trigger output state (in principle!), neither compute
     // update or refresh.
@@ -318,6 +334,7 @@ class OutputTrigger : public receiverModule
     void action()
     {
         digitalWrite(outputTriggerPin, state);
+        digitalWrite(PIN_LED_MESSAGE, state); // FOR TESTS PIN_LED_MESSAGE
     }
 
     // ************************************************************************************************
@@ -349,6 +366,10 @@ class TriggerProcessor : public receiverModule
 
     void init()
     {
+        state = true;
+        // NOTE: trigger processors are always active: they produce output when they receive input.
+        // It will be quite useless to deactivate them, but one could do it if desired (command not implemented though)
+
         myID = id_count;
         id_count++;
     }
@@ -365,7 +386,6 @@ class TriggerProcessor : public receiverModule
 
     void reset()
     {
-        state = false;                 //better not to do it?
         counterEvents = -offsetEvents; // IMPORTANT! start (negative if offset) only the FIRST time
         stateMachine = NO_SKIPPING_STATE;
     }
@@ -427,6 +447,8 @@ class TriggerProcessor : public receiverModule
 
     bool computeNextState(bool _inputVal)
     {
+        digitalWrite(PIN_LED_DEBUG, state);
+
         bool event = false;
         bool output = false;
 
@@ -531,7 +553,7 @@ class Pulsar : public receiverModule
 
     String getName()
     {
-        return ("PUL[" + String(myID) + "]");
+        return ("PRC[" + String(myID) + "]");
     }
 
     String getParamString()

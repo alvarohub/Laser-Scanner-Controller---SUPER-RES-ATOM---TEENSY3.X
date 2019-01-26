@@ -296,8 +296,10 @@ void update()
 	{
 		for (auto ptr_module : vectorPtrModules)
 			ptr_module->action();
+
 		for (auto ptr_module : vectorPtrModules)
 			ptr_module->update();
+			
 		for (auto ptr_module : vectorPtrModules)
 			ptr_module->refresh();
 	}
