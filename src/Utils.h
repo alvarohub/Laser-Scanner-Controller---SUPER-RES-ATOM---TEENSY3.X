@@ -19,7 +19,7 @@
 //#define DEBUG_MODE_LCD  // for using the LCD panel
 //#define DEBUG_MODE_TFT // for using the TFT panel
 
-#define USING_SD_CARD // normally, we will use the Teensy3.6, so the SD card reader should be always there. \
+#define USING_SD_CARD // normally, we will use the Teensy3.6, so the SD card reader should be always there.
 					  // but we may need to compile from a compatible microcontroller without this peripheric
 
 namespace Utils
