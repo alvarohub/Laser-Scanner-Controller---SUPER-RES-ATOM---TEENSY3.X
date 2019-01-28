@@ -163,10 +163,10 @@ const String laserNames[NUM_LASERS]{"red", "green", "blue", "deep_blue"};
 
 // * SEQUENCER MODULES:
 // NOTE: unfortunately there is no implementation of stl::map in Arduino
-//const std::map<String, int> classMap = {{"clock", 0}, {"in", 1}, {"out", 2}, {"laser", 3}, {"prc", 4}, {"trg", 5}};
+//const std::map<String, int> classMap = { {"clock", 0}, {"in", 1}, {"out", 2}, {"laser", 3}, {"trg", 4}, {"pul", 2} };
 // ... so I will need to traverse the array to find the index:
 #define NUM_MODULE_CLASSES 6
-const String classNames[NUM_MODULE_CLASSES]{"clk","in", "out", "las", "prc", "trg"};
+const String classNames[NUM_MODULE_CLASSES]{"clk","in", "out", "las", "trg", "pul"};
 
 // * TRIGGER MODES:
 #define NUM_TRIG_MODES 3

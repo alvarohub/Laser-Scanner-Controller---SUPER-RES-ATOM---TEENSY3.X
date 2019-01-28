@@ -1,4 +1,6 @@
 
+    // HIGHLIGHTING (CSS decoration styles)
+  
 
 // * If the incoming character is a packet terminator, proceed to parse the data.
     // The advantages of doing this instead of parsing for EACH command, is that we can

@@ -10,46 +10,68 @@
  have callable "setIn" or "getOut" methods (ex: for a laser object, we call setInput using the "bang"
  read out in the getOutput from a Sequencer). For example:
 
-      [ (no setIn) Clock 1 ] --> [ Trigger Detector 1 ] --> [ Sequencer 1 ] --> [ Laser 1 ]
+        [ (no setIn) Clock 1 ] --> [ Trigger Processor 1 ] --> [ Pulser 1 ] --> [ Laser 1 ]
 
-or
+or even multi-branch sequencers:
 
-      [ Clock 1]  -->  [ Trigger Detector 2 ] --> [ Laser 3 ]
-                                             |
-                                             --> [Trigger Output]
-      (both laser and trigger output connected to the same trigger detector)
+        [ Clock 1]  -->  [ Trigger Processor 2 ]  --> [ Laser 3 ]
+                                                 |
+                                                  --> [ Pulse Shaper 1 ]--> ["Trigger" Output]
 
-or
+      (both laser and pulse shaper output connected to the same trigger detector/processor)
 
-      [ Trigger Input ] --> [ Trigger Detector 4] --> [ Sequencer 3 ] --> [ Laser 2 ] --> [ Trigger Output ]
+or even cascades:
+
+         [ "Trigger" Input ] --> [ Trigger Processor 1 ] --> [ Pulse Shaper 3 ] --> [ Laser 1 ] --> [ Trigger Output ]
+                                                        |
+                                                         --> [Laser 2] --> [ Trigger Processor 2] -- >[Laser 3]
+                                                                      |
+                                                                       --> [ Trigger Processor 3] --> [Laser 4]
+
+    NOTE: here, "trigger" is connected to the laser: the state of the laser could change for other reasons
+       than the sequencer - so if this is active (the update function is called), it will interfere with it.
+
+ Of course, several non-connected pipelines can run concurrently from input triggers or different clocks:
+
+        [ "Trigger" Input ] --> [ Trigger Processor 1 ] --> [ Pulse Shaper 1 ] --> [ Trigger Output ]
+        [ Clock 0 ] --> [ Pulse Shaper 2 ] --> [ Laser 1 ]
+        [ Clock 1 ] --> [ Pulse Shaper 3 ] --> [ Laser 2 ]
+
+    NOTE: To be sure that these clocks start at the same time, we need to call on,START_ALL_CLK.
+          Another way is to start all the clock simultaneously using an external clock for instance (the
+          state of the clocks will be toggled)
+
+        [ "Trigger" Input ] [ Trigger Processor ]  --> [ Clock 0 ] --> [ Pulse Shaper 2 ] --> [ Laser 1 ]
                                                   |
-                                                  --> [Laser 1]
-      (note that the trigger output could be directly connected to the sequencer 3, but in the future the
-      lasers could change their state for other reasons than a "bang")
+                                                   --> [ Clock 1 ] --> [ Trigger Processor ] --> [ Laser 2 ]
 
- Of course, several non-connected pipelines can run concurrently. Cyclic graphs are also possible (the information will
- advance by time steps, as we update all the nodes simultaneously using their previous values in the main loop).
+Cyclic graphs are also possible (the information wil advance by clocked or triggered time steps, as we update
+all the nodes *simultaneously* using their previous values in the main loop):
 
- Setting/getting methods should have the same names on all the children objects, so they are declared
- as virtual methods in the base class. (There could be other ways to do this, such as having indexes or member
- names to identify the objects, or implementing a more complicated way to access class member functions through
- pointers... not sure about this last possibility without the use of a base class though; moreover, perhaps
- the only advantage would be to avoid forcing the same name for the setters and getters, which seems not really worth the additional complexity).
+         [ "Trigger" Input ] --> [ Pulse Shaper 2 ]  --> [ Laser 1 ] -- >  [ Trigger Processor 1] -->
+                                                    |                                                |
+                                                     <-------------------- < ------------------------
 
- NOTE: in the future I can add nodes with several inputs or outputs, and more complex (cyclic) graphs. Just like the "gluons". This can be particularly useful for doing logical operations between the signals (would be easy to implement some basic operations, unary or binary, such as NOT, AND, OR, XOR...).
+    TODO: Add blinking led nodes (for debug and message), logical modules (and, or, xor), and most interestingly,
+          make inter-module messages that are "analog" (ramps, etc) that could be useful to control the microscope state.
 */
 
 class Module
 {
-    // ATTENTION: to make this class polymorphic (so we can call methods from derived classes using
-    // a pointer to a base class object), we need to declare ALL these methods as virtual in the base class.
-    // These methods are here: reset(), update(), getState(), action() and refresh();
-    // (otherwise we would need to do a static or dynamic cast to convert the pointer to the correspondent
-    // derived class, thus loosing the interest of having an array of base class pointers to process all the modules)
+    /*
+    NOTE: to make this class polymorphic (so we can call methods from derived classes using
+    a pointer to a base class object), we need to declare ALL these methods as virtual in the base class.
+    These methods are here: reset(), update(), getState(), action() and refresh();
+    (otherwise we would need to do a static or dynamic cast to convert the pointer to the correspondent
+    derived class, thus loosing the interest of having an array of base class pointers to process all the modules)
 
-    // NOTE: for the time being, I won't care setting each module as active/inactive: the only variable that
-    // commands the state of the whole sequencer is Sequencer::activeSequencer. Therefore the default active value of
-    // set in the constructor is "true"
+    NOTE: Default module state is "true. Indeed, for the time being, I won't care setting each
+    module as active/inactive: the only variable that commands the state of the whole sequencer
+    is Sequencer::activeSequencer.
+    The only module whose "active/inactive" property is really useful is the clock (the others,
+    when inactive will just pass the data through), so the clock can be activated/deactivated with a
+    special serial command (SET_STATE_CLK, START_CLK, STOP_CLK)
+    */
 
   public:
     Module() : ptr_fromModule(NULL), active(true), state(false), myName("*") {}
@@ -64,7 +86,7 @@ class Module
     virtual String getName() { return (""); } // not pure virtual because of the intermediate class receiverModule
     virtual String getParamString() { return (""); }
 
-    // Note: some modules won't use this, but is simpler to make it a variable of the base class so we don't need
+    // NOTE: some modules won't use this, but is simpler to make it a variable of the base class so we don't need
     // to check if the modules have or have not inputs.
     void setInputLink(Module *_ptr_fromModule) { ptr_fromModule = _ptr_fromModule; }
 
@@ -72,29 +94,20 @@ class Module
     // NOTE: the method may be overriden in many cases, like the external trigger input or clock
     virtual bool getState() { return (state); }
 
-    // NOTE 1: methods are not pure virtual because some classes won't need them, BUT the sequencer will call
-    // update, action and refresh for all of them.
-    // NOTE 2: we need to call action() for all the modules first, then update() for all modules, and
+    // NOTE 1: we need to call action() for all the modules first, then update() for all modules, and
     // finally refresh() for all modules too, in that order (of course some modules do not need to implement
     // some of those methods, since the (output) state will be set by an external pin for instance)
+    // NOTE 2: methods are not pure virtual because some classes won't need them, BUT the sequencer will call
+    // update, action and refresh for all of them.
     virtual void action() {}
     virtual void update() {}
     virtual void refresh() {}
 
-    bool isActive() { return (active); }
-
     void setState(bool _active) { active = _active; }
+    void start() { active = true; }
+    void stop() { active = false; }
 
-    void start()
-    {
-        active = true;
-        //reset();
-    }
-
-    void stop()
-    {
-        active = false;
-    }
+    bool isActive() { return (active); }
 
     virtual void reset() {} // not pure virtual, because some objects don't need it,
                             // but all of them will call start and stop
@@ -109,90 +122,10 @@ class Module
 };
 
 // ==================================================================================================
-//                                      MODULES WITH ONLY OUTPUTS
+//                                    MODULES [ ONLY OUTPUTS ]
+// NOTE: all modules could have an input to start/stop it, inverting the signal, changing parameters...
+//       but we are not really designing a full data-flow based signal processor (like the "gluons")
 // ==================================================================================================
-
-class Clock : public Module
-{
-    /*
-     NOTE 1: this is basically a "slow" 50%-duty PWM generator.
-     NOTE 1: We could use an IntervalTimer to geneate clock Pulsars, but then a clocked trigger
-            should work as either a callback function, or use another IntervalTimer with higher rate.
-            However, this strategy won't work for the triggers controlled by changes in laser state (
-            unless, again, the sample rate is fast or a pin change will produce a callback. This is risky, as
-            it may introduce unacceptable delays to set the laser state). In case of an IntervalTimer controlled
-            trigger, the problem is that there may be jitter (timer periods are arbitrary). Therefore, I will
-            not use IntervalTimer, but a simple pulling method (that could eventually be triggered by an
-            interval timer if things are not critical).
-            Another possibility is to use a PWM signal (tone function!), which, using analogWriteFrequency
-            has a lower limit of a few Hz. But I guess it may be possible that we need to integrate the camera
-            image for larger periods, while it will never be too fast (up to 1kHz perhaps?), so the
-            best solution is to do a very simple Clock object.
-
-    NOTE 2: to generate a PWM with a duty cycle (to control the camera exposure in EDGE mode), use a sequencer.
-            It is better this way because using a Trigger object, we can decimate and also add dead times.
-    */
-
-  public:
-    Clock() { init(); }
-    Clock(uint32_t _periodMs)
-    {
-        periodMs = _periodMs;
-        init();
-    }
-
-    void init()
-    {
-        active = true; // for tests!!!
-        myID = id_count;
-        id_count++;
-        reset();
-    }
-
-    String getName()
-    {
-        return ("CLK[" + String(myID) + "]");
-    }
-
-    String getParamString() { return ("{" + String(periodMs) + "ms}"); }
-
-    void setPeriodMs(uint32_t _periodMs)
-    {
-        periodMs = _periodMs;
-        reset();
-    }
-    uint32_t getPeriodMs() { return (periodMs); }
-
-    // ******************** OVERRIDDEN METHODS OF THE BASE CLASS ***********************
-
-    void reset() { clockTimer = millis(); }
-
-    bool getState() // getstate can be called at any time, from everywhere in the program (not in main loop
-    // for instance)
-    {
-        update();
-        return (state);
-    }
-
-    // NOTE: action(), update() and refresh() do not need to be overriden here, but update can be useful
-    // to check the clock working regardless of the sequencer state:
-    void update()
-    {
-        if (active && (millis() - clockTimer > periodMs))
-        {
-            state = !state;
-            clockTimer = millis();
-           // digitalWrite(PIN_LED_MESSAGE, state);
-        } // otherwise don't change the current state
-    }
-    // ==================================================================================================
-
-  private:
-    uint32_t periodMs = 400; // in ms
-    uint32_t clockTimer;
-    static uint8_t id_count;
-    uint8_t myID;
-};
 
 class InputTrigger : public Module
 {
@@ -216,7 +149,7 @@ class InputTrigger : public Module
 
     String getName()
     {
-        return ("IN[" + String(myID) + "]");
+        return ("TRG_IN[" + String(myID) + "]");
     }
 
     void setInputPin(uint8_t _inputPin)
@@ -244,7 +177,7 @@ class InputTrigger : public Module
 
 // ==================================================================================================
 //                                      MODULES WITH INPUT
-// --> These modules have an additional method implemented, "computeNextState", as well as variables
+// --> These modules have an additional method implemented, in particular "computeNextState", as well as variables
 // to record previous states.
 // ==================================================================================================
 
@@ -265,7 +198,7 @@ class receiverModule : public Module
         if (active)
         {
             bool inputVal = ptr_fromModule->getState(); // get the state of the preceding module at time t-1
-            nextState = computeNextState(inputVal);     // compute the next state
+            nextState = computeNextState(inputVal); // compute the next state
 
             // or, if we use instead a different technique setting the next module, we would do:
             //nextState = computeNextState(inputVal);
@@ -280,12 +213,105 @@ class receiverModule : public Module
 
     // ****** THIS METHOD WILL BE OVERRIDEN by some CHILDREN of receiverModule ********
     // The following method will compute the value of the nextState boolean variable.
-    // NOTE: if not overriden, the value will just pass through.
+    // NOTE: by default (if not overriden) the input value will just pass through to the output
     virtual bool computeNextState(bool _inputVal) { return (_inputVal); }
     // **********************************************************************************
 
   protected:
     bool nextState;
+};
+
+class Clock : public receiverModule
+{
+    /*
+     NOTE : This is basically a "slow" 50%-duty PWM generator.
+     NOTE:  The clock is a child of "receiverModule" because it can be started/stopped (actually toggled)
+            by an input bang (an external trigger for instance). See "action()" method.
+     NOTE : We could use an IntervalTimer to geneate clock Pulsars, but then a clocked trigger
+            should work as either a callback function, or use another IntervalTimer with higher rate.
+            However, this strategy won't work for the triggers controlled by changes in laser state (
+            unless, again, the sample rate is fast or a pin change will produce a callback. This is risky, as
+            it may introduce unacceptable delays to set the laser state). In case of an IntervalTimer controlled
+            trigger, the problem is that there may be jitter (timer periods are arbitrary). Therefore, I will
+            not use IntervalTimer, but a simple pulling method (that could eventually be triggered by an
+            interval timer if things are not critical).
+            Another possibility is to use a PWM signal (tone function!), which, using analogWriteFrequency
+            has a lower limit of a few Hz. But I guess it may be possible that we need to integrate the camera
+            image for larger periods, while it will never be too fast (up to 1kHz perhaps?), so the
+            best solution is to do a very simple Clock object.
+
+    NOTE : To generate a PWM with a duty cycle (to control the camera exposure in EDGE mode), use a sequencer.
+           It is better this way because using a Trigger object, we can decimate and also add dead times.
+    */
+
+  public:
+    Clock() { init(); }
+    Clock(uint32_t _periodMs)
+    {
+        periodMs = _periodMs;
+        init();
+    }
+
+    void init()
+    {
+        active = false;
+        // default state is true for most modules, but the clock is special: we may want to start
+        // the clock in synch with other clocks. Btw, the clock can be TOGGLED BY AN INPUT TRIGGER!
+        myID = id_count;
+        id_count++;
+        reset();
+    }
+
+    String getName()
+    {
+        return ("CLK[" + String(myID) + "]");
+    }
+
+    String getParamString() { return ("{" + String(periodMs) + "ms}"); }
+
+    void setPeriodMs(uint32_t _periodMs)
+    {
+        periodMs = _periodMs;
+        reset();
+    }
+    uint32_t getPeriodMs() { return (periodMs); }
+
+    // ******************** OVERRIDDEN METHODS OF THE BASE CLASS ***********************
+
+    void reset() { clockTimer = millis(); }
+
+    bool getState()
+    {
+        // getState can be called at any time, from everywhere in the program (not in main loop
+        // for instance), but then don't forget to call "update" right before or the state won't change.
+        return (state);
+    }
+
+    void action() { // toggle active state when receiving a bang:
+        active = !active;
+    }
+
+    void update()
+    {
+
+        if (active && (millis() - clockTimer > periodMs))
+        { // otherwise don't change the current state
+            state = !state;
+            clockTimer = millis();
+            digitalWrite(PIN_LED_DEBUG, state); // -test-
+        }
+    }
+
+    // NOTE: refresh() do not need to be overriden here because the state of the clock is not calculated
+    // from the "previous" state.
+
+    // ==================================================================================================
+
+  private:
+    uint32_t periodMs = 400; // in ms
+    uint32_t clockTimer;
+    static uint8_t id_count;
+    uint8_t myID;
 };
 
 class OutputTrigger : public receiverModule
@@ -311,7 +337,7 @@ class OutputTrigger : public receiverModule
 
     String getName()
     {
-        return ("OUT[" + String(myID) + "]");
+        return ("TRG_OUT[" + String(myID) + "]");
     }
 
     void setOutputPin(uint8_t _outputPin)
@@ -322,7 +348,8 @@ class OutputTrigger : public receiverModule
     uint8_t getOutputPin() { return (outputTriggerPin); }
 
     // Trigger output will have an additional method for checking: setState:
-    void setState(bool _state) {
+    void setState(bool _state)
+    {
         state = _state;
         action();
     }
@@ -334,8 +361,10 @@ class OutputTrigger : public receiverModule
     void action()
     {
         digitalWrite(outputTriggerPin, state);
-        digitalWrite(PIN_LED_MESSAGE, state); // FOR TESTS PIN_LED_MESSAGE
+        digitalWrite(PIN_LED_MESSAGE, state); // -test-
     }
+
+    //void update() {} -fix-
 
     // ************************************************************************************************
 
@@ -376,7 +405,7 @@ class TriggerProcessor : public receiverModule
 
     String getName()
     {
-        return ("TRG[" + String(myID) + "]");
+        return ("PRC[" + String(myID) + "]");
     }
 
     String getParamString()
@@ -447,48 +476,60 @@ class TriggerProcessor : public receiverModule
 
     bool computeNextState(bool _inputVal)
     {
-        digitalWrite(PIN_LED_DEBUG, state);
 
         bool event = false;
         bool output = false;
 
         // Then, detect event depending on the selected mode:
-        switch (mode)
+
+        // NOTE This would not be necessary if the update is in sync with the clock state change,
+        // in which case state should take the value of the inputValue
+        // -fix-
+        if (state != _inputVal)
         {
-        case 0:
-            event = (!state) && _inputVal;
-            break;
-        case 1:
-            event = state && (!_inputVal);
-            break;
-        case 2:
-            // "^" is an XOR (same than "!="" for binary arguments)
-            event = (state ^ _inputVal);
-            break;
-        default:
-            break;
+
+            switch (mode)
+            {
+            case 0:
+                event = (!state) && _inputVal;
+                break;
+            case 1:
+                event = state && (!_inputVal);
+                break;
+            case 2:
+                // "^" is an XOR (same than "!="" for binary arguments)
+                event = (state ^ _inputVal);
+                break;
+            default:
+                break;
+            }
         }
+
+        state = _inputVal; // -fix-
 
         if (event)
         {
+            //digitalWrite(PIN_LED_DEBUG, state); // -test-
+            // increment number events detected by the trigger:
             counterEvents++;
 
             switch (stateMachine)
             {
             case NO_SKIPPING_STATE:
-                if (counterEvents < continuousNumEvents)
+                if (counterEvents <= continuousNumEvents)
                 {
                     output = true;
                 }
                 else
                 {
+                    Serial.println("END BURST"); // -test-
                     stateMachine = SKIPPING_STATE;
                     counterEvents = 0;
                     output = false;
                 }
                 break;
             case SKIPPING_STATE:
-                if (counterEvents >= skipNumEvents)
+                if (counterEvents > skipNumEvents)
                 {
                     stateMachine = NO_SKIPPING_STATE;
                     counterEvents = 0;

@@ -21,7 +21,6 @@ enum stateParser
 int8_t toBool(const String _str)
 {
   int8_t val = -1;
-
   if (Utils::isNumber(_str))
     val = _str.toInt() > 0;
   else if (_str == "on")

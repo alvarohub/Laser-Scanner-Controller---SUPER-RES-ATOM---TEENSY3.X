@@ -42,10 +42,10 @@
 
 void initSerialCom();
 
+//lklk//
 //  ================== SETUP ==================
 void setup()
 {
-
   // 1] INIT SERIAL COMMUNICATION:
   Com::ReceiverSerial::init();
 
@@ -70,6 +70,9 @@ void setup()
   // Renderer2D::renderFigure();
   // DisplayScan::startDisplay();
   // Hardware::Lasers::setCarrierModeAll(true);
+
+   String scriptString = readScript("1.txt");
+   parseStringMessage(scriptString);
 }
 
 // ================== MAIN LOOP ==================
@@ -79,7 +82,9 @@ void loop()
   //  updateSerialCom(); //no need if using a serial event handler!
 
   // Update clocks (if they are active) independently of the state of the sequencer (can
-  // be useful to test with leds, etc)
+  // be useful to test with leds, etc).
+  // NOTE: another reason why it could be good to do this is to update the sequencer ONLY when one "main"
+  // clock changes state, instead of updating the pipeline all the time! TODO (to think...)
   Hardware::Clocks::arrayClock[0].update();
 
   // Update sequencer (if it is inactive, the call will return immediately)

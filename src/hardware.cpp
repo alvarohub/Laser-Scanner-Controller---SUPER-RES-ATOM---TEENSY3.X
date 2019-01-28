@@ -231,10 +231,16 @@ void reset()
 		ptr_module->reset();
 }
 
-// class code : {0 = clocks, 1 = ext trigger in,
-//				 2 = ext trigger out, 3 = laser,
-//				 4 = shaper, 5 = trigger processor},
-// followed by the index of the module (for the external triggers, it is always 0, but in the future there may be more)
+/*
+  class codes : {
+	  			  0 = clocks (clk),
+  				  1 = ext trigger in (in),
+				  2 = ext trigger out (out),
+				  3 = laser (las),
+				  4 = trigger processor (trg),
+				  5 = pulse shaper (pul)
+				 }
+ */
 Module *getModulePtr(uint8_t _classID, uint8_t _index)
 {
 	switch (_classID)
@@ -278,7 +284,7 @@ void addModulePipeline(Module *ptr_newModule)
 		for (auto ptr_module : vectorPtrModules)
 		{
 			//if (ptr_module->isEqual(ptr_newModule))
-			if (ptr_module==ptr_newModule)// comparing pointers directly works, no need to use "isEqual"
+			if (ptr_module == ptr_newModule) // comparing pointers directly works, no need to use "isEqual"
 			{
 				isThere = true;
 				break;
@@ -299,7 +305,7 @@ void update()
 
 		for (auto ptr_module : vectorPtrModules)
 			ptr_module->update();
-			
+
 		for (auto ptr_module : vectorPtrModules)
 			ptr_module->refresh();
 	}
