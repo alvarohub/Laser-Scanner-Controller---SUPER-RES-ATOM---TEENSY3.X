@@ -1,34 +1,37 @@
 #include "Class_Laser.h"
 
-uint8_t Laser::id_count = 0;
+uint8_t Laser::id_counter = 0;
 
 Laser::Laser()
 {
-	myID = id_count;
-	id_count++;
-};
+	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
+	clearStateStack();
+}
+
 Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
 {
 	init(_pinPower, _pinSwitch);
-	myID = id_count;
-	id_count++;
 }
 
 void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 {
+	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
+	clearStateStack();
+
 	pinPower = _pinPower;   // this is analog output (PWM). Does not need to be set (pinMode)
 	pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
 
 	// Set the default laser state:
 	// setState(defaultState); //... now using C++11 member initialization method
-
-	clearStateStack();
 }
 
-String Laser::getName()
+// ATTN overloaded from Module base class for sequencer user: =================================
+String Laser::getParamString() // used for sequencer stuff. TODO unify with the above...
 {
-	return ("LSR[" + String(myID) + "/" + Definitions::laserNames[myID] + "]");
+	String param = "{ power=" + String(myState.power) + ", switch=" + Definitions::binaryNames[myState.stateSwitch] + ", carrier=" + Definitions::binaryNames[myState.stateCarrier] + ", blank=" + Definitions::binaryNames[myState.stateBlanking] + "}";
+	return (param);
 }
+//  ==========================================================================================
 
 void Laser::setSwitch(bool _state)
 {
@@ -118,6 +121,7 @@ void Laser::setToCurrentState()
 	setStatePower(myState.power);
 	setStateBlanking(myState.stateBlanking);
 }
+
 Laser::LaserState Laser::getCurrentState() { return (myState); }
 
 void Laser::pushState() { laserState_Stack.push_back(myState); }

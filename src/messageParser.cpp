@@ -872,6 +872,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       Laser::LaserState laserState;
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
+
         laserState = Hardware::Lasers::laserArray[k].getCurrentState();
         PRINT("     ");
         PRINT(Definitions::laserNames[k]);

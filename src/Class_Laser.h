@@ -13,7 +13,7 @@
 // NOTE : the group of lasers is not an object itself, but a namespace. Another option
 // would have been to make the group of laser (array and methods) static methods and variables
 // (in that case, the array could be dynamic - a vector)
-class Laser : public receiverModule
+class Laser : public Module
 {
 
   public:
@@ -35,7 +35,12 @@ class Laser : public receiverModule
 	Laser();
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
 	void init(uint8_t _pinPower, uint8_t _pinSwitch);
-	String getName();
+
+// ATTN overloaded from Module base class for sequencer user: =================================
+	virtual String getParamString();
+	virtual bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
+	virtual void action() { setStateSwitch(state); } // reminder: state is a variable of the base class
+//  ==========================================================================================
 
 	// Low level methods not affecting the current LaserState (myState) - useful for tests.
 	void setSwitch(bool _state);
@@ -69,13 +74,6 @@ class Laser : public receiverModule
 	// Update/read methods:
 	void updateBlank(); // will switch off the laser if the stateBlanking is true
 
-	// *********** OVERRIDEN METHODS OF THE BASE CLASS receiverModule ******************
-	bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
-	void action()
-	{
-		setStateSwitch(state); // reminder: state is a variable of the base class
-	}
-
   private:
 	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
 
@@ -93,8 +91,7 @@ class Laser : public receiverModule
 
 	std::vector<LaserState> laserState_Stack;
 
-	static uint8_t id_count; // automatically incremented at instantiation
-	uint8_t myID;
+	static uint8_t id_counter; // automatically incremented at instantiation
 
 	/* NOTES:
 	- Even if the laser has analog control, a digital pin may be used for fast

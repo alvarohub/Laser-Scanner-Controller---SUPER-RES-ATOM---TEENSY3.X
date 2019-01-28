@@ -71,8 +71,6 @@ void setup()
   // DisplayScan::startDisplay();
   // Hardware::Lasers::setCarrierModeAll(true);
 
-   String scriptString = readScript("1.txt");
-   parseStringMessage(scriptString);
 }
 
 // ================== MAIN LOOP ==================
@@ -85,7 +83,7 @@ void loop()
   // be useful to test with leds, etc).
   // NOTE: another reason why it could be good to do this is to update the sequencer ONLY when one "main"
   // clock changes state, instead of updating the pipeline all the time! TODO (to think...)
-  Hardware::Clocks::arrayClock[0].update();
+  //Hardware::Clocks::arrayClock[0].update();
 
   // Update sequencer (if it is inactive, the call will return immediately)
   Hardware::Sequencer::update();
