@@ -4,18 +4,25 @@ uint8_t Laser::id_counter = 0;
 
 Laser::Laser()
 {
+	// default active for sequencer, but won't interfere with anything if the laser "module" is not linked
+	// to anything in the sequencer pipeline:
+	active = true;
 	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
-	clearStateStack();
+	myName = Definitions::classNames[myClassIndex];
 }
 
 Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
 {
+	active = true;
+	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
+    myName = Definitions::classNames[myClassIndex];
+
 	init(_pinPower, _pinSwitch);
 }
 
 void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 {
-	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
+
 	clearStateStack();
 
 	pinPower = _pinPower;   // this is analog output (PWM). Does not need to be set (pinMode)
@@ -28,7 +35,7 @@ void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 // ATTN overloaded from Module base class for sequencer user: =================================
 String Laser::getParamString() // used for sequencer stuff. TODO unify with the above...
 {
-	String param = "{ power=" + String(myState.power) + ", switch=" + Definitions::binaryNames[myState.stateSwitch] + ", carrier=" + Definitions::binaryNames[myState.stateCarrier] + ", blank=" + Definitions::binaryNames[myState.stateBlanking] + "}";
+	String param = "{ power=" + String(myState.power) + ", carrier=" + Definitions::binaryNames[myState.stateCarrier] + ", blank=" + Definitions::binaryNames[myState.stateBlanking] + "}";
 	return (param);
 }
 //  ==========================================================================================

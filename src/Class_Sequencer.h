@@ -197,6 +197,7 @@ class InputTrigger : public Module
     void init()
     {
          myClassIndex = Definitions::ClassIndexes::CLASSID_IN;
+        myName = Definitions::classNames[myClassIndex];
         setInputPin(inputTriggerPin);
     }
 
@@ -256,6 +257,7 @@ class Clock : public Module
     void init()
     {
          myClassIndex = Definitions::ClassIndexes::CLASSID_CLK;
+         myName = Definitions::classNames[myClassIndex];
         active = false; // default state is true for most modules, but the clock is special: we may want to start
                          // the clock in synch with other clocks. Btw, the clock can be TOGGLED BY AN INPUT TRIGGER!
         reset();
@@ -322,6 +324,7 @@ class OutputTrigger : public Module
     void init()
     {
         myClassIndex = Definitions::ClassIndexes::CLASSID_OUT;
+        myName = Definitions::classNames[myClassIndex];
         setOutputPin(outputTriggerPin);
     }
 
@@ -375,6 +378,7 @@ class TriggerProcessor : public Module
     void init()
     {
          myClassIndex = Definitions::ClassIndexes::CLASSID_TRG;
+         myName = Definitions::classNames[myClassIndex];
         state = true;  // NOTE: trigger processors are always active: they produce output when they receive input.
         // It will be quite useless to deactivate them, but one could do it if desired (command not implemented though)
     }
@@ -493,7 +497,7 @@ class TriggerProcessor : public Module
                 }
                 else
                 {
-                    Serial.println("END BURST"); // -test-
+                   // Serial.println("END BURST"); // -test-
                     stateMachine = SKIPPING_STATE;
                     counterEvents = 0;
                     output = false;
@@ -560,6 +564,7 @@ class Pulsar : public Module
     void init()
     {
          myClassIndex = Definitions::ClassIndexes::CLASSID_PUL;
+         myName = Definitions::classNames[myClassIndex];
     }
 
     String getParamString()

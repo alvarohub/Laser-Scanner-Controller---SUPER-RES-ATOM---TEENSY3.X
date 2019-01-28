@@ -36,17 +36,18 @@ class Laser : public Module
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
 	void init(uint8_t _pinPower, uint8_t _pinSwitch);
 
-// ATTN overloaded from Module base class for sequencer user: =================================
+	// ATTN overloaded from Module base class for sequencer user: =================================
 	virtual String getParamString();
 	virtual bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
-	virtual void action() { setStateSwitch(state); } // reminder: state is a variable of the base class
-//  ==========================================================================================
+	virtual void action() { setStateSwitch(state); }		  // reminder: state is a variable of the base class
+	//  ==========================================================================================
 
 	// Low level methods not affecting the current LaserState (myState) - useful for tests.
 	void setSwitch(bool _state);
 	void toggleStateSwitch(); // will be useful for the sequencer.
 	void setPower(uint16_t _power);
-	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable (could made all private though)
+	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable
+							  //(could made all private though)
 
 	// Methods similar to the above, but affecting the current LaserState variable myState
 	void setStateSwitch(bool _state);
