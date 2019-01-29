@@ -604,8 +604,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // PULSE SHAPER parameter configuration:
-  // #define SET_TRIGGER_PROCESSOR "SET_TRGPRC" // Param: {shaper_id, t_off, t_on}, with times in ms
-  else if (_cmdString == SET_TRIGGER_PROCESSOR)
+  //  #define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (ms), time on (ms)}
+  else if (_cmdString == SET_PULSE_SHAPER)
   {
     if (_numArgs == 3)
     {
@@ -616,6 +616,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
+
 
   // SEQUENCER activation/deactivation:
   // #define SET_SEQUENCER_STATE   "SET_STATE_SEQ"   // Param: {0/1}. Deactivate/activate sequencer.

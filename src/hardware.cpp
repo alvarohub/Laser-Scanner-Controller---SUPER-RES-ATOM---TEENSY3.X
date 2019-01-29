@@ -245,23 +245,26 @@ Module *getModulePtr(uint8_t _classID, uint8_t _index)
 {
 	switch (_classID)
 	{
-	case 0: // clocks
+	case 0: // actually cannot happen: this is the base class.
+		return (NULL);
+		break;
+	case 1: // clocks
 		return (&(arrayClock[_index % NUM_CLOCKS]));
 		break;
-	case 1: // external trigger In
+	case 2: // external trigger In
 		return (&(arrayTriggerIn[_index % NUM_EXT_TRIGGERS_IN]));
 		break;
-	case 2: // external trigger Out
+	case 3: // external trigger Out
 		return (&(arrayTriggerOut[_index % NUM_EXT_TRIGGERS_OUT]));
 		break;
-	case 3: // laser
+	case 4: // laser
 		return (&(laserArray[_index % NUM_LASERS]));
-		break;
-	case 4: //pulsar shaper
-		return (&(arrayPulsar[_index % NUM_PULSARS]));
 		break;
 	case 5: // trigger processor
 		return (&(arrayTriggerProcessor[_index % NUM_TRG_PROCESSORS]));
+		break;
+	case 6: //pulsar shaper
+		return (&(arrayPulsar[_index % NUM_PULSARS]));
 		break;
 	default:
 		return (NULL);
@@ -390,7 +393,7 @@ void test()
 
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
-		PRINT("TEST LASER: ");
+		PRINT("TEST LASER ["+String(i)+"] ("+Definitions::laserNames[i]+")");
 		PRINTLN(i);
 		setStateSwitch(i, true);
 

@@ -34,10 +34,13 @@ class Laser : public Module
 
 	Laser();
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
+	void init();
 	void init(uint8_t _pinPower, uint8_t _pinSwitch);
 
 	// ATTN overloaded from Module base class for sequencer user: =================================
-	virtual String getParamString();
+	String getParamString();
+	String getName();
+
 	virtual bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
 	virtual void action() { setStateSwitch(state); }		  // reminder: state is a variable of the base class
 	//  ==========================================================================================
@@ -92,7 +95,10 @@ class Laser : public Module
 
 	std::vector<LaserState> laserState_Stack;
 
-	static uint8_t id_counter; // automatically incremented at instantiation
+	String myName;
+    uint8_t myClassIndex;
+    uint8_t myID;
+    static uint8_t id_counter;
 
 	/* NOTES:
 	- Even if the laser has analog control, a digital pin may be used for fast

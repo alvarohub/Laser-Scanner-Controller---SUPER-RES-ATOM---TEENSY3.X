@@ -4,34 +4,40 @@ uint8_t Laser::id_counter = 0;
 
 Laser::Laser()
 {
-	// default active for sequencer, but won't interfere with anything if the laser "module" is not linked
+	init();
+}
+
+void Laser::init()
+{
+	myID = id_counter;
+	id_counter++;
+	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS; // TODO: make these variables STATIC!!
+	myName = Definitions::classNames[myClassIndex];
+
+	// Default active = true for sequencer operation, but won't interfere with anything if the laser "module" is not linked
 	// to anything in the sequencer pipeline:
 	active = true;
-	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
-	myName = Definitions::classNames[myClassIndex];
+
+	clearStateStack();
+
+	// Set the default laser state:
+	// setState(defaultState); //... now using C++11 member initialization method
 }
 
 Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
 {
-	active = true;
-	myClassIndex = Definitions::ClassIndexes::CLASSID_LAS;
-    myName = Definitions::classNames[myClassIndex];
-
 	init(_pinPower, _pinSwitch);
 }
 
 void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
 {
 
-	clearStateStack();
-
 	pinPower = _pinPower;   // this is analog output (PWM). Does not need to be set (pinMode)
 	pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
-
-	// Set the default laser state:
-	// setState(defaultState); //... now using C++11 member initialization method
+	init();
 }
 
+String Laser::getName() { return (myName+ "[" + String(myID) + "]("+Definitions::laserNames[myID]+")" ); }
 // ATTN overloaded from Module base class for sequencer user: =================================
 String Laser::getParamString() // used for sequencer stuff. TODO unify with the above...
 {

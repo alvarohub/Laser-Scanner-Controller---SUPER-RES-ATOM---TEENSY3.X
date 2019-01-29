@@ -102,8 +102,10 @@
 // TRIGGER PROCESSOR parameter configuration:
 // Param: {trg_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], offset=[0...]}
 // where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
-#define SET_TRIGGER_PROCESSOR "SET_PRC"
 // TODO: setting parameters independently
+#define SET_TRIGGER_PROCESSOR "SET_PRC"
+
+#define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (ms), time on (ms)}
 
 // SEQUENCER activation/deactivation:
 #define SET_SEQUENCER_STATE   "SET_STATE_SEQ" // Param: {0/1}. Deactivate/activate sequencer.

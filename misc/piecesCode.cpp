@@ -1,6 +1,26 @@
 
+
+  private: // by making these variables private and not protected, we ensure we don't make mistakes (forgetting
+    // to declare the corresponding variables in the child class)
+    // ATTN each class muist have a different static counter identifier! problem is, a static
+    // variable of the base class cannot be "overloaded". So we need to use different names or caller functions.
+    // (C++ has no virtual static data members).
+    // Some workaround: //stackoverflow.com/questions/1390913/are-static-variables-in-a-base-class-shared-by-all-derived-classes
+    // (but in my case it is simple to just change names, and add myID = id_counterXX and id_counterXX++ in each
+    // child class). The base class myID will however tell how many objects have been instantiated, which
+    // can be interesting anyway.
+    uint8_t myID;
+    static uint8_t id_counter;
+
+
+  // NOTE also, if we want to keep myID different for each class, and since we call methods of the children
+    // through a pointer of the base class, we should make it private! But this is not enough: when checking myID
+    // from the base class pointer, it will give the base myID!! Let's just use different names, and a virtual getName
+    // or overloaded function.
+
+
     // HIGHLIGHTING (CSS decoration styles)
-  
+
 
 // * If the incoming character is a packet terminator, proceed to parse the data.
     // The advantages of doing this instead of parsing for EACH command, is that we can
