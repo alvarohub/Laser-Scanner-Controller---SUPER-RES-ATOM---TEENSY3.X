@@ -48,7 +48,7 @@ int8_t toClassID(const String _str)
       }
     }
   }
-  if (val<0 && val >= NUM_MODULE_CLASSES)
+  if (val < 0 && val >= NUM_MODULE_CLASSES)
     val = -1;
   return (val);
 }
@@ -169,6 +169,7 @@ bool saveScript(String _nameFile)
 
 // ***************************************************************************************************************
 // RPN PARSER ****************************************************************************************************
+String oldAtomicCommandString = ""; // oldAtomicCommandString is for repeating last GOOD string-command
 bool parseStringMessage(const String &_messageString)
 {
   // NOTE: can contain more than one command; however, after every command there must be an END_COMMAND
@@ -180,7 +181,6 @@ bool parseStringMessage(const String &_messageString)
                                    // Note that the data is saved as a String - it will be converted to int, float or
                                    // whatever by the specific method associated with the correspondent command.
 
-  static String oldAtomicCommandString = ""; // oldAtomicCommandString is for repeating last GOOD string-command
   bool cmdExecuted;
 
   /* Lambda function (C++ does not allows nested functions unless they are in a struct or class).
@@ -290,11 +290,16 @@ bool parseStringMessage(const String &_messageString)
 
       if (myState == START)
       { // implies cmdString.length() equal to zero, i.e, END of packet received WITHOUT a command:
-        // => REPEAT command IF there was a previous good command:
+        // => REPEAT command IF there was a previous good command?
         // NOTE: for the time being, this discards the rest of the message
         // (in case it came from something else than a terminal of course)
         if (val == END_CMD)
         {
+          //NOTE: I will not do repeat, unless explicitly asked with a command. This way the line feed is
+          // just ignored if there is no command string (better to write readable scripts)
+          PRINTLN(">");
+
+          /* IF REPEAT by LINE FEED:
           if (oldAtomicCommandString != "")
           {
             PRINTLN("> [REPEAT]");
@@ -306,9 +311,10 @@ bool parseStringMessage(const String &_messageString)
           else
           {
             PRINTLN("> [NO PREVIOUS COMMAND TO REPEAT]");
-
             break; // abort parsing (we could also restart it from here with resetParser())
           }
+          */
+
         }
         else
         { // "concatenator" without previous CMD
@@ -348,9 +354,9 @@ bool parseStringMessage(const String &_messageString)
         {
           scriptExecuted = scriptExecuted && cmdExecuted; // this way we can know if there was an error in the middle of
           // a script, without stopping it.
-          // NOTE: ignore and don't record START_REC_SCRIPT and END_REC_SCRIPT commands!
-          // (could be useful, but handling that becomes convoluted)
-          if ((cmdString != START_REC_SCRIPT) && (cmdString != END_REC_SCRIPT) && (cmdString != ADD_REC_SCRIPT))
+          // NOTE: ignore and don't record START_REC_SCRIPT and END_REC_SCRIPT or ADD_REC_SCRIPT, nor
+          // the REPEAT_COMMAND commands! (could be useful, but handling that becomes convoluted)
+          if ((cmdString != REPEAT_COMMAND) && (cmdString != START_REC_SCRIPT) && (cmdString != END_REC_SCRIPT) && (cmdString != ADD_REC_SCRIPT))
           {
             // 1) Save properly parsed and executed command string in oldAtomicCommandString for repetition upon "ENTER":
             oldAtomicCommandString = atomicCommandString;
@@ -414,10 +420,36 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   //PRINTLN("START INTERPRETATION");
 
+//==========================================================================
+//====== MISC ================================================
+
+ if (_cmdString == REPEAT_COMMAND)
+  { // Param: 0 to 4096 (12 bit res).
+    if (_numArgs == 0)
+    {
+      //PRINTLN("> EXECUTING... ");
+      if (oldAtomicCommandString != "")
+          {
+            PRINTLN("> REPEAT");
+            parseStringMessage(oldAtomicCommandString); // <<== ATTN: not ideal perhaps to use recurrent
+            // call here.. but when using in command line input, the END_CMD is the
+            // last character, so there is no risk of deep nested calls (on return the parser
+            // will end in the next loop iteration)
+          }
+          else
+          {
+            PRINTLN("> [NO PREVIOUS COMMAND TO REPEAT]");
+          }
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
   //==========================================================================
   // A) ====== LASER COMMANDS ================================================
   //==========================================================================
-  if (_cmdString == SET_POWER_LASER_ALL)
+  else if (_cmdString == SET_POWER_LASER_ALL)
   { // Param: 0 to 4096 (12 bit res).
     if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
@@ -532,8 +564,8 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
- //#define START_CLOCK	         "START_CLK"            // Param: {clk_id}
- else if (_cmdString == START_CLOCK)
+  //#define START_CLOCK	         "START_CLK"            // Param: {clk_id}
+  else if (_cmdString == START_CLOCK)
   {
     if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
@@ -563,7 +595,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if ((_numArgs == 2) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Clocks::arrayClock[argStack[0].toInt()].setActive( toBool(argStack[1]) );
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].setActive(toBool(argStack[1]));
       execFlag = true;
     }
     else
@@ -645,7 +677,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
-
 
   // SEQUENCER activation/deactivation:
   // #define SET_SEQUENCER_STATE   "SET_STATE_SEQ"   // Param: {0/1}. Deactivate/activate sequencer.
@@ -742,6 +773,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // b) Create a chain of interconnected modules at once:
+  // NOTE: it does NOT delecte whatever was before
   //#define SET_SEQUENCER_CHAIN "SET_CHAIN_SEQ" // Param: {module1 class and index, module two class and index, ...}
   else if (_cmdString == SET_SEQUENCER_CHAIN)
   {

@@ -179,7 +179,6 @@ void resetAllClocks()
 // ======================= NAMESPACE  AL TRIGGERS INPUT(S) =======================
 namespace ExtTriggers
 {
-
 OutputTrigger arrayTriggerOut[NUM_EXT_TRIGGERS_OUT];
 InputTrigger arrayTriggerIn[NUM_EXT_TRIGGERS_IN];
 
@@ -290,7 +289,6 @@ void addModulePipeline(Module *ptr_newModule)
 				break;
 			}
 		}
-
 		if (!isThere)
 			vectorPtrModules.push_back(ptr_newModule);
 	}
@@ -332,15 +330,14 @@ void displaySequencerStatus()
 	else
 	{
 		PRINTLN("  2-Pipeline length : " + String(vectorPtrModules.size()) + " modules");
-
 		for (auto ptr_module : vectorPtrModules)
 		{
+			// NOTE: since the
 			Module *ptr_fromModule = ptr_module->getPtrModuleFrom(); // NULL if there is no input module
 			if (ptr_fromModule != NULL)
 				PRINT(ptr_fromModule->getName() + ptr_fromModule->getParamString() + " >> ");
 		}
 		// And finally the last module itself:
-
 		PRINTLN(vectorPtrModules.back()->getName() + vectorPtrModules.back()->getParamString());
 	}
 }

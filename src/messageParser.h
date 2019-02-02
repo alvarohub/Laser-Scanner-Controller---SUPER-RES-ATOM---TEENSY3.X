@@ -19,7 +19,7 @@
 // NOTE: The Enter key sends a CR character (carriage return, Ctrl+M, numerical value 13 = 0x0d = 015).
 #define ARG_SEPARATOR ','
 #define END_CMD '\n'          // End command (CARRIAGE RETURN, ASCII 13). Without anything else,
-                              // this repeat the last GOOD command.
+                              // this could repeat the last GOOD command, but I won't do that.
 #define LINE_FEED_IGNORE '\r' // line feed (ASCII 10) . Ignored and continue parsing.
 
 /*******************************************************************************************************
@@ -38,6 +38,10 @@
 // pulse shaper index:           shaper_id = [0-4]
 // Ext input trigger:            trgIn_id  = [0]  (unique for the time being)
 // Ext output trigger:           trgOut_id = [0]  (unique for the time being)
+
+//************************************************************************************************************
+// 0) MISC *************************************************************************************************
+#define REPEAT_COMMAND "REPEAT" // repeats last command sting (good or bad)
 
 //************************************************************************************************************
 // 1) LASERS *************************************************************************************************
@@ -151,7 +155,8 @@
 //    1,SET_STATE_SEQ              <-- reactivate the sequencer
 
 // c) Create a chain of interconnected modules at once:
-#define SET_SEQUENCER_CHAIN "SET_CHAIN_SEQ" // Param: {module1 class and index, module two class and index, ...}
+// NOTE: it does NOT delecte whatever was before
+#define SET_SEQUENCER_CHAIN "SET_SEQ" // Param: {module1 class and index, module two class and index, ...}
 // For example, to do the same thing described above:
 //    0,SET_STATE_SEQ
 //    CLEAR_SEQ       <<-- very important if one does not want to add to the previous sequencer!
@@ -282,7 +287,6 @@ const uint8_t SIZE_CMD_STACK = 50; // Maximum size of the *command* stack (TODO:
 
 // messageParser.h is (for now) only included in main.cpp and SerialCommands.cpp, so we don't need to declare
 // the functions "extern".
-
 bool parseStringMessage(const String &_messageString);
 bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[]);
 
