@@ -94,8 +94,10 @@
 
 // CLOCK parameter configuration:
 #define SET_CLOCK_PERIOD      "SET_PERIOD_CLK"       // Param: {clk_id, period in ms}
-#define SET_CLOCK_STATE       "SET_STATE_CLK"         // Param: {clk_id, 0/1}. Switch the clock off/on
-#define SET_CLOCK_STATE_ALL   "SET_STATE_CLK_ALL" // Param: {0/1}. Switch all clocks off/on
+#define START_CLOCK	         "START_CLK"            // Param: {clk_id}
+#define STOP_CLOCK	         "STOP_CLK"             // Param: {clk_id}
+#define SET_CLOCK_STATE       "SET_STATE_CLK"        // Param: {clk_id, 0/1}. Switch the clock off/on
+#define SET_CLOCK_STATE_ALL   "SET_STATE_CLK_ALL"    // Param: {0/1}. Switch all clocks off/on
 #define RST_CLOCK             "RST_CLK"                     // Param: {clk_id}. Reset clock.
 #define RST_ALL_CLOCKS        "RST_CLK_ALL"            // No parameters.
 
@@ -103,7 +105,7 @@
 // Param: {trg_id, mode trigger=[0,1,2], burst=[0...], skip=[0...], offset=[0...]}
 // where trigger processor mode 0 is RISE, 1 is FALL and 2 is CHANGE
 // TODO: setting parameters independently
-#define SET_TRIGGER_PROCESSOR "SET_PRC"
+#define SET_TRIGGER_PROCESSOR "SET_TRG"
 
 #define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (ms), time on (ms)}
 

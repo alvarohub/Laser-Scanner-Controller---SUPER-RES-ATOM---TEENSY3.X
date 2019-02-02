@@ -35,7 +35,7 @@ class Laser : public Module
 	Laser();
 	Laser(uint8_t _pinPower, uint8_t _pinSwitch);
 	void init();
-	void init(uint8_t _pinPower, uint8_t _pinSwitch);
+	void setPins(uint8_t _pinPower, uint8_t _pinSwitch);
 
 	// ATTN overloaded from Module base class for sequencer user: =================================
 	String getParamString();

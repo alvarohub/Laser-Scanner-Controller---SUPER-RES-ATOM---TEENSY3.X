@@ -8,7 +8,7 @@
 
 /* BASE CLASS InOutModule is used to be able to collect - as base class pointers - all the objects that
  have callable "setIn" or "getOut" methods (ex: for a laser object, we call setInput using the "bang"
- read out in the getOutput from a Sequencer). For example:
+ read out in the getOutputState from a Sequencer). For example:
 
         [ (no setIn) Clock 1 ] --> [ Trigger Processor 1 ] --> [ Pulser 1 ] --> [ Laser 1 ]
 
@@ -72,128 +72,120 @@ class Module
 
     NOTE: Default active state is "true. Indeed, for the time being, I won't care setting each
     module as active/inactive: the only variable that commands the state of the whole sequencer
-    is Sequencer::activeSequencer.
-    The only module whose "active/inactive" property is really useful is the clock (the others,
-    when inactive will just pass the data through), so the clock can be activated/deactivated with a
+    is Sequencer::activeSequencer. By the way, the only module whose "active/inactive" property is really useful is the clock (the others, when inactive will just pass the data through), so the clock can be activated/deactivated with a
     special serial command (SET_STATE_CLK, START_CLK, STOP_CLK)
     */
 
   public:
     Module()
     {
-        baseInit(); // the base class init() is called before the child constructor, so we don't need to set some things.
+        Module::init();
     }
     virtual ~Module(){};
 
-    void start() { active = true; }
-    void stop() { active = false; }
-    void setState(bool _active) { active = _active; }
-    void toggleState() { active = !active; }
-    bool isActive() { return (active); }
-
-    // reset() and init() are not pure virtual, because some objects just don't need them
-    virtual void baseInit()
+    void init()
     {
-
-        //ATTN myClassIndex and myName HAVE to be properly (re)set for each class type (see Utils::className).
-        // => DO NOT FORGET to set the class index in the Laser class! (or any other not in Class_Sequencer.h that
-        // is a child of Module and can be used in the sequencer pipeline)
-
-        // myID in the base class can be handy to know the index of creation of each object (but then
-        // we need a virtual method to get the value and use cast... Let's forget about an ID for the base class)
-
+        active = true; // default is true - in the case of the clock, it may be better to start with false.
         ptr_fromModule = NULL;
-
-        active = true;
-
-        state = false;
-        nextState = false;
-
-        firstTime = true; // this is used to ensure that something special happens the same time,
-        // and that it will no depend on the casual difference between the initial state and the
-        // computed nextState.
+        reset();
     }
 
+    void start() { active = true; }
+    void stop() { active = false; }
+    void setActive(bool _active) { active = _active; }
+    void toggleActive() { active = !active; }
+    bool isActive() { return (active); }
+
     // Reset parameters to default, reinitialize clock, etc.
-    virtual void reset()
+    // (ATTN: the link is not reset!)
+    void reset()
     {
+        // NOTE 1: sometimes modules are stateless.
+        // NOTE 2: states could be more complex than a binary value of course. Also, children module can have they own
+        // state variables of course, but this boolean variable will come handy in many cases.
+        input = nextInput = false;
+        output = nextOutput = false;
         state = nextState = false;
-        firstTime = true;
+        firstTime = true; // this is used if something special has to happen the first time.
     }
 
     virtual String getName() = 0;
     virtual String getParamString() = 0;
 
-    bool isEqual(Module *_toPtr) { return (_toPtr->getName() == getName()); } // simple comparison of String objects
+    // Module equality (will be done through the name, but simple string comparison)
+    bool isEqual(Module *_toPtr) { return (_toPtr->getName() == getName()); }
 
     void setInputLink(Module *_ptr_fromModule) { ptr_fromModule = _ptr_fromModule; }
+    void clearInputLink() { ptr_fromModule = NULL; }
     Module *getPtrModuleFrom() { return (ptr_fromModule); }
 
-    // Get the currect state of the module (for the time being, a boolean) in particular for using it
+    // Get the output of the module (for the time being, a boolean) for using it
     // in the next module in the chain.
-    // NOTE: the method may be overriden in many cases, like the external trigger input or clock, and not
-    // use the "state" variable of the module at all.
-    virtual bool getState() { return (state); }
+    bool getOutputState() { return (output); }
 
-    // NOTE 1: we need to first call update(), then refresh() for all modules in that order
+    // NOTE 1: we need to first call update(), then refreshStates() for all modules in that order
     // (of course some modules do not need to implement some of those methods, since the (output)
     // state will be set by an external pin for instance).
     // NOTE 2: methods are not pure virtual because some classes won't need them, BUT the sequencer will call
-    // update, action and refresh for all of them.
+    // update, action and refreshStates for all of them.
 
     // ***** UPDATE *****
-    // By default, update uses the value of the previous module to update the nextState. However, some modules
-    // (such as the // clock or the input trigger) will override it. A better solution though is to make the
-    // computeNextState such that it simply does not depends on the previous state, but from a timer function or a
-    // digital input.
-    virtual void update()
+    // By default, update uses the value of the previous module and the current state variables.
+    // This method is *not* virtual and in general not overloaded.
+    void update()
     {
-        if (active && (ptr_fromModule != NULL))
+        if (active)
         {
-            bool stateFrom = ptr_fromModule->getState(); // get the state of the preceding module at time t-1
-            nextState = computeNextState(stateFrom);     // compute the next state
-        }
+
+            bool inputFrom = false;
+            if (ptr_fromModule != NULL)                       // NOTE: if the module is not connected, inputFrom defaults to false.
+                inputFrom = ptr_fromModule->getOutputState(); // get the output of the preceding module at time t-1
+
+            computeNextState(inputFrom); // will compute nextOutput, nextInput and nextState
+
+            if (firstTime)
+            {
+                firstTime = false;
+                firstTimeAction();
+            }
+            else
+            {
+                // ATTN: perform the action all the time, or only when the output state changed?
+                // For the time being, I will do the latest thing:
+                //if (output != nextOutput)
+                action();
+            }
+
+        } // otherwise state and output does not change, and action() is not performed.
     }
 
-    // ***** NEXT STATE *****
-    // The following method will compute the value of the nextState boolean variable.
-    // NOTE: by default (if not overriden) the input value will just pass through to the output.
-    virtual bool computeNextState(bool _stateFrom) { return (_stateFrom); }
+    // ***** EVOLVE *****
+    virtual void computeNextState(bool _inputFrom) {}
+
+    // ***** ACTION *****
+    // Whatever the module needs to do (unrelated to the state evolution), using the input and any state variable.
+    // Not pure virtual because some children won't use (but not non-virtual, otherwise calling from the
+    // basew pointer will just exectute the one declared/defined here)
+    virtual void action() {}
+    virtual void firstTimeAction() { action(); } // by default, it is just the same than action()
 
     // ***** REFRESH *****
     //This method is necessary so that the modules are updated in time steps, but "in parallel".
-    // It will call "action()" on state change (or continuously if one wants too by overriing it)
-    // NOTE if one wants to start by an effective action, then we need to set state and nextState with
-    // different values.
-    virtual void refresh()
+    void refreshStates()
     {
-        if (firstTime)
-        {
-            firstTime = false;
-            // set state different or equal from nextState so the action is performed or not the
-            // first time?
-            state = !nextState; // ensures the action is performed the first time.
-        }
-
-        if (state != nextState) // the first time is useful for
-        {                       // change-conditional action
-            state = nextState;
-
-            action();
-        }
+        output = nextOutput;
+        input = nextInput;
+        state = nextState;
     }
 
-    // ***** ACTION *****
-    // Whatever the module needs to do (unrelated to the state evolution), using the state variable.
-    // note pure virtual because some children won't use (but not non-virtual, otherwise calling from the
-    // basew pointer will just exectute the one declared/defined here)
-    virtual void action() {}
-
   protected:
-    bool active;
-    bool state;
-    bool nextState;
     bool firstTime;
+    bool active;
+
+    bool output, nextOutput;
+    bool state, nextState;
+    bool input, nextInput;
+
     Module *ptr_fromModule;
 };
 
@@ -201,72 +193,10 @@ class Module
                             REAL MODULES (children of base class)
 ===================================================================================================*/
 
-class InputTrigger : public Module
-{
-  public:
-    InputTrigger() : inputTriggerPin(PIN_TRIGGER_INPUT) // default input pin (so we can use it right away)
-    {
-        init();
-    }
-    InputTrigger(uint8_t _inputPin)
-    {
-        inputTriggerPin = _inputPin;
-        init();
-    }
-
-    void init()
-    {
-        myID = id_counter;
-        id_counter++;
-        myClassIndex = Definitions::ClassIndexes::CLASSID_IN;
-        myName = Definitions::classNames[myClassIndex];
-        setInputPin(inputTriggerPin);
-    }
-
-    void setInputPin(uint8_t _inputPin)
-    {
-        inputTriggerPin = _inputPin;
-        pinMode(_inputPin, INPUT_PULLUP); // or pulldown? or floating? (make a parameter?)
-    }
-    uint8_t getInputPin() { return (inputTriggerPin); }
-
-    // Separating this method from action() is for debugging purposes, or for using the
-    // trigger somewhere else (not in the sequencer, with the sequencer inactive):
-    bool readInput()
-    {
-        return (digitalRead(inputTriggerPin));
-    }
-
-    // ******************** OVERRIDDEN METHODS OF THE BASE CLASS **************************************
-    String getName() { return (myName + "[" + String(myID) + "]"); } // by overriding this method,
-                                                                     //we ensure that we are using the myID of the derived class!
-    String getParamString() { return ("{ pin=" + String(inputTriggerPin) + "}"); }
-
-    bool getState()
-    {
-        // There could be some sort of processing (filter? software schmitt trigger?),
-        // checking or something (led debug?)
-        return (readInput());
-    }
-    // NOTE: reset(), action(), update() and refresh() do not need to be overridden here.
-    // NOTE: If the input trigger is in the middle of the pipeline, the data received will be overriden
-    // by the state of the digital pin, regarless of the state or nextState value.
-    // *************************************************************************************************
-
-  private:
-    String myName;
-    uint8_t myClassIndex;
-    uint8_t myID;
-    static uint8_t id_counter;
-    uint8_t inputTriggerPin;
-};
-
 class Clock : public Module
 {
     /*
      NOTE : This is basically a "slow" 50%-duty PWM generator.
-     NOTE:  The clock is a child of "receiverModule" because it can be started/stopped (actually toggled)
-            by an input bang (an external trigger for instance). See "action()" method.
      NOTE : We could use an IntervalTimer to geneate clock Pulsars, but then a clocked trigger
             should work as either a callback function, or use another IntervalTimer with higher rate.
             However, this strategy won't work for the triggers controlled by changes in laser state (
@@ -282,6 +212,10 @@ class Clock : public Module
 
     NOTE : To generate a PWM with a duty cycle (to control the camera exposure in EDGE mode), use a sequencer.
            It is better this way because using a Trigger object, we can decimate and also add dead times.
+
+    NOTE: the clock is an example of a module that *could* not use an internal state. However, I will use it in case
+        we want to do some action only when there is a change of state.
+
     */
 
   public:
@@ -300,7 +234,6 @@ class Clock : public Module
         myName = Definitions::classNames[myClassIndex];
         active = false; // default state is true for most modules, but the clock is special: we may want to start
                         // the clock in synch with other clocks. Btw, the clock can be TOGGLED BY AN INPUT TRIGGER!
-        reset();
     }
 
     void setPeriodMs(uint32_t _periodMs)
@@ -312,34 +245,36 @@ class Clock : public Module
 
     // ******************** Overriden/Overloaded METHODS OF THE BASE CLASS ***********************
 
-    String getName() { return (myName + "[" + String(myID) + "]"); }
-    String getParamString() { return ("{ period=" + String(periodMs) + "ms}"); }
-
-    void reset() { clockTimer = millis(); }
-
-    bool getState()
+    void reset()
     {
-        // getState can be called at any time, from everywhere in the program (not in main loop
-        // for instance), but then don't forget to call "update" right before or the state won't change.
-        // To avoid this problem, we call update here:
-        update();
-        return (state);
+        Module::reset();       // call the base reset()
+        clockTimer = millis(); // reset of things proper to this child class.
     }
 
-    void update() // very special in the case of the clock:
+    String getName() { return (myName + "[" + String(myID) + "]"); }
+    String getParamString()
     {
-        // previous module can activate/deactivate the clock:
-        if (ptr_fromModule != NULL)
+        return ("{state=" + Definitions::binaryNames[active] + ", period=" + String(periodMs) + "ms}");
+    }
+
+    // **** EVOLUTION ****
+    void computeNextState(bool _inputFrom)
+    {
+        if (millis() - clockTimer > periodMs)
         {
-            active = ptr_fromModule->getState();
-            // reset(); ?
-        }
-        else if (active && (millis() - clockTimer > periodMs))
-        { // otherwise don't change the current state
-            state = !state;
+            // we could do nextOutput =!output, but this is for clarity (other logical function could be performed):
+            nextState = !state;
+
             clockTimer = millis();
-            digitalWrite(PIN_LED_DEBUG, state); // -test-
+
+            // And the nextOutput is:
+            nextOutput = nextState;
         }
+    }
+
+    void action()
+    {
+        digitalWrite(PIN_LED_DEBUG, output); // -test-
     }
 
     // ==================================================================================================
@@ -352,6 +287,78 @@ class Clock : public Module
 
     uint32_t periodMs = 1000; // in ms
     uint32_t clockTimer;
+};
+
+// NOTE: this is a stateless module, and it does not even depends on the previous module (btw, there
+// should not be connected to anything before it...)
+class InputTrigger : public Module
+{
+  public:
+    InputTrigger() : inputTriggerPin(PIN_TRIGGER_INPUT) // default input pin (so we can use it right away)
+    {
+        // NOTE: the base class init method is called during construction.
+        init();
+    }
+    InputTrigger(uint8_t _inputPin)
+    {
+        inputTriggerPin = _inputPin;
+        init();
+    }
+
+    // Child class init method: only things other than what the base class init does, in particular the
+    // myClassIndex and myName HAVE to be properly (re)set for each class type (see Utils::className).
+    // => DO NOT FORGET to set the class index in the Laser class! (or any other not in Class_Sequencer.h that
+    // is a child of Module and can be used in the sequencer pipeline)
+    void init()
+    {
+        myID = id_counter;
+        id_counter++;
+        myClassIndex = Definitions::ClassIndexes::CLASSID_IN;
+        myName = Definitions::classNames[myClassIndex];
+        setInputPin(inputTriggerPin);
+    }
+
+    void setInputPin(uint8_t _inputPin)
+    {
+        inputTriggerPin = _inputPin;
+        pinMode(_inputPin, INPUT_PULLUP); // or pulldown? or floating? (make a parameter?)
+
+        reset(); // in this case this is equal to Module::reset() since the reset method is not oveloading here.
+    }
+    uint8_t getInputPin() { return (inputTriggerPin); }
+
+    // Separating this method from action() is for debugging purposes, or for using the
+    // trigger somewhere else (not in the sequencer, with the sequencer inactive):
+    bool readInput()
+    {
+        return (digitalRead(inputTriggerPin));
+    }
+
+    // ******************** OVERRIDDEN METHODS OF THE BASE CLASS **************************************
+    String getName() { return (myName + "[" + String(myID) + "]"); } // by overriding this method,
+                                                                     //we ensure that we are using the myID of the derived class!
+    String getParamString() { return ("{ pin=" + String(inputTriggerPin) + "}"); }
+
+    // **** EVOLUTION ****
+    void computeNextState(bool _inputFrom)
+    {
+        // everything stays the same, but nextOutput is updated (statelessly):
+        nextOutput = readInput();
+    }
+
+    void action()
+    { // in this case, the action() method is mostly for tests.
+        //digitalWrite(PIN_LED_MESSAGE, output);
+    }
+
+    // *************************************************************************************************
+
+  private:
+    String myName;
+    uint8_t myClassIndex;
+    uint8_t myID;
+    static uint8_t id_counter;
+    uint8_t inputTriggerPin;
 };
 
 class OutputTrigger : public Module
@@ -385,19 +392,27 @@ class OutputTrigger : public Module
 
     // Separating this method from action() is for debugging purposes, or for using the
     // trigger somewhere else (not in the sequencer, with the sequencer inactive):
-    void setOutput(bool _state)
+    void setOutput(bool _out)
     {
-        digitalWrite(outputTriggerPin, _state);
-        digitalWrite(PIN_LED_MESSAGE, state); // -test-
+        digitalWrite(outputTriggerPin, _out);
+        digitalWrite(PIN_LED_MESSAGE, _out); // -test-
     }
 
     // ******************** OVERRIDDEN METHODS OF THE BASE CLASS **************************************
     String getName() { return (myName + "[" + String(myID) + "]"); }
-    String getParamString() { return ("{ pin=" + String(outputTriggerPin)); }
+    String getParamString() { return ("{ pin=" + String(outputTriggerPin)+"}"); }
+
+    // **** EVOLUTION ****
+    void computeNextState(bool _inputFrom)
+    {
+        nextOutput = _inputFrom;
+    }
 
     void action()
-    {
-        setOutput(state);
+    { // NOTE: state can be used to avoid calling the action all the time, by checking if the output has actually
+        // changed:
+        //if (state!=nextState)
+        setOutput(output);
     }
 
     // ************************************************************************************************
@@ -451,6 +466,7 @@ class TriggerProcessor : public Module
 
     void reset()
     {
+        Module::reset();
         counterEvents = -offsetEvents; // IMPORTANT! start (negative if offset) only the FIRST time
         stateMachine = BURST_STATE;
     }
@@ -516,41 +532,36 @@ class TriggerProcessor : public Module
 
     void action()
     {
-        // TODO: this could signal somehow the state of the trigger processor
-        // (the state machine state, the number of detected events, etc)
+       // digitalWrite(PIN_LED_MESSAGE, output); // -test-
     }
 
-    bool computeNextState(bool _stateFrom)
+    void computeNextState(bool _inputFrom)
     {
 
-        // "event" is a detected rise, fall or change on state of input module
+        nextInput = _inputFrom;
+
+        //  First, detect an event ("event" is a detected rise, fall or change on state of input module)
         bool event = false;
-
-        // "output" is the result of the processed event stream (burst, skip and offset)
-        bool output = false;
-
         switch (mode)
         {
         case 0: // RISE
-            event = (!state) && _stateFrom;
+            event = (!input) && nextInput;
             break;
         case 1: // FALL
-            event = state && (!_stateFrom);
+            event = input && (!nextInput);
             break;
         case 2: // CHANGE
             // "^" is an XOR (same than "!="" for binary arguments)
-            event = (state ^ _stateFrom);
+            event = (input ^ nextInput);
             break;
         default:
             break;
         }
 
-        // then, update the state of this module to match the value of the input module
-        state = _stateFrom;
-
+        // Then, the output ("output" is the result of the processed event stream (burst, skip and offset)
         if (event)
         {
-            // digitalWrite(PIN_LED_DEBUG, state); // -test-
+           // Serial.println("number rises: " + String(counterEvents + 1));
 
             // Increment number events detected by the trigger:
             counterEvents++;
@@ -558,31 +569,31 @@ class TriggerProcessor : public Module
             switch (stateMachine)
             {
             case BURST_STATE:
-                if (counterEvents <= burstLength)
+                if (counterEvents < burstLength)
                 {
-                    output = true;
+                    nextOutput = true;
                 }
                 else
                 {
-                    // Serial.println("END BURST"); // -test-
-                    output = false;
+                   // Serial.println("END BURST"); // -test-
+                    nextOutput = false;
                     stateMachine = SKIP_STATE;
                     counterEvents = 0; // NOTE offset is not applied anymore.
                 }
                 break;
             case SKIP_STATE:
-                if (counterEvents > skipLength)
+                if (counterEvents >= skipLength)
                 {
-                    output = true;
+                   //  Serial.println("END SKIP STATE"); // -test-
+                    nextOutput = true;
                     stateMachine = BURST_STATE;
                     counterEvents = 0;
-                } // else output remains false
+                } // else nextState remains false
                 break;
             default:
                 break;
             }
         }
-        return (output);
     }
 
   private:
@@ -650,20 +661,27 @@ class Pulsar : public Module
 
     void reset()
     {
+        Module::reset();
         timerPulsar = millis(); // +t_off_ms + t_on_ms; // this is to avoid
     }
 
     // ******************** OVERRIDEN METHODS OF THE BASE CLASS ***********************
-    bool computeNextState(bool _stateFrom)
+    void computeNextState(bool _inputFrom)
     {
-        if (_stateFrom)
-            reset(); // reset timer
+        if (_inputFrom) // reset timer (only!)
+            timerPulsar = millis();
+
         // Output of the Pulsar: ON or OFF (in the future, it can be a struct also
         // containing an analog value - e.g. power ramps)
         uint32_t timePassed = millis() - timerPulsar;
-        bool output = (timePassed > t_off_ms) && (timePassed <= (t_off_ms + t_on_ms));
-        return (output);
+        nextOutput = (timePassed > t_off_ms) && (timePassed <= (t_off_ms + t_on_ms));
     }
+
+    void action()
+    {
+        digitalWrite(PIN_LED_MESSAGE, output); // -test-
+    }
+
     // ********************************************************************************
 
   private:

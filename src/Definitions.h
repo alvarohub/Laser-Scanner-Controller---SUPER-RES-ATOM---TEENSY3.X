@@ -71,7 +71,7 @@
 #define RES_PWM 12 // for now, the PWM resolution is set for ALL PWM pins using the Arduino library,
 // even though pwm pins can be divided in groups with different flexi-timer controllers.
 
-#define NUM_LASERS 4 // larger in the future (in my circuit I already can control 4 lasers - quad op-apm...
+#define NUM_LASERS 4 // larger in the future (in my circuit I already can control 4 lasers - quad op-apm...)
 
 //Power pins (PWM): analog value come from filtered PWM outputs
 // PWM pins to control the laser power on flexitimer FTM0 (pins 5,6,9,10,20,21,22,23)
@@ -183,7 +183,7 @@ const String classNames[NUM_MODULE_CLASSES]{"*", "clk", "in", "out", "las", "trg
 const String trgModeNames[NUM_TRIG_MODES]{"rise", "fall", "change"};
 
 // * binary values ON/OFF:
-const String binaryNames[2]{"on", "off"};
+const String binaryNames[2]{"off", "on"};
 
 } // namespace Definitions
 //=========================== OTHER USEFUL MACROS ===============================

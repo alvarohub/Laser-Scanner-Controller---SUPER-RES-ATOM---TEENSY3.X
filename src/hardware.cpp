@@ -18,11 +18,10 @@ void init()
 #ifdef USING_SD_CARD
 	SDCard::init();
 #endif
-
 	Gpio::init();
+	OptoTuners::init();
 	Lasers::init();
 	Scanner::init();
-	OptoTuners::init();
 }
 
 //Software reset: better than using the RST pin (noisy?)
@@ -119,13 +118,9 @@ void init()
 	pinMode(PIN_TRIGGER_OUTPUT, OUTPUT);
 	pinMode(PIN_TRIGGER_INPUT, INPUT_PULLUP);
 
-	// LEGACY INTENSITY/BLANKING. Here it will be used so that it is HIGH whenever the lasers are ON, and OFF otherwise.
-	// For the time being, it will be ON when display engine is running, and OFF otherwise?
-	pinMode(PIN_INTENSITY_BLANKING, OUTPUT);
-	if (Lasers::isSomeLaserOn())
-		digitalWrite(PIN_INTENSITY_BLANKING, HIGH);
-	else
-		digitalWrite(PIN_INTENSITY_BLANKING, LOW);
+	// LEGACY INTENSITY/BLANKING.
+	// For the time being, it will be OFF at startup.
+	digitalWrite(PIN_INTENSITY_BLANKING, LOW);
 
 	// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
 	pinMode(PIN_SHUTTER, OUTPUT);
@@ -166,7 +161,7 @@ void setStateAllClocks(bool _startStop)
 {
 	for (uint8_t k = 1; k < NUM_CLOCKS; k++)
 	{
-		arrayClock[k].setState(_startStop);
+		arrayClock[k].setActive(_startStop);
 	}
 }
 
@@ -274,6 +269,8 @@ Module *getModulePtr(uint8_t _classID, uint8_t _index)
 
 void clearPipeline()
 {
+	// we need to clear the vector of modules, but also reset the connections:
+	disconnectModules();
 	vectorPtrModules.clear();
 }
 
@@ -299,18 +296,21 @@ void addModulePipeline(Module *ptr_newModule)
 	}
 }
 
+void disconnectModules()
+{
+	for (auto ptr_module : vectorPtrModules)
+		ptr_module->clearInputLink();
+}
+
 void update()
 {
 	if (activeSequencer)
 	{
 		for (auto ptr_module : vectorPtrModules)
-			ptr_module->action();
-
-		for (auto ptr_module : vectorPtrModules)
 			ptr_module->update();
 
 		for (auto ptr_module : vectorPtrModules)
-			ptr_module->refresh();
+			ptr_module->refreshStates();
 	}
 }
 
@@ -368,7 +368,7 @@ void init()
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
 		// Power, switch and carrier are off.
-		laserArray[i].init(pinPowerLaser[i], pinSwitchLaser[i]);
+		laserArray[i].setPins(pinPowerLaser[i], pinSwitchLaser[i]);
 	}
 
 	PRINTLN("> LASERS READY");
@@ -393,7 +393,7 @@ void test()
 
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 	{
-		PRINT("TEST LASER ["+String(i)+"] ("+Definitions::laserNames[i]+")");
+		PRINT("TEST LASER [" + String(i) + "] (" + Definitions::laserNames[i] + ")");
 		PRINTLN(i);
 		setStateSwitch(i, true);
 

@@ -1,4 +1,22 @@
 
+if (ptr_module->getName()=="clk[0]")
+Serial.print("A:");
+            Serial.print(Definitions::binaryNames[state] + " ");
+            Serial.println(Definitions::binaryNames[nextState]);
+
+// NOTE/TODO: serialEvent is a function callback in core Arduino Serial: it has to be here. In the future,
+// properly integrate this in Com namespace.
+void serialEvent()
+{
+  // SerialEvent occurs whenever a new data comes in the hardware serial RX.
+  // It is NOT an interrupt routine: the function gets called at the end of each loop()
+  // iteration if there is something in the serial buffer - in others
+  // words, it is equivalent to a call using "if (Serial.available()) ...".
+  // This means we have to avoid saturating the buffer during the loop... this won't happen
+  // unless the PC gets really crazy or you use an (horrible) delay in the loop.
+  // It won't happen as I use an ISR for the mirror, and the commands are very short).
+  Com::ReceiverSerial::receive();
+}
 
   private: // by making these variables private and not protected, we ensure we don't make mistakes (forgetting
     // to declare the corresponding variables in the child class)

@@ -18,6 +18,7 @@ namespace Com
 
 extern String receivedMessage; // holds the received message (one or more commands)
 extern bool requestACK;
+extern void update();
 extern void setAckMode(bool _mode);
 extern bool getAckMode();
 

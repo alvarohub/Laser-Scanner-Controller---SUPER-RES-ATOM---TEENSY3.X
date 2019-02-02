@@ -99,8 +99,10 @@ def echoSerial():
 ports = list(port_list.comports())
 for p in ports: print(p)
 
+portName = "/dev/cu.usbmodem4072371"
+
 try:
-    ser = serial.Serial('/dev/ttyACM0', 38400)
+    ser = serial.Serial(portName, 38400)
     ser.flushInput()
 except SerialException:
     print("Port unavailable")

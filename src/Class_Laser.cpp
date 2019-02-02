@@ -4,9 +4,14 @@ uint8_t Laser::id_counter = 0;
 
 Laser::Laser()
 {
+	Serial.print("ins");
 	init();
 }
-
+Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
+{
+	init();
+	setPins(_pinPower, _pinSwitch);
+}
 void Laser::init()
 {
 	myID = id_counter;
@@ -22,22 +27,18 @@ void Laser::init()
 
 	// Set the default laser state:
 	// setState(defaultState); //... now using C++11 member initialization method
+
+	Serial.print("instantiating laser:");
+	Serial.println(String(myID));
 }
 
-Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
+void Laser::setPins(uint8_t _pinPower, uint8_t _pinSwitch)
 {
-	init(_pinPower, _pinSwitch);
-}
-
-void Laser::init(uint8_t _pinPower, uint8_t _pinSwitch)
-{
-
 	pinPower = _pinPower;   // this is analog output (PWM). Does not need to be set (pinMode)
 	pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
-	init();
 }
 
-String Laser::getName() { return (myName+ "[" + String(myID) + "]("+Definitions::laserNames[myID]+")" ); }
+String Laser::getName() { return (myName + "[" + String(myID) + "](" + Definitions::laserNames[myID] + ")"); }
 // ATTN overloaded from Module base class for sequencer user: =================================
 String Laser::getParamString() // used for sequencer stuff. TODO unify with the above...
 {

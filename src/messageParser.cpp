@@ -33,7 +33,7 @@ int8_t toBool(const String _str)
 
 int8_t toClassID(const String _str)
 {
-  int8_t val = -1;
+  int8_t val(0); // return -1 if class not found
 
   if (Utils::isNumber(_str))
     val = _str.toInt();
@@ -48,6 +48,8 @@ int8_t toClassID(const String _str)
       }
     }
   }
+  if (val<0 && val >= NUM_MODULE_CLASSES)
+    val = -1;
   return (val);
 }
 
@@ -529,12 +531,39 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
+
+ //#define START_CLOCK	         "START_CLK"            // Param: {clk_id}
+ else if (_cmdString == START_CLOCK)
+  {
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].start();
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
+  //#define STOP_CLOCK	         "STOP_CLK"             // Param: {clk_id}
+  else if (_cmdString == STOP_CLOCK)
+  {
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
+    {
+      //PRINTLN("> EXECUTING... ");
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].stop();
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
   else if (_cmdString == SET_CLOCK_STATE)
   {
     if ((_numArgs == 2) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Clocks::arrayClock[argStack[0].toInt()].setState( toBool(argStack[1]) );
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].setActive( toBool(argStack[1]) );
       execFlag = true;
     }
     else
@@ -873,10 +902,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       Laser::LaserState laserState;
       for (uint8_t k = 0; k < NUM_LASERS; k++)
       {
-
-        laserState = Hardware::Lasers::laserArray[k].getCurrentState();
         PRINT("     ");
-        PRINT(Definitions::laserNames[k]);
+        PRINT(Hardware::Lasers::laserArray[k].getName());
+        laserState = Hardware::Lasers::laserArray[k].getCurrentState();
         PRINT("\t[");
         PRINT(laserState.power);
         PRINT(", ");

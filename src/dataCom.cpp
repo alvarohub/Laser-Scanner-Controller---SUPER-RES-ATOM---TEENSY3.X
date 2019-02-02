@@ -13,7 +13,12 @@ namespace Com
 String receivedMessage;
 bool requestACK = false;
 
-// Common methods (not yet used):
+// Common methods:
+void update() {
+  ReceiverSerial::receive();
+  // TODO: other com methods (use an "#if def...)
+}
+
 void setAckMode(bool _mode) {requestACK = _mode; }
 bool getAckMode() { return (requestACK); }
 
@@ -28,6 +33,12 @@ void init()
 
   // Default acknowledge mode:
   setAckMode(false);
+
+   while (!Serial)
+    ;
+
+    PRINTLN("> SERIAL PORT READY");
+
 }
 
 void receive() // NOTE: no need to declare it before the setup, it is declared in Arduino.h

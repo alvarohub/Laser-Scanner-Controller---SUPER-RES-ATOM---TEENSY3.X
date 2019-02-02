@@ -40,26 +40,26 @@
 #include "messageParser.h"
 #include "dataCom.h"
 
-void initSerialCom();
-
-//lklk//
 //  ================== SETUP ==================
 void setup()
 {
-  // 1] INIT SERIAL COMMUNICATION:
+
+  PRINTLN("==== CONFIGURING SYSTEM ====");
+
+  // 1] INIT SERIAL COMMUNICATION
   Com::ReceiverSerial::init();
 
-  // 2] INIT HARDWARE
+  // 2] INIT SCANNER HARDWARE
   Hardware::init();
 
   // 3] INIT DISPLAY ENGINE (default is not stand by, but running)
   DisplayScan::init();
 
-  PRINTLN("==SYSTEM READY==");
-  //PRINT(">> ");
+  PRINTLN("==== SYSTEM READY =========");
+
 
   // 4] Blink led to show everything went fine(needs to be called after setting pin modes)
-  Hardware::blinkLedDebug(4,250000); // period in us
+  Hardware::blinkLedDebug(4, 250000); // period in us
 
   // Check FREE RAM in DEBUG mode:
   //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
@@ -70,14 +70,14 @@ void setup()
   // Renderer2D::renderFigure();
   // DisplayScan::startDisplay();
   // Hardware::Lasers::setCarrierModeAll(true);
-
 }
 
 // ================== MAIN LOOP ==================
 void loop()
 {
 
-  //  updateSerialCom(); //no need if using a serial event handler!
+
+  Com::update(); // configure in Com namespace which receiver to user (serial, osc, ethernet, bluetooth...)
 
   // Update clocks (if they are active) independently of the state of the sequencer (can
   // be useful to test with leds, etc).
@@ -96,19 +96,4 @@ void loop()
   // Renderer2D::renderFigure();
 
   //delay(200);
-}
-
-// ====== GATHER BYTES FROM SERIAL PORT ========================================
-// * NOTE: This will fill the messageString until finding a packet terminator
-String messageString = "";
-
-void serialEvent() {
-   // SerialEvent occurs whenever a new data comes in the hardware serial RX.
-  // It is NOT an interrupt routine: the function gets called at the end of each loop()
-  // iteration if there is something in the serial buffer - in others
-  // words, it is equivalent to a call using "if (Serial.available()) ...".
-  // This means we have to avoid saturating the buffer during the loop... this won't happen
-  // unless the PC gets really crazy or you use an (horrible) delay in the loop.
-  // It won't happen as I use an ISR for the mirror, and the commands are very short).
-  Com::ReceiverSerial::receive();
 }

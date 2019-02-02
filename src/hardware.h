@@ -190,6 +190,9 @@ extern bool getState();
 extern void reset();
 
 extern void addModulePipeline(Module *ptr_newModule);
+
+extern void disconnectModules();
+
 extern void clearPipeline();
 
 extern void displaySequencerStatus();
