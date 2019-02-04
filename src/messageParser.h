@@ -233,7 +233,7 @@
 #define MAKE_SPIRAL "SPIRAL"  // Param: length-between-arms, num-tours, numpoints, SPIRAL
 
 // d) TEST FIGURES:
-#define LINE_TEST "LITEST"
+#define LINE_TEST "LITEST" 
 #define CIRCLE_TEST "CITEST"  // no parameters: makes a circle.
 #define SQUARE_TEST "SQTEST"  // no parameters: makes a square
 #define COMPOSITE_TEST "MIRE" // no parameters: cross and squares (will automatically launch START)

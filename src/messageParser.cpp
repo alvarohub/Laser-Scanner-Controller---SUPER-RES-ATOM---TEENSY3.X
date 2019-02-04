@@ -314,7 +314,6 @@ bool parseStringMessage(const String &_messageString)
             break; // abort parsing (we could also restart it from here with resetParser())
           }
           */
-
         }
         else
         { // "concatenator" without previous CMD
@@ -420,26 +419,26 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   //PRINTLN("START INTERPRETATION");
 
-//==========================================================================
-//====== MISC ================================================
+  //==========================================================================
+  //====== MISC ================================================
 
- if (_cmdString == REPEAT_COMMAND)
+  if (_cmdString == REPEAT_COMMAND)
   { // Param: 0 to 4096 (12 bit res).
     if (_numArgs == 0)
     {
       //PRINTLN("> EXECUTING... ");
       if (oldAtomicCommandString != "")
-          {
-            PRINTLN("> REPEAT");
-            parseStringMessage(oldAtomicCommandString); // <<== ATTN: not ideal perhaps to use recurrent
-            // call here.. but when using in command line input, the END_CMD is the
-            // last character, so there is no risk of deep nested calls (on return the parser
-            // will end in the next loop iteration)
-          }
-          else
-          {
-            PRINTLN("> [NO PREVIOUS COMMAND TO REPEAT]");
-          }
+      {
+        PRINTLN("> REPEAT");
+        parseStringMessage(oldAtomicCommandString); // <<== ATTN: not ideal perhaps to use recurrent
+        // call here.. but when using in command line input, the END_CMD is the
+        // last character, so there is no risk of deep nested calls (on return the parser
+        // will end in the next loop iteration)
+      }
+      else
+      {
+        PRINTLN("> [NO PREVIOUS COMMAND TO REPEAT]");
+      }
       execFlag = true;
     }
     else
@@ -778,7 +777,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == SET_SEQUENCER_CHAIN)
   {
     using namespace Hardware::Sequencer;
-    if (!(_numArgs % 2)) // number of arguments must be even (there are more tests to do on the ranges, but at least that)
+    if ( (Utils::areNumbers(_numArgs, argStack)) && (!(_numArgs % 2)) ) // number of arguments must be even (there are more tests to do on the ranges, but at least that)
     {
       //PRINTLN("> EXECUTING... ");
       for (uint8_t k = 0; k < _numArgs / 2 - 1; k++)
@@ -844,7 +843,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_POWER_OPTOTUNER)
   { // Param: laser number, power (0 to 4096, 12 bit res).
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&& Utils::areNumbers(_numArgs,argStack))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePower(argStack[0].toInt(), argStack[1].toInt());
@@ -883,7 +882,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_INTERVAL)
   {
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&& Utils::isNumber( argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::setInterPointTime(argStack[0].toInt());
@@ -984,7 +983,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_ANGLE_GLOBAL)
   { // Param: angle in DEG (float)
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&& Utils::isNumber( argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setAngle(argStack[0].toFloat());
@@ -997,7 +996,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_CENTER_GLOBAL)
   { // Param: x,y
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&& Utils::areNumbers(_numArgs, argStack))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
@@ -1010,7 +1009,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_SCALE_GLOBAL)
   { // Param: scale
-    if (_numArgs == 1)
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setScaleFactor(argStack[0].toFloat());
@@ -1023,7 +1022,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_COLOR_GLOBAL)
   { // Param: color bool [TODO: real colors]
-    if (_numArgs == 1)
+    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setColorRed(argStack[0].toInt());
@@ -1087,7 +1086,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
   else if (_cmdString == SET_BLANKING)
   {
-    if (_numArgs == 2)
+    if ((_numArgs == 2)&&Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
@@ -1117,6 +1116,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   // == MAKE LINE ==========================================
   else if (_cmdString == MAKE_LINE)
   {
+     if (Utils::areNumbers(_numArgs, argStack)) {
     switch (_numArgs)
     {
     case 3: //origina at (0,0)
@@ -1146,6 +1146,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
       break;
     }
+     } else {
+       PRINTLN("> BAD PARAMETERS");
+     }
   }
 
   // == MAKE CIRCLE ==========================================
@@ -1154,155 +1157,189 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //      [of course, the radius is multiplied by the current scaling factor]
   else if (_cmdString == MAKE_CIRCLE)
   {
-
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 2: // radius + num points [centered]
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      switch (_numArgs)
+      {
+      case 2: // radius + num points [centered]
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        Graphics::drawCircle(argStack[0].toFloat(), argStack[1].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      case 4:
+      { // center point, radius, num points
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
       break;
-    case 4:
-    { // center point, radius, num points
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      P2 centerP2(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawCircle(centerP2, argStack[2].toFloat(), argStack[3].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-    break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
   }
 
   // == MAKE RECTANGLE ==========================================
   else if (_cmdString == MAKE_RECTANGLE)
   {
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 4: // [centered]
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      Graphics::drawRectangle(
-          argStack[0].toFloat(), argStack[1].toFloat(),
-          argStack[2].toInt(), argStack[3].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      switch (_numArgs)
+      {
+      case 4: // [centered]
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        Graphics::drawRectangle(
+            argStack[0].toFloat(), argStack[1].toFloat(),
+            argStack[2].toInt(), argStack[3].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      case 6:
+      { // From lower left corner:
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawRectangle(
+            fromP2,
+            argStack[2].toFloat(), argStack[3].toFloat(),
+            argStack[4].toInt(), argStack[5].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
       break;
-    case 6:
-    { // From lower left corner:
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawRectangle(
-          fromP2,
-          argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt(), argStack[5].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-    break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
   }
 
   // == MAKE SQUARE ==========================================
   else if (_cmdString == MAKE_SQUARE)
   {
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 2: // side, num point [centered]
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      switch (_numArgs)
+      {
+      case 2: // side, num point [centered]
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        Graphics::drawSquare(argStack[0].toFloat(), argStack[1].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      case 4:
+      { // center point, radius, num points
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
       break;
-    case 4:
-    { // center point, radius, num points
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawSquare(fromP2, argStack[2].toFloat(), argStack[3].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-    break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
   }
 
   else if (_cmdString == MAKE_ZIGZAG)
   {
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 4: // Centered on [0,0]
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      Graphics::drawZigZag(
-          argStack[0].toFloat(), argStack[1].toFloat(),
-          argStack[2].toInt(), argStack[3].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      switch (_numArgs)
+      {
+      case 4: // Centered on [0,0]
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        Graphics::drawZigZag(
+            argStack[0].toFloat(), argStack[1].toFloat(),
+            argStack[2].toInt(), argStack[3].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      case 6:
+      { // from left bottom corner:
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawZigZag(
+            fromP2,
+            argStack[2].toFloat(), argStack[3].toFloat(),
+            argStack[4].toInt(), argStack[5].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
       break;
-    case 6:
-    { // from left bottom corner:
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawZigZag(
-          fromP2,
-          argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt(), argStack[5].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-    break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
   }
 
   else if (_cmdString == MAKE_SPIRAL)
   {
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 5:
-    {
-      Graphics::updateScene();
-      P2 center(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawSpiral(
-          center,
-          argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
-          argStack[3].toFloat(), // num tours (float)
-          argStack[4].toInt()    // num points
-      );
-      Renderer2D::renderFigure();
-      execFlag = true;
+      switch (_numArgs)
+      {
+      case 5:
+      {
+        Graphics::updateScene();
+        P2 center(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawSpiral(
+            center,
+            argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
+            argStack[3].toFloat(), // num tours (float)
+            argStack[4].toInt()    // num points
+        );
+        Renderer2D::renderFigure();
+        execFlag = true;
+      }
+      break;
+      case 3:
+        Graphics::updateScene();
+        Graphics::drawSpiral(
+            argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
+            argStack[1].toFloat(),
+            argStack[2].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-    break;
-    case 3:
-      Graphics::updateScene();
-      Graphics::drawSpiral(
-          argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
-          argStack[1].toFloat(),
-          argStack[2].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
-      break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
   }
 
@@ -1440,7 +1477,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   // Wrappers for special pins (exposed in the D25 connector):
   else if (_cmdString == SET_DIGITAL_A)
   { // Param: state
-    if (_numArgs == 1)
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinA(toBool(argStack[0]));
@@ -1452,7 +1489,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == SET_DIGITAL_B)
   { // Param: state
-    if (_numArgs == 1)
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Gpio::setDigitalPinB(toBool(argStack[0]));
@@ -1566,7 +1603,10 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       // * NOTE 2 : power and switch of lasers is modified. Again, a stack for laser
       //            attributes would be great.
 
+      Hardware::Lasers::pushState();
+
       Hardware::Scanner::testMirrorRange(argStack[0].toInt());
+
       Hardware::Lasers::popState();
 
       execFlag = true;
@@ -1582,10 +1622,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::Lasers::pushState();
+
       Hardware::Lasers::setStatePowerAll(1000);
       Hardware::Lasers::setStateSwitchAll(true);
-
       Hardware::Scanner::testCircleRange(argStack[0].toInt());
+
       Hardware::Lasers::popState();
 
       execFlag = true;
@@ -1602,9 +1643,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
 
       Hardware::Lasers::pushState();
+
       Hardware::Lasers::setStatePowerAll(1000);
       Hardware::Lasers::setStateSwitchAll(true);
       Hardware::Scanner::testCrossRange(argStack[0].toInt());
+
       Hardware::Lasers::popState();
 
       execFlag = true;

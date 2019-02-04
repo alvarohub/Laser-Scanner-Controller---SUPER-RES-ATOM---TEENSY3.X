@@ -37,6 +37,7 @@ extern bool recordingScript;
 extern void setVerboseMode(bool _active);
 
 extern bool isNumber(String _str);
+extern bool areNumbers(uint8_t _numArgs, const String _argStack[]);
 extern bool isDigit(char _val);
 extern bool isSmallCaps(String _arg);
 

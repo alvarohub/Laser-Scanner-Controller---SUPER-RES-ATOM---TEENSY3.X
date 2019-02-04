@@ -4,7 +4,6 @@ uint8_t Laser::id_counter = 0;
 
 Laser::Laser()
 {
-	Serial.print("ins");
 	init();
 }
 Laser::Laser(uint8_t _pinPower, uint8_t _pinSwitch)
@@ -36,6 +35,7 @@ void Laser::setPins(uint8_t _pinPower, uint8_t _pinSwitch)
 {
 	pinPower = _pinPower;   // this is analog output (PWM). Does not need to be set (pinMode)
 	pinSwitch = _pinSwitch; // this is a digital output, but can be used as PWM (carrier)
+	pinMode(pinSwitch, OUTPUT);
 }
 
 String Laser::getName() { return (myName + "[" + String(myID) + "](" + Definitions::laserNames[myID] + ")"); }
@@ -49,22 +49,10 @@ String Laser::getParamString() // used for sequencer stuff. TODO unify with the 
 
 void Laser::setSwitch(bool _state)
 {
-	if (myState.stateCarrier)
-	{
-		if (!_state)
-		{
-			// Note: if in carrier mode, digitalWrite will be IGNORED unless we force
-			// pinMode OUTPUT (it will reverse to PWM when issuing an analogWrite command)
-			pinMode(pinSwitch, OUTPUT);
-			digitalWrite(pinSwitch, LOW);
-		}
-		else
-			analogWrite(pinSwitch, 0.58 * 2048);
-	}
-	else
-	{
-		digitalWrite(pinSwitch, _state);
-	}
+	if (myState.stateCarrier) analogWrite(pinSwitch, 0.58 * 2048*_state);
+	else digitalWrite(pinSwitch, _state);
+	// ATTN: do not forgot to set the pin to OUTPUT mode when swithing the carrier OFF, or the switching
+	// won't work anymore.
 }
 
 void Laser::setPower(uint16_t _power)
@@ -102,6 +90,12 @@ void Laser::setStateCarrier(bool _stateCarrier)
 	// It "modulates" the current laser power (another PWM per-laser at FREQ_PWM_CARRIER of
 	// about 70kHz, with a low pass filter)
 	myState.stateCarrier = _stateCarrier;
+
+	// ATTN: do not forgot to set the pin to OUTPUT mode when swithing the carrier OFF, or the switching
+	// won't work anymore!
+	if (!_stateCarrier)
+		pinMode(pinSwitch, OUTPUT);
+
 	setSwitch(myState.stateSwitch);
 }
 bool Laser::getStateCarrier() { return (myState.stateCarrier); }

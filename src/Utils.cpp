@@ -38,5 +38,17 @@ bool isNumber(const String _str)
 	return (isDigit(_str[0]));
 }
 
-
+bool areNumbers(uint8_t _numArgs, const String _argStack[])
+{
+	bool isOk = true;
+	for (uint8_t k = 0; k < _numArgs; k++)
+	{
+		if (!isNumber(_argStack[k]))
+		{
+			isOk = false;
+			break;
+		}
+	}
+	return (isOk);
+}
 } // namespace Utils
