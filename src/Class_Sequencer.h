@@ -554,7 +554,6 @@ class TriggerProcessor : public Module
         {
         case 0: // RISE
             event = (!input) && nextInput;
-            if (event) Serial.print("^");
             break;
         case 1: // FALL
             event = input && (!nextInput);
@@ -576,8 +575,6 @@ class TriggerProcessor : public Module
             {
                 if (counterEvents < burstLength)
                 {
-                    Serial.print("STATE BURST / ");
-                    Serial.println(String(counterEvents));
                     nextOutput = true;
                 }
                 else
@@ -595,15 +592,10 @@ class TriggerProcessor : public Module
             {
                 if (counterEvents < skipLength)
                 {
-                    Serial.print("STATE SKIP / ");
-                    Serial.println(String(counterEvents));
-
-                    //  Serial.println("END SKIP STATE"); // -test-
                      nextOutput = false; //<-- not necessary... but I leave it for clarity.
                 }
                 else
                 {
-                    //  Serial.println("END SKIP STATE"); // -test-
                     stateMachine = BURST_STATE;
                     nextOutput = true;
                     counterEvents = 0;
