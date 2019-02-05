@@ -41,8 +41,17 @@ class Laser : public Module
 	String getParamString();
 	String getName();
 
-	virtual bool getState() { return (myState.stateSwitch); } // the same than getStateSwitch() in fact
-	virtual void action() { setStateSwitch(state); }		  // reminder: state is a variable of the base class
+
+	bool getState() { return (output); }
+	// NOTE: may NOT the same than getStateSwitch() if action() was not performed:
+
+	void action() override{ setStateSwitch(output); } // reminder: output is a variable of the base class
+
+	void setActive(bool _active) override { // overriden method (ATTN: technically there is no need to declar "virtual" in base class,// nor "overrided" )
+		active = _active;
+		setStateSwitch(false);
+	}
+	void computeNextState(bool _inputFrom) { nextOutput = _inputFrom; }
 	//  ==========================================================================================
 
 	// Low level methods not affecting the current LaserState (myState) - useful for tests.

@@ -125,8 +125,8 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS]{29, 30}; // these are PWM pins c
 #define PIN_DIGITAL_B 32
 
 // * TRIGGER PIN (bidirectional?)
-#define PIN_TRIGGER_INPUT 22  // pin 12 in D25 ILDA connector
-#define PIN_TRIGGER_OUTPUT 23 // pi 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
+#define PIN_TRIGGER_OUTPUT 22  // pin 12 in D25 ILDA connector
+#define PIN_TRIGGER_INPUT 23 // pi 21 in D25 ILDA connector (this is DB-, but it should then not be connected to GND)
 
 // * INTENSITY/BLANKING
 // * NOTE: This is set automatically to LOW when NO laser is ON, and OFF otherwise by software; however, it would be

@@ -83,7 +83,7 @@ class Module
     }
     virtual ~Module(){};
 
-    void init()
+    virtual void init()
     {
         active = true; // default is true - in the case of the clock, it may be better to start with false.
         ptr_fromModule = NULL;
@@ -92,13 +92,16 @@ class Module
 
     void start() { active = true; }
     void stop() { active = false; }
-    void setActive(bool _active) { active = _active; }
+    virtual void setActive(bool _active) { active = _active; } // note: this can be overloaded, so as to be able to
+    // set the parameters when not active depending on the module (for instance, for the laser this is OFF)
     void toggleActive() { active = !active; }
     bool isActive() { return (active); }
 
+    // Base class reset (the children can use it as default, or override it to complement it,
+    // but still can call this one using Module::reset)
     // Reset parameters to default, reinitialize clock, etc.
     // (ATTN: the link is not reset!)
-    void reset()
+    virtual void reset()
     {
         // NOTE 1: sometimes modules are stateless.
         // NOTE 2: states could be more complex than a binary value of course. Also, children module can have they own
@@ -132,13 +135,13 @@ class Module
     // ***** UPDATE *****
     // By default, update uses the value of the previous module and the current state variables.
     // This method is *not* virtual and in general not overloaded.
-    void update()
+    virtual void update()
     {
         if (active)
         {
 
             bool inputFrom = false;
-            if (ptr_fromModule != NULL)                       // NOTE: if the module is not connected, inputFrom defaults to false.
+            if (ptr_fromModule != NULL)                       // NOTE: if the module is not connected, inputFrom defaults to NULL.
                 inputFrom = ptr_fromModule->getOutputState(); // get the output of the preceding module at time t-1
 
             computeNextState(inputFrom); // will compute nextOutput, nextInput and nextState
@@ -160,7 +163,7 @@ class Module
     }
 
     // ***** EVOLVE *****
-    virtual void computeNextState(bool _inputFrom) {}
+    virtual void computeNextState(bool _inputFrom) { nextOutput = _inputFrom; } // default to pass
 
     // ***** ACTION *****
     // Whatever the module needs to do (unrelated to the state evolution), using the input and any state variable.
@@ -226,7 +229,7 @@ class Clock : public Module
         init();
     }
 
-    void init()
+    void init() override
     {
         myID = id_counter;
         id_counter++;
@@ -245,7 +248,7 @@ class Clock : public Module
 
     // ******************** Overriden/Overloaded METHODS OF THE BASE CLASS ***********************
 
-    void reset()
+    void reset() override
     {
         Module::reset();       // call the base reset()
         clockTimer = millis(); // reset of things proper to this child class.
@@ -258,7 +261,7 @@ class Clock : public Module
     }
 
     // **** EVOLUTION ****
-    void computeNextState(bool _inputFrom)
+    void computeNextState(bool _inputFrom) override
     {
         if (millis() - clockTimer > periodMs)
         {
@@ -272,7 +275,7 @@ class Clock : public Module
         }
     }
 
-    void action()
+    void action() override
     {
         digitalWrite(PIN_LED_DEBUG, output); // -test-
     }
@@ -309,7 +312,7 @@ class InputTrigger : public Module
     // myClassIndex and myName HAVE to be properly (re)set for each class type (see Utils::className).
     // => DO NOT FORGET to set the class index in the Laser class! (or any other not in Class_Sequencer.h that
     // is a child of Module and can be used in the sequencer pipeline)
-    void init()
+    void init() override
     {
         myID = id_counter;
         id_counter++;
@@ -340,13 +343,15 @@ class InputTrigger : public Module
     String getParamString() { return ("{ pin=" + String(inputTriggerPin) + "}"); }
 
     // **** EVOLUTION ****
-    void computeNextState(bool _inputFrom)
+    void computeNextState(bool _inputFrom) override // actually the input from won't be set from the input module,
+    // here, unless (for some weird reason) the input trigger has an input module. In that case, the value is
+    // ignored.
     {
         // everything stays the same, but nextOutput is updated (statelessly):
         nextOutput = readInput();
     }
 
-    void action()
+    void action() override
     { // in this case, the action() method is mostly for tests.
         //digitalWrite(PIN_LED_MESSAGE, output);
     }
@@ -374,7 +379,7 @@ class OutputTrigger : public Module
         init();
     } // in the future, there could be be several triggers
 
-    void init()
+    void init() override
     {
         myID = id_counter;
         id_counter++;
@@ -400,15 +405,15 @@ class OutputTrigger : public Module
 
     // ******************** OVERRIDDEN METHODS OF THE BASE CLASS **************************************
     String getName() { return (myName + "[" + String(myID) + "]"); }
-    String getParamString() { return ("{ pin=" + String(outputTriggerPin)+"}"); }
+    String getParamString() { return ("{ pin=" + String(outputTriggerPin) + "}"); }
 
     // **** EVOLUTION ****
-    void computeNextState(bool _inputFrom)
+    void computeNextState(bool _inputFrom) override
     {
         nextOutput = _inputFrom;
     }
 
-    void action()
+    void action() override
     { // NOTE: state can be used to avoid calling the action all the time, by checking if the output has actually
         // changed:
         //if (state!=nextState)
@@ -444,7 +449,7 @@ class TriggerProcessor : public Module
         setParam(_mode, _burstLength, _skipLength, _offsetEvents);
     }
 
-    void init()
+    void init() override
     {
         myID = id_counter;
         id_counter++;
@@ -464,7 +469,7 @@ class TriggerProcessor : public Module
         reset();
     }
 
-    void reset()
+    void reset() override
     {
         Module::reset();
         counterEvents = -offsetEvents; // IMPORTANT! start (negative if offset) only the FIRST time
@@ -527,18 +532,21 @@ class TriggerProcessor : public Module
     String getName() { return (myName + "[" + String(myID) + "]"); }
     String getParamString()
     {
-        return ("{ mode=" + Definitions::trgModeNames[mode] + ", burst=" + String(burstLength) + ", skip=" + String(skipLength) + ", offset=" + String(offsetEvents) + "}");
+        return ("{mode=" + Definitions::trgModeNames[mode] + ", burst=" + String(burstLength) + ", skip=" + String(skipLength) + ", offset=" + String(offsetEvents) + "}");
     }
 
-    void action()
+    void action() override
     {
-       // digitalWrite(PIN_LED_MESSAGE, output); // -test-
+        // digitalWrite(PIN_LED_MESSAGE, output); // -test-
     }
 
-    void computeNextState(bool _inputFrom)
+    void computeNextState(bool _inputFrom) override
     {
-
         nextInput = _inputFrom;
+
+        // ATTN: remember we want a "bang" only, so if nothing happens,
+        // the next output state HAS to be false:
+        nextOutput = false;
 
         //  First, detect an event ("event" is a detected rise, fall or change on state of input module)
         bool event = false;
@@ -546,6 +554,7 @@ class TriggerProcessor : public Module
         {
         case 0: // RISE
             event = (!input) && nextInput;
+            if (event) Serial.print("^");
             break;
         case 1: // FALL
             event = input && (!nextInput);
@@ -561,38 +570,48 @@ class TriggerProcessor : public Module
         // Then, the output ("output" is the result of the processed event stream (burst, skip and offset)
         if (event)
         {
-           // Serial.println("number rises: " + String(counterEvents + 1));
+            // Serial.println("number rises: " + String(counterEvents + 1));
 
-            // Increment number events detected by the trigger:
-            counterEvents++;
-
-            switch (stateMachine)
+            if (stateMachine == BURST_STATE)
             {
-            case BURST_STATE:
                 if (counterEvents < burstLength)
                 {
+                    Serial.print("STATE BURST / ");
+                    Serial.println(String(counterEvents));
                     nextOutput = true;
                 }
                 else
                 {
-                   // Serial.println("END BURST"); // -test-
-                    nextOutput = false;
+                    // Serial.println("END BURST"); // -test-
                     stateMachine = SKIP_STATE;
-                    counterEvents = 0; // NOTE offset is not applied anymore.
+                    nextOutput = false; //<-- not necessary... but I leave it for clarity.
+                    counterEvents = 0; // NOTE offset is only applied at start (or reset).
                 }
-                break;
-            case SKIP_STATE:
-                if (counterEvents >= skipLength)
-                {
-                   //  Serial.println("END SKIP STATE"); // -test-
-                    nextOutput = true;
-                    stateMachine = BURST_STATE;
-                    counterEvents = 0;
-                } // else nextState remains false
-                break;
-            default:
-                break;
             }
+
+            // NOTE: state could have changed here, hence I don't use a switch/case!
+
+            if (stateMachine == SKIP_STATE)
+            {
+                if (counterEvents < skipLength)
+                {
+                    Serial.print("STATE SKIP / ");
+                    Serial.println(String(counterEvents));
+
+                    //  Serial.println("END SKIP STATE"); // -test-
+                     nextOutput = false; //<-- not necessary... but I leave it for clarity.
+                }
+                else
+                {
+                    //  Serial.println("END SKIP STATE"); // -test-
+                    stateMachine = BURST_STATE;
+                    nextOutput = true;
+                    counterEvents = 0;
+                }
+            }
+
+            // Increment number events detected by the trigger:
+            counterEvents++;
         }
     }
 
@@ -637,13 +656,19 @@ class Pulsar : public Module
         init();
     }
 
-    void init()
+    void init() override
     {
         myID = id_counter;
         id_counter++;
         myClassIndex = Definitions::ClassIndexes::CLASSID_PUL;
         myName = Definitions::classNames[myClassIndex];
         reset();
+    }
+
+    void reset() override
+    {
+        Module::reset();
+        timerPulsar = millis(); // +t_off_ms + t_on_ms; // this is to avoid
     }
 
     void setParam(uint32_t _t_off_ms, uint32_t _t_on_ms)
@@ -659,14 +684,8 @@ class Pulsar : public Module
         return ("{" + String(t_off_ms) + "ms, " + String(t_on_ms) + "ms}");
     }
 
-    void reset()
-    {
-        Module::reset();
-        timerPulsar = millis(); // +t_off_ms + t_on_ms; // this is to avoid
-    }
-
     // ******************** OVERRIDEN METHODS OF THE BASE CLASS ***********************
-    void computeNextState(bool _inputFrom)
+    void computeNextState(bool _inputFrom) override
     {
         if (_inputFrom) // reset timer (only!)
             timerPulsar = millis();
@@ -677,7 +696,7 @@ class Pulsar : public Module
         nextOutput = (timePassed > t_off_ms) && (timePassed <= (t_off_ms + t_on_ms));
     }
 
-    void action()
+    void action() override
     {
         digitalWrite(PIN_LED_MESSAGE, output); // -test-
     }

@@ -122,6 +122,12 @@
                                             // restarting the clock, and resetting the trigger processors so the delay
                                             // can be taken into account again)
 
+// MODULE activation/deactivation:
+// NOTE: Setting modules active/inactive independently is useful for debugging at least,
+// but can have other practical uses (stop one laser but not the other without changing the,
+// sequencer pipeline, etc):
+#define SET_STATE_MODULE	"SET_STATE"  // Param: {module1 class, index, on/off}
+
 // TODO: STATUS_CLK
 // TODO: LED_CLK on/off
 
@@ -136,7 +142,7 @@
 //                1 = in (ext trigger in)
 //                2 = out (ext trigger out)
 //                3 = las (laser)
-//                4 = prc (pulse shaper)
+//                4 = pul (pulse shaper)
 //                5 = trg (trigger processor)
 //
 // followed by the index of the module (for the external triggers, it is always 0, but in the future there may be more)
@@ -233,7 +239,7 @@
 #define MAKE_SPIRAL "SPIRAL"  // Param: length-between-arms, num-tours, numpoints, SPIRAL
 
 // d) TEST FIGURES:
-#define LINE_TEST "LITEST" 
+#define LINE_TEST "LITEST"
 #define CIRCLE_TEST "CITEST"  // no parameters: makes a circle.
 #define SQUARE_TEST "SQTEST"  // no parameters: makes a square
 #define COMPOSITE_TEST "MIRE" // no parameters: cross and squares (will automatically launch START)

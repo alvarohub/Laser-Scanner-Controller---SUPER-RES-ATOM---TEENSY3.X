@@ -70,6 +70,7 @@ int8_t toLaserID(const String _str)
       }
     }
   }
+  //PRINTLN("Switching laser: "+String(val));
   return (val);
 }
 
@@ -635,7 +636,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // TRIGGER PROCESSOR parameter configuration:
-  //#define SET_PRC "SET_PRC"
+  //#define SET_TRG "SET_TRG"
   // Param: { trg_id = [0-NUM_TRG_PROCESSORS],
   //          mode trigger=[0,1,2] (or "rise", "fall", "change")
   //          burst=[0...],        (positive integer)
@@ -777,7 +778,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   else if (_cmdString == SET_SEQUENCER_CHAIN)
   {
     using namespace Hardware::Sequencer;
-    if ( (Utils::areNumbers(_numArgs, argStack)) && (!(_numArgs % 2)) ) // number of arguments must be even (there are more tests to do on the ranges, but at least that)
+    if (!(_numArgs % 2)) // number of arguments must be even (there are more tests to do on the ranges, but at least that)
     {
       //PRINTLN("> EXECUTING... ");
       for (uint8_t k = 0; k < _numArgs / 2 - 1; k++)
@@ -825,6 +826,26 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
+
+  //#define SET_STATE_MODULE	"SET_STATE"  // Param: {module1 class, index, on/off}
+  // Setting modules active/inactive independently is useful for debugging at least,
+  // but can have other practical uses (stop one laser but not the other without changing the,
+  // sequencer pipeline, etc):
+else if (_cmdString == SET_STATE_MODULE)
+  {
+    if (_numArgs == 3)
+    {
+      //PRINTLN("> EXECUTING... ");
+      Module *ptr_Module = Hardware::Sequencer::getModulePtr(toClassID(argStack[0]), argStack[1].toInt());
+      ptr_Module->setActive(toBool(argStack[2])); // <-- NOTE: it is then up to the user to set the state it "ends"
+      // being at during the stop (this will depend on the module: for the laser, I think it is better to set it off,
+      // so I will overload the base method "setActive()")
+      execFlag = true;
+    }
+    else
+      PRINTLN("> BAD PARAMETERS");
+  }
+
 
   //==========================================================================
   // 3) ====== OPTOTUNER COMMANDS  ===========================================

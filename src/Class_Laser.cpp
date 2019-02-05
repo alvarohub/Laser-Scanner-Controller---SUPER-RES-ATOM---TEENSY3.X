@@ -27,8 +27,8 @@ void Laser::init()
 	// Set the default laser state:
 	// setState(defaultState); //... now using C++11 member initialization method
 
-	Serial.print("instantiating laser:");
-	Serial.println(String(myID));
+	// Serial.print("instantiating laser:");
+	// Serial.println(String(myID));
 }
 
 void Laser::setPins(uint8_t _pinPower, uint8_t _pinSwitch)
@@ -42,7 +42,7 @@ String Laser::getName() { return (myName + "[" + String(myID) + "](" + Definitio
 // ATTN overloaded from Module base class for sequencer user: =================================
 String Laser::getParamString() // used for sequencer stuff. TODO unify with the above...
 {
-	String param = "{ power=" + String(myState.power) + ", carrier=" + Definitions::binaryNames[myState.stateCarrier] + ", blank=" + Definitions::binaryNames[myState.stateBlanking] + "}";
+	String param = "{power=" + String(myState.power) + ", carrier=" + Definitions::binaryNames[myState.stateCarrier] + ", blank=" + Definitions::binaryNames[myState.stateBlanking] + "}";
 	return (param);
 }
 //  ==========================================================================================

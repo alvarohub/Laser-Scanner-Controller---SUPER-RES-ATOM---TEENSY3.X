@@ -218,7 +218,7 @@ extern void test();
 inline void setStateSwitch(int8_t _laserIndex, bool _state)
 {
 	// NOTE: carrier mode overrides this.
-	if (_laserIndex > 0) // otherwise do nothing
+	if (_laserIndex >= 0) // otherwise do nothing
 		laserArray[_laserIndex].setStateSwitch(_state);
 }
 
@@ -241,7 +241,7 @@ inline void switchOnAll()
 
 inline void setStatePower(int8_t _laserIndex, uint16_t _power)
 {
-	if (_laserIndex > 0) // otherwise do nothing
+	if (_laserIndex >= 0) // otherwise do nothing
 		laserArray[_laserIndex].setStatePower(_power);
 	//analogWrite(pinPowerLaser[_laser], _power);
 }
@@ -253,7 +253,7 @@ inline void setStatePowerAll(uint16_t _power)
 
 inline void setStateBlanking(int8_t _laserIndex, bool _blankingMode)
 {
-	if (_laserIndex > 0) // otherwise do nothing
+	if (_laserIndex >= 0) // otherwise do nothing
 		laserArray[_laserIndex].setStateBlanking(_blankingMode);
 }
 
@@ -265,7 +265,7 @@ inline void setStateBlankingAll(bool _blankingMode)
 
 inline void setStateCarrier(int8_t _laserIndex, bool _carrierMode)
 {
-	if (_laserIndex > 0)
+	if (_laserIndex >= 0)
 		laserArray[_laserIndex].setStateCarrier(_carrierMode);
 }
 

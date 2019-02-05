@@ -213,6 +213,9 @@ bool activeSequencer = false;
 
 void setState(bool _active)
 {
+	if (_active)
+		reset(); // this is optional (we could stop the sequencer, call reset and then re-activate it, but
+		// the cases where we may need NOT reseting are not very useful)
 	activeSequencer = _active;
 }
 
@@ -220,7 +223,8 @@ bool getState() { return (activeSequencer); }
 
 void reset()
 {
-	// reset all the modules in the sequencer pipeline
+	// reset all the modules in the sequencer pipeline.
+	// NOTE: no need to stop the sequencer if it was active, the update is not done in an ISR.
 	for (auto ptr_module : vectorPtrModules)
 		ptr_module->reset();
 }
@@ -329,16 +333,33 @@ void displaySequencerStatus()
 		PRINTLN("  2-Pipeline : EMPTY");
 	else
 	{
-		PRINTLN("  2-Pipeline length : " + String(vectorPtrModules.size()) + " modules");
+		uint8_t numCon = 0; // to count connections (and display a list)
+		PRINTLN("  2-Pipeline (" + String(vectorPtrModules.size()) + " modules) : ");
+		for (uint8_t k = 0; k < vectorPtrModules.size() - 1; k++)
+		{
+			if ((vectorPtrModules[k])->getPtrModuleFrom() != NULL)
+				numCon++;
+			PRINT("     " + String(k) + " : ");
+			PRINTLN((vectorPtrModules[k])->getName() + (vectorPtrModules[k])->getParamString());
+			//PRINT(", ");
+		}
+		PRINT("     " + String(vectorPtrModules.size()) + " : ");
+		PRINT(vectorPtrModules.back()->getName() + vectorPtrModules.back()->getParamString());
+		PRINTLN(" }");
+		PRINTLN("");
+		PRINTLN("  3-Connections (" + String(numCon) + " connections) : ");
+		numCon = 1;
 		for (auto ptr_module : vectorPtrModules)
 		{
-			// NOTE: since the
 			Module *ptr_fromModule = ptr_module->getPtrModuleFrom(); // NULL if there is no input module
 			if (ptr_fromModule != NULL)
-				PRINT(ptr_fromModule->getName() + ptr_fromModule->getParamString() + " >> ");
+			{
+				PRINT("     " + String(numCon++) + " : ");
+				PRINT(ptr_fromModule->getName());// + ptr_fromModule->getParamString());
+				PRINT(" >> ");
+				PRINTLN(ptr_module->getName());// + ptr_module->getParamString());
+			}
 		}
-		// And finally the last module itself:
-		PRINTLN(vectorPtrModules.back()->getName() + vectorPtrModules.back()->getParamString());
 	}
 }
 
