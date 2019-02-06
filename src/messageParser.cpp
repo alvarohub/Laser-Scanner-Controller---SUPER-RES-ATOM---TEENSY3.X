@@ -665,7 +665,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   }
 
   // PULSE SHAPER parameter configuration:
-  //  #define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (ms), time on (ms)}
+  //  #define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (us), time on (us)}
   else if (_cmdString == SET_PULSE_SHAPER)
   {
     if (_numArgs == 3)

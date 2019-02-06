@@ -111,7 +111,7 @@
 // TODO: setting parameters independently
 #define SET_TRIGGER_PROCESSOR "SET_TRG"
 
-#define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (ms), time on (ms)}
+#define SET_PULSE_SHAPER "SET_PUL" // Param: {pul_id, time off (us), time on (us)}
 
 // SEQUENCER activation/deactivation:
 #define SET_SEQUENCER_STATE   "SET_STATE_SEQ" // Param: {0/1}. Deactivate/activate sequencer.

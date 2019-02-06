@@ -288,7 +288,7 @@ class Clock : public Module
     uint8_t myID;
     static uint8_t id_counter;
 
-    uint32_t periodUs = 1000; // in ms
+    uint32_t periodUs = 100000; // in us
     uint32_t clockTimer;      // in us
 };
 
@@ -642,9 +642,9 @@ class Pulsar : public Module
     {
         init();
     }
-    Pulsar(uint32_t _t_off_ms, uint32_t _t_on_ms)
+    Pulsar(uint32_t _t_off_us, uint32_t _t_on_us)
     {
-        setParam(_t_off_ms, _t_on_ms);
+        setParam(_t_off_us, _t_on_us);
         init();
     }
 
@@ -660,32 +660,32 @@ class Pulsar : public Module
     void reset() override
     {
         Module::reset();
-        timerPulsar = millis(); // +t_off_ms + t_on_ms; // this is to avoid
+        timerPulsar = micros(); // +t_off_us + t_on_us; // this is to avoid
     }
 
-    void setParam(uint32_t _t_off_ms, uint32_t _t_on_ms)
+    void setParam(uint32_t _t_off_us, uint32_t _t_on_us)
     {
-        t_off_ms = _t_off_ms;
-        t_on_ms = _t_on_ms;
+        t_off_us = _t_off_us;
+        t_on_us = _t_on_us;
         reset();
     }
 
     String getName() { return (myName + "[" + String(myID) + "]"); }
     String getParamString()
     {
-        return ("{" + String(t_off_ms) + "ms, " + String(t_on_ms) + "ms}");
+        return ("{" + String(t_off_us) + "ms, " + String(t_on_us) + "us}");
     }
 
     // ******************** OVERRIDEN METHODS OF THE BASE CLASS ***********************
     void computeNextState(bool _inputFrom) override
     {
         if (_inputFrom) // reset timer (only!)
-            timerPulsar = millis();
+            timerPulsar = micros();
 
         // Output of the Pulsar: ON or OFF (in the future, it can be a struct also
         // containing an analog value - e.g. power ramps)
-        uint32_t timePassed = millis() - timerPulsar;
-        nextOutput = (timePassed > t_off_ms) && (timePassed <= (t_off_ms + t_on_ms));
+        uint32_t timePassed = micros() - timerPulsar;
+        nextOutput = (timePassed > t_off_us) && (timePassed <= (t_off_us + t_on_us));
     }
 
     void action() override
@@ -696,10 +696,10 @@ class Pulsar : public Module
     // ********************************************************************************
 
   private:
-    // Pulse parameters (eventually t_off_ms too, or a more complicated shape using an array)
-    uint32_t t_off_ms = 0;
-    uint32_t t_on_ms = 50;
-    uint32_t timerPulsar; // reset to millis() each time we receive a trigger signal
+    // Pulse parameters (eventually t_off_us too, or a more complicated shape using an array)
+    uint32_t t_off_us = 0;
+    uint32_t t_on_us = 50000;
+    uint32_t timerPulsar; // reset to micros() each time we receive a trigger signal
 
     String myName; // TODO: make these variables STATIC!
     uint8_t myClassIndex;
