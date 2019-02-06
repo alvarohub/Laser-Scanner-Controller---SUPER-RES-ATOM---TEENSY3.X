@@ -223,9 +223,9 @@ class Clock : public Module
 
   public:
     Clock() { init(); }
-    Clock(uint32_t _periodMs)
+    Clock(uint32_t _periodUs)
     {
-        periodMs = _periodMs;
+        periodUs = _periodUs;
         init();
     }
 
@@ -239,36 +239,36 @@ class Clock : public Module
                         // the clock in synch with other clocks. Btw, the clock can be TOGGLED BY AN INPUT TRIGGER!
     }
 
-    void setPeriodMs(uint32_t _periodMs)
+    void setPeriodUs(uint32_t _periodUs)
     {
-        periodMs = _periodMs;
+        periodUs = _periodUs;
         reset();
     }
-    uint32_t getPeriodMs() { return (periodMs); }
+    uint32_t getperiodUs() { return (periodUs); }
 
     // ******************** Overriden/Overloaded METHODS OF THE BASE CLASS ***********************
 
     void reset() override
     {
         Module::reset();       // call the base reset()
-        clockTimer = millis(); // reset of things proper to this child class.
+        clockTimer = micros(); // reset of things proper to this child class.
     }
 
     String getName() { return (myName + "[" + String(myID) + "]"); }
     String getParamString()
     {
-        return ("{state=" + Definitions::binaryNames[active] + ", period=" + String(periodMs) + "ms}");
+        return ("{state=" + Definitions::binaryNames[active] + ", period=" + String(periodUs) + "us}");
     }
 
     // **** EVOLUTION ****
     void computeNextState(bool _inputFrom) override
     {
-        if (millis() - clockTimer > periodMs)
+        if (micros() - clockTimer > periodUs)
         {
             // we could do nextOutput =!output, but this is for clarity (other logical function could be performed):
             nextState = !state;
 
-            clockTimer = millis();
+            clockTimer = micros();
 
             // And the nextOutput is:
             nextOutput = nextState;
@@ -288,8 +288,8 @@ class Clock : public Module
     uint8_t myID;
     static uint8_t id_counter;
 
-    uint32_t periodMs = 1000; // in ms
-    uint32_t clockTimer;
+    uint32_t periodUs = 1000; // in ms
+    uint32_t clockTimer;      // in us
 };
 
 // NOTE: this is a stateless module, and it does not even depends on the previous module (btw, there
@@ -582,7 +582,7 @@ class TriggerProcessor : public Module
                     // Serial.println("END BURST"); // -test-
                     stateMachine = SKIP_STATE;
                     nextOutput = false; //<-- not necessary... but I leave it for clarity.
-                    counterEvents = 0; // NOTE offset is only applied at start (or reset).
+                    counterEvents = 0;  // NOTE offset is only applied at start (or reset).
                 }
             }
 
@@ -592,7 +592,7 @@ class TriggerProcessor : public Module
             {
                 if (counterEvents < skipLength)
                 {
-                     nextOutput = false; //<-- not necessary... but I leave it for clarity.
+                    nextOutput = false; //<-- not necessary... but I leave it for clarity.
                 }
                 else
                 {

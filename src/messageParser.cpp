@@ -557,7 +557,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     if ((_numArgs == 2) && Utils::isNumber(argStack[0]) && Utils::isNumber(argStack[1]))
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Clocks::arrayClock[argStack[0].toInt()].setPeriodMs(argStack[1].toInt());
+      Hardware::Clocks::arrayClock[argStack[0].toInt()].setPeriodUs(argStack[1].toInt() / 2);
       execFlag = true;
     }
     else
@@ -831,7 +831,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   // Setting modules active/inactive independently is useful for debugging at least,
   // but can have other practical uses (stop one laser but not the other without changing the,
   // sequencer pipeline, etc):
-else if (_cmdString == SET_STATE_MODULE)
+  else if (_cmdString == SET_STATE_MODULE)
   {
     if (_numArgs == 3)
     {
@@ -845,7 +845,6 @@ else if (_cmdString == SET_STATE_MODULE)
     else
       PRINTLN("> BAD PARAMETERS");
   }
-
 
   //==========================================================================
   // 3) ====== OPTOTUNER COMMANDS  ===========================================
@@ -864,7 +863,7 @@ else if (_cmdString == SET_STATE_MODULE)
 
   else if (_cmdString == SET_POWER_OPTOTUNER)
   { // Param: laser number, power (0 to 4096, 12 bit res).
-    if ((_numArgs == 2)&& Utils::areNumbers(_numArgs,argStack))
+    if ((_numArgs == 2) && Utils::areNumbers(_numArgs, argStack))
     {
       //PRINTLN("> EXECUTING... ");
       Hardware::OptoTuners::setStatePower(argStack[0].toInt(), argStack[1].toInt());
@@ -903,7 +902,7 @@ else if (_cmdString == SET_STATE_MODULE)
 
   else if (_cmdString == SET_INTERVAL)
   {
-    if ((_numArgs == 1)&& Utils::isNumber( argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       DisplayScan::setInterPointTime(argStack[0].toInt());
@@ -1004,7 +1003,7 @@ else if (_cmdString == SET_STATE_MODULE)
 
   else if (_cmdString == SET_ANGLE_GLOBAL)
   { // Param: angle in DEG (float)
-    if ((_numArgs == 1)&& Utils::isNumber( argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setAngle(argStack[0].toFloat());
@@ -1017,7 +1016,7 @@ else if (_cmdString == SET_STATE_MODULE)
 
   else if (_cmdString == SET_CENTER_GLOBAL)
   { // Param: x,y
-    if ((_numArgs == 2)&& Utils::areNumbers(_numArgs, argStack))
+    if ((_numArgs == 2) && Utils::areNumbers(_numArgs, argStack))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setCenter(argStack[0].toFloat(), argStack[1].toFloat());
@@ -1043,7 +1042,7 @@ else if (_cmdString == SET_STATE_MODULE)
 
   else if (_cmdString == SET_COLOR_GLOBAL)
   { // Param: color bool [TODO: real colors]
-    if ((_numArgs == 1)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       Graphics::setColorRed(argStack[0].toInt());
@@ -1107,7 +1106,7 @@ else if (_cmdString == SET_STATE_MODULE)
   }
   else if (_cmdString == SET_BLANKING)
   {
-    if ((_numArgs == 2)&&Utils::isNumber(argStack[0]))
+    if ((_numArgs == 2) && Utils::isNumber(argStack[0]))
     {
       //PRINTLN("> EXECUTING... ");
       // This is delicate: we need to stop the displaying engine, and reset it (in particular
@@ -1137,39 +1136,42 @@ else if (_cmdString == SET_STATE_MODULE)
   // == MAKE LINE ==========================================
   else if (_cmdString == MAKE_LINE)
   {
-     if (Utils::areNumbers(_numArgs, argStack)) {
-    switch (_numArgs)
+    if (Utils::areNumbers(_numArgs, argStack))
     {
-    case 3: //origina at (0,0)
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      Graphics::drawLine(
-          argStack[0].toFloat(), argStack[1].toFloat(),
-          argStack[2].toInt());
-      Renderer2D::renderFigure();
-      execFlag = true;
-      break;
-    case 5:
-    {
-      //PRINTLN("> EXECUTING... ");
-      Graphics::updateScene();
-      // from point, lenX, lenY, num points
-      P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
-      Graphics::drawLine(
-          startP2,
-          argStack[2].toFloat(), argStack[3].toFloat(),
-          argStack[4].toInt());
-      Renderer2D::renderFigure();
+      switch (_numArgs)
+      {
+      case 3: //origina at (0,0)
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        Graphics::drawLine(
+            argStack[0].toFloat(), argStack[1].toFloat(),
+            argStack[2].toInt());
+        Renderer2D::renderFigure();
+        execFlag = true;
+        break;
+      case 5:
+      {
+        //PRINTLN("> EXECUTING... ");
+        Graphics::updateScene();
+        // from point, lenX, lenY, num points
+        P2 startP2(argStack[0].toFloat(), argStack[1].toFloat());
+        Graphics::drawLine(
+            startP2,
+            argStack[2].toFloat(), argStack[3].toFloat(),
+            argStack[4].toInt());
+        Renderer2D::renderFigure();
+      }
+        execFlag = true;
+        break;
+      default:
+        PRINTLN("> BAD PARAMETERS");
+        break;
+      }
     }
-      execFlag = true;
-      break;
-    default:
+    else
+    {
       PRINTLN("> BAD PARAMETERS");
-      break;
     }
-     } else {
-       PRINTLN("> BAD PARAMETERS");
-     }
   }
 
   // == MAKE CIRCLE ==========================================

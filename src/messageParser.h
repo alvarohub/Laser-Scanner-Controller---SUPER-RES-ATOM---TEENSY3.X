@@ -97,7 +97,7 @@
    using the setting methods described below.*/
 
 // CLOCK parameter configuration:
-#define SET_CLOCK_PERIOD      "SET_PERIOD_CLK"       // Param: {clk_id, period in ms}
+#define SET_CLOCK_PERIOD      "SET_PERIOD_CLK"       // Param: {clk_id, period in us}
 #define START_CLOCK	         "START_CLK"            // Param: {clk_id}
 #define STOP_CLOCK	         "STOP_CLK"             // Param: {clk_id}
 #define SET_CLOCK_STATE       "SET_STATE_CLK"        // Param: {clk_id, 0/1}. Switch the clock off/on
