@@ -900,7 +900,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_INTERVAL)
+  else if (_cmdString == SET_PERIOD_ISR_DISPLAY)
   {
     if ((_numArgs == 1) && Utils::isNumber(argStack[0]))
     {
@@ -1289,80 +1289,69 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   else if (_cmdString == MAKE_ZIGZAG)
   {
-    if (Utils::areNumbers(_numArgs, argStack))
+    switch (_numArgs)
     {
-      switch (_numArgs)
-      {
-      case 4: // Centered on [0,0]
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        Graphics::drawZigZag(
-            argStack[0].toFloat(), argStack[1].toFloat(),
-            argStack[2].toInt(), argStack[3].toInt());
-        Renderer2D::renderFigure();
-        execFlag = true;
-        break;
-      case 6:
-      { // from left bottom corner:
-        //PRINTLN("> EXECUTING... ");
-        Graphics::updateScene();
-        P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawZigZag(
-            fromP2,
-            argStack[2].toFloat(), argStack[3].toFloat(),
-            argStack[4].toInt(), argStack[5].toInt());
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
+    case 5: // Centered on [0,0]
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      Graphics::drawZigZag(
+          argStack[0].toFloat(), argStack[1].toFloat(),
+          argStack[2].toInt(), argStack[3].toInt(),
+          toBool(argStack[4]));
+      Renderer2D::renderFigure();
+      execFlag = true;
       break;
-      default:
-        PRINTLN("> BAD PARAMETERS");
-        break;
-      }
+    case 7:
+    { // from left bottom corner:
+      //PRINTLN("> EXECUTING... ");
+      Graphics::updateScene();
+      P2 fromP2(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawZigZag(
+          fromP2,
+          argStack[2].toFloat(), argStack[3].toFloat(),
+          argStack[4].toInt(), argStack[5].toInt(),
+          toBool(argStack[6]));
+      Renderer2D::renderFigure();
+      execFlag = true;
     }
-    else
-    {
+    break;
+    default:
       PRINTLN("> BAD PARAMETERS");
+      break;
     }
   }
 
   else if (_cmdString == MAKE_SPIRAL)
   {
-    if (Utils::areNumbers(_numArgs, argStack))
+    switch (_numArgs)
     {
-      switch (_numArgs)
-      {
-      case 5:
-      {
-        Graphics::updateScene();
-        P2 center(argStack[0].toFloat(), argStack[1].toFloat());
-        Graphics::drawSpiral(
-            center,
-            argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
-            argStack[3].toFloat(), // num tours (float)
-            argStack[4].toInt()    // num points
-        );
-        Renderer2D::renderFigure();
-        execFlag = true;
-      }
+    case 4:
+      Graphics::updateScene();
+      Graphics::drawSpiral(
+          argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
+          argStack[1].toFloat(),
+          argStack[2].toInt(), // num points
+          toBool(argStack[3])); // interlaced with return or not
+      Renderer2D::renderFigure();
+      execFlag = true;
       break;
-      case 3:
-        Graphics::updateScene();
-        Graphics::drawSpiral(
-            argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
-            argStack[1].toFloat(),
-            argStack[2].toInt());
-        Renderer2D::renderFigure();
-        execFlag = true;
-        break;
-      default:
-        PRINTLN("> BAD PARAMETERS");
-        break;
-      }
-    }
-    else
+    case 6:
     {
+      Graphics::updateScene();
+      P2 center(argStack[0].toFloat(), argStack[1].toFloat());
+      Graphics::drawSpiral(
+          center,
+          argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
+          argStack[3].toFloat(), // num tours (float)
+          argStack[4].toInt(),   // num points
+          toBool(argStack[5])); // interlaced with return or not
+      Renderer2D::renderFigure();
+      execFlag = true;
+    }
+      break;
+    default:
       PRINTLN("> BAD PARAMETERS");
+      break;
     }
   }
 

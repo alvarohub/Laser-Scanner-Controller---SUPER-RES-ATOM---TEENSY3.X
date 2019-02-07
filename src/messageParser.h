@@ -202,7 +202,7 @@
 
 #define START_DISPLAY "START"   // Start the ISR for the displaying engine
 #define STOP_DISPLAY "STOP"     // Stop the displaying ISR
-#define SET_INTERVAL "DT"       // Param: {inter-point time in us (min about 20us)}
+#define SET_PERIOD_ISR_DISPLAY "DT"       // Param: {inter-point time in us (min about 20us)}
 #define DISPLAY_STATUS "STATUS" // Echo various settings to the serial port.
                                 // Note that the number of points in the current blueprint (or "figure")
                                 // and the size of the displaying buffer may differ because of clipping.
