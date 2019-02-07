@@ -193,8 +193,13 @@ void drawZigZag(
 	const uint16_t _nx, const uint16_t _ny,
 	bool _mode) // mode 0: without return / mode 1: interlaced (with return)
 {
-	uint8_t numPointsStepLine = 5;
-	uint8_t numRepeatedStartLine = 5;
+	uint8_t numPointsStepLine = 3;
+	uint8_t numRepeatedStartLine = 0;
+	if (_mode)
+	{
+		numPointsStepLine = 5;
+		numRepeatedStartLine = 5;
+	}
 
 	P2 point(_fromPoint);
 	float stepY = _lenY / _ny * (1 + _mode);
@@ -294,7 +299,7 @@ void drawSpiral(const P2 &_center,
 		{
 			float r = radiusArm * theta / 2 / PI;
 			// b) ... and rotate by PI:
-			P2 point(_center.x + r * cos(theta+PI), _center.y + r * sin(theta+PI));
+			P2 point(_center.x + r * cos(theta + PI), _center.y + r * sin(theta + PI));
 			addVertex(point);
 
 			// Use dicotomy to find the stephTheta such that the length increase is equal to stepLength:
