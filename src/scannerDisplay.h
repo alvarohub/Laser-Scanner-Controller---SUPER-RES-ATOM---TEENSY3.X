@@ -37,8 +37,8 @@
 // etc) are measured by pooling from one interrupt to another, so it will be MULTIPLES of DT.
 
 // NOTE 2 : do this variable, with setters and getters for the following:
-#define MIRROR_INTER_FIGURE_WAITING_TIME 0 // in microseconds, delay to give time to the galvos to reach start \
-                                           //new figure, or the start of the same figure (in case it is not closed)
+#define MIRROR_INTER_FIGURE_WAITING_TIME 0 // in microseconds, delay to give time to the galvos to reach start
+                                           // new figure, or the start of the same figure (in case it is not closed)
 #define MIRROR_INTER_POINT_WAITING_TIME 10 // 15 / delay to give time to the mirrors to reach the current point
 
 //#define LASER_OFF_WAITING_TIME            0     // in microseconds - or assumed to be really fast anyway.
