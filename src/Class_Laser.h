@@ -16,20 +16,20 @@
 class Laser : public Module
 {
 
-  public:
+public:
 	// Public struct to store laser state (I will use a
 	// stack to save/retrieve the state whenever we want to try something
 	// or do some complex drawing - similar to "pushStyle" in OF or Processing)
 	struct LaserState
 	{
-		uint16_t power;	// 0-MAX_LASER_POWER
-		bool stateSwitch;  // on/off
+		uint16_t power;		 // 0-MAX_LASER_POWER
+		bool stateSwitch;	// on/off
 		bool stateCarrier; // chopper mode at FREQ_PWM_CARRIER
 		// NOTE: carrier mode is independent of the sequence mode (meaning that in the ON state, the laser is still
 		// modulated at the carrier frequency)
 		bool stateBlanking; // blank between each figure (for the time being, end of trajectory buffer).
-							// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
-							// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
+												// NOTE: this is NOT the inter-point blanking, which - for the time being - is a property
+												// common to all lasers and could be a static class variable (but now is a DisplayScan variable).
 	};
 
 	Laser();
@@ -41,13 +41,13 @@ class Laser : public Module
 	String getParamString();
 	String getName();
 
-
 	bool getState() { return (output); }
 	// NOTE: may NOT the same than getStateSwitch() if action() was not performed:
 
-	void action() override{ setStateSwitch(output); } // reminder: output is a variable of the base class
+	void action() override { setStateSwitch(output); } // reminder: output is a variable of the base class
 
-	void setActive(bool _active) override { // overriden method (ATTN: technically there is no need to declar "virtual" in base class,// nor "overrided" )
+	void setActive(bool _active) override
+	{ // overriden method (ATTN: technically there is no need to declar "virtual" in base class,// nor "overrided" )
 		active = _active;
 		setStateSwitch(false);
 	}
@@ -59,7 +59,7 @@ class Laser : public Module
 	void toggleStateSwitch(); // will be useful for the sequencer.
 	void setPower(uint16_t _power);
 	void setToCurrentState(); // in case we changed the state by directly accessing the myState variable
-							  //(could made all private though)
+														//(could made all private though)
 
 	// Methods similar to the above, but affecting the current LaserState variable myState
 	void setStateSwitch(bool _state);
@@ -87,7 +87,7 @@ class Laser : public Module
 	// Update/read methods:
 	void updateBlank(); // will switch off the laser if the stateBlanking is true
 
-  private:
+private:
 	LaserState myState{defaultState}; // C++11 class member initialization (I define defaultState in case we want to revert to default):
 
 	uint8_t pinPower, pinSwitch;
@@ -96,18 +96,18 @@ class Laser : public Module
 	// NOTE: for the time being, inter-point blanking is a variable of DisplayScan, so it concern
 	// all the lasers at the same time.
 	const LaserState defaultState = {
-		2000,  // power (0-4095)
-		false, // switch (on/off)
-		false, // carrier mode (on/off)
-		false  // blancking mode (on/off)
+			2000,	// power (0-4095)
+			false, // switch (on/off)
+			false, // carrier mode (on/off)
+			false	// blancking mode (on/off)
 	};
 
 	std::vector<LaserState> laserState_Stack;
 
 	String myName;
-    uint8_t myClassIndex;
-    uint8_t myID;
-    static uint8_t id_counter;
+	uint8_t myClassIndex;
+	uint8_t myID;
+	static uint8_t id_counter;
 
 	/* NOTES:
 	- Even if the laser has analog control, a digital pin may be used for fast

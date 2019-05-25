@@ -1330,7 +1330,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       Graphics::drawSpiral(
           argStack[0].toFloat(), // radius arm [ r= radiusArm * theta ]
           argStack[1].toFloat(),
-          argStack[2].toInt(), // num points
+          argStack[2].toInt(),  // num points
           toBool(argStack[3])); // interlaced with return or not
       Renderer2D::renderFigure();
       execFlag = true;
@@ -1344,11 +1344,11 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
           argStack[2].toFloat(), // radius arm [ r= radiusArm * theta ]
           argStack[3].toFloat(), // num tours (float)
           argStack[4].toInt(),   // num points
-          toBool(argStack[5])); // interlaced with return or not
+          toBool(argStack[5]));  // interlaced with return or not
       Renderer2D::renderFigure();
       execFlag = true;
     }
-      break;
+    break;
     default:
       PRINTLN("> BAD PARAMETERS");
       break;
@@ -1835,6 +1835,6 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
 
   // Finally, return the execution flag (TODO: different codes, and a String explaining the error)
   return execFlag;
-} // namespace Parser
+} // end interpret Command
 
 } // namespace Parser
