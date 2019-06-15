@@ -34,8 +34,8 @@ void init()
   // Default acknowledge mode:
   setAckMode(false);
 
-   while (!Serial)
-    ;
+  //  while (!Serial)
+  //   ;
 
     PRINTLN("> SERIAL PORT READY");
 
