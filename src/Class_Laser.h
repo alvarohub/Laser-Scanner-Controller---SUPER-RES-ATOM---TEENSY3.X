@@ -54,7 +54,11 @@ public:
 	void computeNextState(bool _inputFrom) { nextOutput = _inputFrom; }
 	//  ==========================================================================================
 
-	// Low level methods not affecting the current LaserState (myState) - useful for tests.
+	// Low level methods not affecting the current LaserState (myState)
+	bool enabled = true;
+	void enableLaserLock();
+	void disableLaserLock();
+
 	void setSwitch(bool _state);
 	void toggleStateSwitch(); // will be useful for the sequencer.
 	void setPower(uint16_t _power);
@@ -99,7 +103,7 @@ private:
 			2000,	// power (0-4095)
 			false, // switch (on/off)
 			false, // carrier mode (on/off)
-			false	// blancking mode (on/off)
+			false	// blanking mode (on/off)
 	};
 
 	std::vector<LaserState> laserState_Stack;

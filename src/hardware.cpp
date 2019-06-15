@@ -18,9 +18,11 @@ void init()
 #ifdef USING_SD_CARD
 	SDCard::init();
 #endif
+
 	Gpio::init();
+	InputShutter::init();
 	OptoTuners::init();
-	Lasers::init();
+	Lasers::init(); // NOTE: initialize the shutters BEFORE initializing the lasers
 	Scanner::init();
 }
 
@@ -122,10 +124,6 @@ void init()
 	// For the time being, it will be OFF at startup.
 	digitalWrite(PIN_INTENSITY_BLANKING, LOW);
 
-	// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
-	pinMode(PIN_SHUTTER, OUTPUT);
-	digitalWrite(PIN_SHUTTER, LOW); // NOTE: Shutter control is MANUAL (command)
-
 	// Setting D25 exposed digital and analog pins (analog pins on timer TMP1):
 	analogWriteFrequency(PIN_ANALOG_A, 65000); //PIN_ANALOG_B set automatically as it is on the same timer.
 
@@ -153,6 +151,51 @@ void init()
 } // namespace Gpio
 
 // ====================================================================================
+// ============================ NAMESPACE SHUTTER INPUT ===============================
+namespace InputShutter
+{
+
+	uint8_t pinInputShutter;
+	volatile bool state;
+
+	void init() {
+		setPin(PIN_SHUTTER_INPUT);
+		startExtInterrupt(CHANGE);
+		state = getShutterState(); // initial state (it will be updated at the INTERRUPT CHANGE)
+	}
+
+	void setPin(uint8_t _pinInputShutter)
+	{
+		pinInputShutter = _pinInputShutter;
+		pinMode(pinInputShutter, INPUT_PULLUP); //ATTN: when nothing is connected, the shutter state will be HIGH
+	}
+
+	void startExtInterrupt(uint8_t _mode)
+	{
+		// state = getShutterState(); // at the init() (initial state - it will be updated at the INTERRUPT CHANGE)
+
+		// attach the corresponding static ISR:
+		attachInterrupt(pinInputShutter, shutterCallback, _mode);
+	}
+
+	bool getShutterState() {
+		return (digitalRead(pinInputShutter));
+	}
+
+	void shutterCallback() {
+		// NOTE: here, we could do software debouncing/schmitt triggering...
+		state = getShutterState();
+		if (state) Lasers::disableAllLock();
+		else Lasers::enableAllLock();
+	}
+
+} // namespace InputShutter
+
+// ====================================================================================
+// ============================ NAMESPACE SHUTTER OUTPUT ==============================
+// ...
+
+// ====================================================================================
 // ============================ NAMESPACE CLOCK =======================================
 namespace Clocks
 {
@@ -176,7 +219,7 @@ void resetAllClocks()
 } // namespace Clocks
 
 // ====================================================================================
-// ======================= NAMESPACE  AL TRIGGERS INPUT(S) =======================
+// ======================= NAMESPACE TRIGGERS INPUT(S) =======================
 namespace ExtTriggers
 {
 OutputTrigger arrayTriggerOut[NUM_EXT_TRIGGERS_OUT];
@@ -388,6 +431,13 @@ void init()
 		// Power, switch and carrier are off.
 		laserArray[i].setPins(pinPowerLaser[i], pinSwitchLaser[i]);
 	}
+
+	// Is the main lock open or closed?
+		// Enable/disable laser depending on the state of the input shutter lock:
+	if (InputShutter::getShutterState()) // ATTN: inverted logic
+		disableAllLock();
+	else
+		enableAllLock();
 
 	PRINTLN("> LASERS READY");
 }

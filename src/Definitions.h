@@ -133,8 +133,16 @@ const uint8_t pinPowerOptoTuner[NUM_OPTOTUNERS]{29, 30}; // these are PWM pins c
 // much better if this was done electronically, not using the relatively complex - and easy to broke - logic of my program!
 #define PIN_INTENSITY_BLANKING 15 // in D25 ILDA connector, it goes to pin 3 (pin 16 is normally tied to ground then!)
 
-// * SHUTTER PIN: should put 5V when drawing and lasers ON, and 0 otherwise.
-#define PIN_SHUTTER 14 // this is pin 13 in D25 ILDA connector
+// * INPUT SHUTTERS: should put 5V when drawing and lasers ON, and 0 otherwise.
+#define PIN_SHUTTER_INPUT 14    // this is pin 13 in D25 ILDA connector
+// note: there can be more!
+
+// * OUTPUT SHUTTERS: none for the time being
+//#define PIN_SHUTTER_INPUT_2 XXX
+// ... here, define up to 4 input shutters that will work via external interrupts
+
+// * OUTPUT SHUTTERS:
+//#define PIN_SHUTTER_OUTPUT_1 XXX
 
 // ======================== SIMPLE I/O INTERFACE (LCD, buttons) ================
 // 1] LCD Grove RGB display on Teensy SDA0/SCL0 )using Wire library=
@@ -186,7 +194,11 @@ const String trgModeNames[NUM_TRIG_MODES]{"rise", "fall", "change"};
 const String binaryNames[2]{"off", "on"};
 
 } // namespace Definitions
-//=========================== OTHER USEFUL MACROS ===============================
+
+//=========================== OTHER USEFUL DEFINITIONS AND MACROS ===============================
+
+typedef void (*voidFuncPtr)(void);
+
 // Size of an array of anything (careful: this doesn't work if array is allocated dynamically)
 #define ARRAY_SIZE(array) (sizeof((array)) / sizeof((array[0])))
 #define INRANGE(x, a, b) (((x) > (a) && (x) < (b)) ? 1 : 0)

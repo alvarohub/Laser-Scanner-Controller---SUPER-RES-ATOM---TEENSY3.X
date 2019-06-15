@@ -47,17 +47,29 @@ String Laser::getParamString() // used for sequencer stuff. TODO unify with the 
 }
 //  ==========================================================================================
 
+void Laser::enableLaserLock() {
+	enabled = true;
+}
+void Laser::disableLaserLock() {
+	setSwitch(false);
+	enabled = false;
+}
+
 void Laser::setSwitch(bool _state)
 {
+	if (enabled) {
 	if (myState.stateCarrier) analogWrite(pinSwitch, 0.58 * 2048*_state);
 	else digitalWrite(pinSwitch, _state);
 	// ATTN: do not forgot to set the pin to OUTPUT mode when swithing the carrier OFF, or the switching
 	// won't work anymore.
+	}
 }
 
 void Laser::setPower(uint16_t _power)
 {
+	if (enabled) {
 	analogWrite(pinPower, constrain(_power, 0, MAX_LASER_POWER));
+	}
 }
 
 void Laser::setStateSwitch(bool _state)
@@ -68,7 +80,8 @@ void Laser::setStateSwitch(bool _state)
 		setSwitch(_state);
 	}
 }
-bool Laser::getStateSwitch() { return (myState.stateSwitch); }
+
+bool Laser::getStateSwitch() { return (enabled && myState.stateSwitch); }
 
 void Laser::toggleStateSwitch()
 {
@@ -79,7 +92,7 @@ void Laser::toggleStateSwitch()
 void Laser::setStatePower(uint16_t _power)
 {
 	myState.power = constrain(_power, 0, MAX_LASER_POWER);
-	analogWrite(pinPower, _power);
+	setPower(myState.power);
 }
 uint16_t Laser::getStatePower() { return (myState.power); }
 

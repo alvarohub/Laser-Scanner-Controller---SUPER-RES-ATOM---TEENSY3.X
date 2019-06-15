@@ -48,11 +48,6 @@ namespace Gpio
 
 void init();
 
-inline void setShutter(bool _state)
-{
-	digitalWrite(PIN_SHUTTER, _state);
-}
-
 inline void setIntensityBlanking(bool _state)
 {
 	digitalWrite(PIN_INTENSITY_BLANKING, _state);
@@ -129,6 +124,22 @@ extern void setPWMFreq(uint16_t _freq);
 inline void setPWMDuty(uint8_t _pin, uint16_t _duty) { analogWrite(_pin, _duty); }
 
 } // namespace Gpio
+
+//=====================================================================================
+// ============================ NAMESPACE SHUTTER INPUT ===============================
+namespace InputShutter
+{
+	extern uint8_t pinInputShutter;
+	extern volatile bool state;
+
+	void init();
+	void setPin(uint8_t _pinInputShutter);
+	void startExtInterrupt(uint8_t _mode);
+	bool getShutterState();
+	void shutterCallback();
+
+} // namespace InputShutter
+
 
 // ====================================================================================
 // ============================ NAMESPACE CLOCKS ======================================
@@ -214,6 +225,18 @@ extern Laser laserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
 // NOTE: namespace methods correspond to static methods of the class Laser
 void init();
 extern void test();
+
+inline void enableAllLock()
+{
+	for (uint8_t i = 0; i < NUM_LASERS; i++)
+		laserArray[i].enableLaserLock();
+}
+
+inline void disableAllLock()
+{
+	for (uint8_t i = 0; i < NUM_LASERS; i++)
+		laserArray[i].disableLaserLock();
+}
 
 inline void setStateSwitch(int8_t _laserIndex, bool _state)
 {

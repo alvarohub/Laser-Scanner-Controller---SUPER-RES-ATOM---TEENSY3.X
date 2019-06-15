@@ -1,6 +1,11 @@
 {
     "terminal.integrated.env.osx": {
-        "PATH": "/Users/alvarocassinelliAir/.platformio/penv/bin:/Users/alvarocassinelliAir/.platformio/penv:/Users/alvarocassinelliAir/anaconda3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/texbin:/Applications/Visual Studio Code.app/Contents/Resources/app/bin",
+        "PATH": "/Users/alvaro/.platformio/penv/bin:/Users/alvaro/.platformio/penv:/Users/alvaro/anaconda3/bin:/usr/local/bin:/Users/alvaro/Library/Android/sdk/platform-tools:/Users/alvaro/Library/Android/sdk/tools:/Applications/anaconda/bin:/usr/local/opt/python/libexec/bin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/opt/local/bin:/opt/local/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/texbin:/opt/X11/bin",
         "PLATFORMIO_CALLER": "vscode"
-    }
+    },
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\Users\\Alvaro\\.platformio\\penv\\Scripts;C:\\Users\\Alvaro\\.platformio\\penv;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files (x86)\\Intel\\Intel(R) Management Engine Components\\DAL;C:\\Program Files\\Intel\\Intel(R) Management Engine Components\\DAL;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\NVIDIA Corporation\\NVIDIA NGX;C:\\Program Files\\NVIDIA Corporation\\NVIDIA NvDLISR;C:\\Users\\Alvaro\\AppData\\Local\\Microsoft\\WindowsApps;;C:\\Users\\Alvaro\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files (x86)\\Intel\\Intel(R) Management Engine Components\\DAL;C:\\Program Files\\Intel\\Intel(R) Management Engine Components\\DAL;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\NVIDIA Corporation\\NVIDIA NGX;C:\\Program Files\\NVIDIA Corporation\\NVIDIA NvDLISR;C:\\Users\\Alvaro\\AppData\\Local\\Microsoft\\WindowsApps;;C:\\Users\\Alvaro\\AppData\\Local\\Programs\\Microsoft VS Code\\bin",
+        "PLATFORMIO_CALLER": "vscode"
+    },
+    "python.pythonPath": "C:\\Users\\Alvaro\\Anaconda3\\python.exe"
 }

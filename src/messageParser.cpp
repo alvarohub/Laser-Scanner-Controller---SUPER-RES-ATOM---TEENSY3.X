@@ -522,12 +522,14 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       PRINTLN("> BAD PARAMETERS");
   }
 
-  else if (_cmdString == SET_SHUTTER)
+  else if (_cmdString == GET_SHUTTER_LOCK)
   {
-    if (_numArgs == 1)
+    if (_numArgs == 0)
     {
       //PRINTLN("> EXECUTING... ");
-      Hardware::Gpio::setShutter(argStack[0]);
+      bool stateInputShutter = Hardware::InputShutter::getShutterState();
+      PRINT(" STATE SHUTTER LOCK : ");
+      PRINTLN(stateInputShutter? "off (5V)" : "on (0V)"); // ATTN: inverted logic...
       execFlag = true;
     }
     else
@@ -966,6 +968,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
         PRINT(laserState.stateBlanking > 0 ? "on" : "off");
         PRINTLN("]");
       }
+      bool stateInputShutter = Hardware::InputShutter::getShutterState();
+      PRINT(" 8- GLOBAL SHUTTER LOCK: ");
+      PRINTLN(stateInputShutter? "off (5V)" : "on (0V)"); // ATTN: inverted logic...
 
       execFlag = true;
     }

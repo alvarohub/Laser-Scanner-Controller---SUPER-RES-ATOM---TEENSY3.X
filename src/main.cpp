@@ -79,7 +79,7 @@ void loop()
 
   Com::update(); // configure in Com namespace which receiver to user (serial, osc, ethernet, bluetooth...)
 
-  // Update clocks (if they are active) independently of the state of the sequencer (can
+  // Update clocks (if they are active) independently of the state of the sequencer? (can
   // be useful to test with leds, etc).
   // NOTE: another reason why it could be good to do this is to update the sequencer ONLY when one "main"
   // clock changes state, instead of updating the pipeline all the time! TODO (to think...)
