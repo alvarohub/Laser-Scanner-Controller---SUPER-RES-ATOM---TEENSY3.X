@@ -529,7 +529,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       bool stateInputShutter = Hardware::InputShutter::getShutterState();
       PRINT(" STATE SHUTTER LOCK : ");
-      PRINTLN(stateInputShutter? "locked (5V)" : "unlocked (0V)"); // ATTN: inverted logic...
+      PRINTLN(stateInputShutter? "Unlocked (5V): enabled lasers" : "Locked (0V): disabed lasers");
       execFlag = true;
     }
     else
@@ -970,7 +970,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       }
       bool stateInputShutter = Hardware::InputShutter::getShutterState();
       PRINT(" 8- GLOBAL SHUTTER LOCK: ");
-      PRINTLN(stateInputShutter? "locked (5V)" : "unlocked (0V)"); // ATTN: inverted logic...
+      PRINTLN(stateInputShutter? "Unlocked (5V): enabled lasers" : "Locked (0V): disabed lasers");
 
       execFlag = true;
     }

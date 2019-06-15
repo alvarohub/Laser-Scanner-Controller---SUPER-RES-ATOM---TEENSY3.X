@@ -48,8 +48,14 @@ String Laser::getParamString() // used for sequencer stuff. TODO unify with the 
 //  ==========================================================================================
 
 void Laser::enableLaserLock() {
+
 	enabled = true;
+
+	// Since we could have change the state of the lasers during their disabled phase, we need to
+	// update it AND activate accordingly:
+	setToCurrentState();
 }
+
 void Laser::disableLaserLock() {
 	setSwitch(false);
 	enabled = false;
@@ -77,7 +83,7 @@ void Laser::setStateSwitch(bool _state)
 	if (myState.stateSwitch != _state)
 	{ // we will only set the state if it changed, to avoid useless time consuming calls.
 		myState.stateSwitch = _state;
-		setSwitch(_state);
+		setSwitch(_state); // NOTE: if lasers disabled by shutter, this won't affect their real state
 	}
 }
 

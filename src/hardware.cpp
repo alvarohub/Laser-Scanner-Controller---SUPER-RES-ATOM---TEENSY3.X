@@ -18,11 +18,11 @@ void init()
 #ifdef USING_SD_CARD
 	SDCard::init();
 #endif
-
 	Gpio::init();
 	OptoTuners::init();
 	InputShutter::init();
 	Lasers::init(); // NOTE: initialize the shutters BEFORE initializing the lasers
+	InputShutter::startExtInterrupt(CHANGE); // activate shutters interrupts AFTER lasers (because it will call lasers)
 	Scanner::init();
 }
 
@@ -114,7 +114,7 @@ void init()
 	pinMode(PIN_LED_MESSAGE, OUTPUT);
 	digitalWrite(PIN_LED_MESSAGE, LOW); // to signal good message reception
 
-	// Multi-purpose  al triggers (NOTE: they are not associated necessarily with a microcontroller interrupt,
+	// Multi-purpose triggers (NOTE: they are not associated necessarily with a microcontroller interrupt,
 	// but it may be important for some experiments?). BTW, practically ALL Teensy3.6 pins can be configured as
 	//  al interrupts, and set using the classic Arduino methods "attachInterrupt()"...
 	pinMode(PIN_TRIGGER_OUTPUT, OUTPUT);
@@ -160,22 +160,28 @@ namespace InputShutter
 
 	void init() {
 		setPin(PIN_SHUTTER_INPUT);
+
 		state = getShutterState(); // initial state (it will be updated at the INTERRUPT CHANGE)
-		startExtInterrupt(CHANGE);
+		digitalWrite(PIN_LED_DEBUG, state);
+
+		// startExtInterrupt(CHANGE); // should be called after shutter AND laser initialization
 		PRINTLN("> SHUTTER READY");
 	}
 
 	void setPin(uint8_t _pinInputShutter)
 	{
 		pinInputShutter = _pinInputShutter;
-		pinMode(pinInputShutter, INPUT_PULLUP); //ATTN: when nothing is connected, the shutter state will be HIGH
+		pinMode(pinInputShutter, INPUT_PULLUP);
+		//ATTN: when nothing is connected, the shutter state will be HIGH. This is better than no pullup
+		// at all, but would mean inverted logic is better for security (by default, lasers disabled),
+		// but since there are others interlocks, I will use non-inverted logic (default: enabled)
 	}
 
 	void startExtInterrupt(uint8_t _mode)
 	{
 		// state = getShutterState(); // at the init() (initial state - it will be updated at the INTERRUPT CHANGE)
 
-		// attach the corresponding static ISR:
+		// Attach the ISR (cannot be a class method, unless it is static!):
 		attachInterrupt(pinInputShutter, shutterCallback, _mode);
 	}
 
@@ -186,16 +192,15 @@ namespace InputShutter
 	void shutterCallback() {
 		// NOTE: here, we could do software debouncing/schmitt triggering...
 		state = getShutterState();
-		if (state) { // state HIGH means disabling lasers
-			Lasers::disableAllLock();
-			digitalWrite(PIN_LED_DEBUG, LOW);
+		if (state) { // state HIGH means enabled lasers
+			Lasers::enableLasers();
+			digitalWrite(PIN_LED_DEBUG, HIGH);
 		}
 		else {
-			Lasers::enableAllLock();
-			digitalWrite(PIN_LED_DEBUG, HIGH);;
+			Lasers::disableLasers();
+			digitalWrite(PIN_LED_DEBUG, LOW);;
 		}
 	}
-
 
 } // namespace InputShutter
 
@@ -440,12 +445,12 @@ void init()
 		laserArray[i].setPins(pinPowerLaser[i], pinSwitchLaser[i]);
 	}
 
-	// Is the main lock open or closed?
-		// Enable/disable laser depending on the state of the input shutter lock:
-	if (InputShutter::getShutterState()) // ATTN: inverted logic
-		disableAllLock();
+	// Is the main lock open or closed at boot?
+	// Enable/disable laser depending on the state of the input shutter lock:
+	if (InputShutter::getShutterState())
+		enableLasers();
 	else
-		enableAllLock();
+		disableLasers();
 
 	PRINTLN("> LASERS READY");
 }

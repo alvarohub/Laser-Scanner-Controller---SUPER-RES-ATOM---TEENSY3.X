@@ -226,13 +226,13 @@ extern Laser laserArray[NUM_LASERS]; //= {"RED", "GREEN", "BLUE", "D-BLUE"};
 void init();
 extern void test();
 
-inline void enableAllLock()
+inline void enableLasers()
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		laserArray[i].enableLaserLock();
 }
 
-inline void disableAllLock()
+inline void disableLasers()
 {
 	for (uint8_t i = 0; i < NUM_LASERS; i++)
 		laserArray[i].disableLaserLock();

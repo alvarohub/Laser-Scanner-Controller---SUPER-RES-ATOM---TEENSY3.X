@@ -3,6 +3,10 @@
    Author: Alvaro Cassinelli
 
    Version:
+   [15/6/2019] Security SHUTTER pin (an input TTL)
+      + Added securiy SHUTTER INPUT using external interrupts on pin 14
+      + Added STATE_SHUTTER command
+
    [18/1/2019] HUGE CHANGES:
       + more versatile communication protocol (preparing for ethernet)
       + A pipeline based (binary) sequencer capable of handling branching and parallel execution, with
@@ -58,7 +62,7 @@ void setup()
   PRINTLN("==== SYSTEM READY =========");
 
   // 4] Blink led to show everything went fine(needs to be called after setting pin modes)
-  Hardware::blinkLedDebug(4, 250000); // period in us
+  Hardware::blinkLedMessage(4, 250000); // period in us
 
   // Check FREE RAM in DEBUG mode:
   //PRINT("Free RAM: "); PRINT(Utils::freeRam()); PRINTLN(" bytes");
@@ -74,7 +78,6 @@ void setup()
 // ================== MAIN LOOP ==================
 void loop()
 {
-
 
   Com::update(); // configure in Com namespace which receiver to user (serial, osc, ethernet, bluetooth...)
 

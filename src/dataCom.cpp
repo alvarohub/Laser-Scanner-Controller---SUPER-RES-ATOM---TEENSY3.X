@@ -34,8 +34,11 @@ void init()
   // Default acknowledge mode:
   setAckMode(false);
 
-  //  while (!Serial)
-  //   ;
+ // NOTE: either wait for serial port before starting everything, or don't, but in this case the
+ // first report (ready) may not be seen... If there is ALWAYS a port that will be connected, then leaving
+ // this is good. 
+    while (!Serial)
+    ;
 
     PRINTLN("> SERIAL PORT READY");
 
