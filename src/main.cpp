@@ -57,7 +57,6 @@ void setup()
 
   PRINTLN("==== SYSTEM READY =========");
 
-
   // 4] Blink led to show everything went fine(needs to be called after setting pin modes)
   Hardware::blinkLedDebug(4, 250000); // period in us
 

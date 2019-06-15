@@ -529,7 +529,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       //PRINTLN("> EXECUTING... ");
       bool stateInputShutter = Hardware::InputShutter::getShutterState();
       PRINT(" STATE SHUTTER LOCK : ");
-      PRINTLN(stateInputShutter? "off (5V)" : "on (0V)"); // ATTN: inverted logic...
+      PRINTLN(stateInputShutter? "locked (5V)" : "unlocked (0V)"); // ATTN: inverted logic...
       execFlag = true;
     }
     else
@@ -970,7 +970,7 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
       }
       bool stateInputShutter = Hardware::InputShutter::getShutterState();
       PRINT(" 8- GLOBAL SHUTTER LOCK: ");
-      PRINTLN(stateInputShutter? "off (5V)" : "on (0V)"); // ATTN: inverted logic...
+      PRINTLN(stateInputShutter? "locked (5V)" : "unlocked (0V)"); // ATTN: inverted logic...
 
       execFlag = true;
     }

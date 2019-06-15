@@ -20,8 +20,8 @@ void init()
 #endif
 
 	Gpio::init();
-	InputShutter::init();
 	OptoTuners::init();
+	InputShutter::init();
 	Lasers::init(); // NOTE: initialize the shutters BEFORE initializing the lasers
 	Scanner::init();
 }
@@ -160,8 +160,9 @@ namespace InputShutter
 
 	void init() {
 		setPin(PIN_SHUTTER_INPUT);
-		startExtInterrupt(CHANGE);
 		state = getShutterState(); // initial state (it will be updated at the INTERRUPT CHANGE)
+		startExtInterrupt(CHANGE);
+		PRINTLN("> SHUTTER READY");
 	}
 
 	void setPin(uint8_t _pinInputShutter)
@@ -185,9 +186,16 @@ namespace InputShutter
 	void shutterCallback() {
 		// NOTE: here, we could do software debouncing/schmitt triggering...
 		state = getShutterState();
-		if (state) Lasers::disableAllLock();
-		else Lasers::enableAllLock();
+		if (state) { // state HIGH means disabling lasers
+			Lasers::disableAllLock();
+			digitalWrite(PIN_LED_DEBUG, LOW);
+		}
+		else {
+			Lasers::enableAllLock();
+			digitalWrite(PIN_LED_DEBUG, HIGH);;
+		}
 	}
+
 
 } // namespace InputShutter
 
