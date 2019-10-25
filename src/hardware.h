@@ -493,7 +493,7 @@ extern void println(String text);
 // *********** SD CARD STUFF *******************************
 namespace SDCard
 {
-
+#ifdef USING_SD_CARD
 const int chipSelect = BUILTIN_SDCARD;
 extern void init();
 extern String readScript(const String _nameFile);
@@ -501,7 +501,7 @@ extern String readScript(const String _nameFile);
 extern bool saveScript(String _nameFile);
 
 extern void printDirectory(File dir, uint8_t numTabs);
-
+#endif
 } // namespace SDCard
 
 } // namespace Hardware

@@ -7,6 +7,7 @@ namespace Hardware
 // ============================ Basic Harware namespace methods =====================
 void init()
 {
+
 #ifdef DEBUG_MODE_LCD
 	Lcd::init();
 #endif
@@ -15,15 +16,17 @@ void init()
 	Tft::init();
 #endif
 
+Gpio::init();
+OptoTuners::init();
+InputShutter::init();
+Lasers::init();							 // NOTE: initialize the shutters BEFORE initializing the lasers
+InputShutter::startExtInterrupt(CHANGE); // activate shutters interrupts AFTER lasers (because it will call lasers)
+Scanner::init();
+
 #ifdef USING_SD_CARD
 	SDCard::init();
 #endif
-	Gpio::init();
-	OptoTuners::init();
-	InputShutter::init();
-	Lasers::init(); // NOTE: initialize the shutters BEFORE initializing the lasers
-	InputShutter::startExtInterrupt(CHANGE); // activate shutters interrupts AFTER lasers (because it will call lasers)
-	Scanner::init();
+
 }
 
 //Software reset: better than using the RST pin (noisy?)
@@ -155,52 +158,58 @@ void init()
 namespace InputShutter
 {
 
-	uint8_t pinInputShutter;
-	volatile bool state;
+uint8_t pinInputShutter;
+volatile bool state;
 
-	void init() {
-		setPin(PIN_SHUTTER_INPUT);
+void init()
+{
+	setPin(PIN_SHUTTER_INPUT);
 
-		state = getShutterState(); // initial state (it will be updated at the INTERRUPT CHANGE)
-		digitalWrite(PIN_LED_DEBUG, state);
+	state = getShutterState(); // initial state (it will be updated at the INTERRUPT CHANGE)
+	digitalWrite(PIN_LED_DEBUG, state);
 
-		// startExtInterrupt(CHANGE); // should be called after shutter AND laser initialization
-		PRINTLN("> SHUTTER READY");
+	// startExtInterrupt(CHANGE); // should be called after shutter AND laser initialization
+	PRINTLN("> SHUTTER READY");
+}
+
+void setPin(uint8_t _pinInputShutter)
+{
+	pinInputShutter = _pinInputShutter;
+	pinMode(pinInputShutter, INPUT_PULLUP);
+	//ATTN: when nothing is connected, the shutter state will be HIGH. This is better than no pullup
+	// at all, but would mean inverted logic is better for security (by default, lasers disabled),
+	// but since there are others interlocks, I will use non-inverted logic (default: enabled)
+}
+
+void startExtInterrupt(uint8_t _mode)
+{
+	// state = getShutterState(); // at the init() (initial state - it will be updated at the INTERRUPT CHANGE)
+
+	// Attach the ISR (cannot be a class method, unless it is static!):
+	attachInterrupt(pinInputShutter, shutterCallback, _mode);
+}
+
+bool getShutterState()
+{
+	return (digitalRead(pinInputShutter));
+}
+
+void shutterCallback()
+{
+	// NOTE: here, we could do software debouncing/schmitt triggering...
+	state = getShutterState();
+	if (state)
+	{ // state HIGH means enabled lasers
+		Lasers::enableLasers();
+		digitalWrite(PIN_LED_DEBUG, HIGH);
 	}
-
-	void setPin(uint8_t _pinInputShutter)
+	else
 	{
-		pinInputShutter = _pinInputShutter;
-		pinMode(pinInputShutter, INPUT_PULLUP);
-		//ATTN: when nothing is connected, the shutter state will be HIGH. This is better than no pullup
-		// at all, but would mean inverted logic is better for security (by default, lasers disabled),
-		// but since there are others interlocks, I will use non-inverted logic (default: enabled)
+		Lasers::disableLasers();
+		digitalWrite(PIN_LED_DEBUG, LOW);
+		;
 	}
-
-	void startExtInterrupt(uint8_t _mode)
-	{
-		// state = getShutterState(); // at the init() (initial state - it will be updated at the INTERRUPT CHANGE)
-
-		// Attach the ISR (cannot be a class method, unless it is static!):
-		attachInterrupt(pinInputShutter, shutterCallback, _mode);
-	}
-
-	bool getShutterState() {
-		return (digitalRead(pinInputShutter));
-	}
-
-	void shutterCallback() {
-		// NOTE: here, we could do software debouncing/schmitt triggering...
-		state = getShutterState();
-		if (state) { // state HIGH means enabled lasers
-			Lasers::enableLasers();
-			digitalWrite(PIN_LED_DEBUG, HIGH);
-		}
-		else {
-			Lasers::disableLasers();
-			digitalWrite(PIN_LED_DEBUG, LOW);;
-		}
-	}
+}
 
 } // namespace InputShutter
 
@@ -271,7 +280,7 @@ void setState(bool _active)
 {
 	if (_active)
 		reset(); // this is optional (we could stop the sequencer, call reset and then re-activate it, but
-		// the cases where we may need NOT reseting are not very useful)
+				 // the cases where we may need NOT reseting are not very useful)
 	activeSequencer = _active;
 }
 
@@ -411,9 +420,9 @@ void displaySequencerStatus()
 			if (ptr_fromModule != NULL)
 			{
 				PRINT("     " + String(numCon++) + " : ");
-				PRINT(ptr_fromModule->getName());// + ptr_fromModule->getParamString());
+				PRINT(ptr_fromModule->getName()); // + ptr_fromModule->getParamString());
 				PRINT(" >> ");
-				PRINTLN(ptr_module->getName());// + ptr_module->getParamString());
+				PRINTLN(ptr_module->getName()); // + ptr_module->getParamString());
 			}
 		}
 	}
@@ -810,6 +819,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RS
 
 void init()
 {
+
 	// Use this initializer if you're using a 1.8" TFT
 	tft.initR(INITR_BLACKTAB); // initialize a ST7735S chip, black tab
 
@@ -854,13 +864,18 @@ namespace SDCard
 
 void init()
 {
-
+ #ifdef USING_SD_CARD
 	if (!SD.begin(chipSelect))
 		PRINTLN("> NO SD CARD or INIT FAILURE");
 	else
 		PRINTLN("> SD CARD PRESENT");
+ #else
+ 	PRINTLN("> NO SD CARD INITALIZED");
+ #endif
+
 }
 
+#ifdef USING_SD_CARD
 void printDirectory(File dir, uint8_t numTabs)
 {
 	while (true)
@@ -893,6 +908,7 @@ void printDirectory(File dir, uint8_t numTabs)
 		entry.close();
 	}
 }
+#endif
 
 } // namespace SDCard
 

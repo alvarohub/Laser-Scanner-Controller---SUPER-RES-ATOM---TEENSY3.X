@@ -48,8 +48,6 @@
 void setup()
 {
 
-  PRINTLN("==== CONFIGURING SYSTEM ====");
-
   // 1] INIT SERIAL COMMUNICATION
   Com::ReceiverSerial::init();
 

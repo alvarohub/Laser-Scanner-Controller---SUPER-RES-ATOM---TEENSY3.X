@@ -116,6 +116,7 @@ void addRecordingScript()
 // send to the parser, exactly as if it where typed on the serial port.
 String readScript(String _nameFile)
 {
+  #ifdef USING_SD_CARD
   _nameFile += ".txt";
   PRINTLN("-- READING : " + _nameFile);
 
@@ -139,10 +140,15 @@ String readScript(String _nameFile)
     msgString = "error";
   }
   return (msgString);
+  #else
+  PRINTLN("-- NO SD CARD INITIALIZED");
+  return ("error");
+  #endif
 }
 
 bool saveScript(String _nameFile)
 {
+  #ifdef USING_SD_CARD
   _nameFile += ".txt";
 
   bool execOk = false;
@@ -166,6 +172,11 @@ bool saveScript(String _nameFile)
     PRINTLN("> ERROR writing file!");
   }
   return (execOk);
+  #else
+  PRINTLN("-- NO SD CARD INITIALIZED");
+  return ("error");
+  #endif
+
 }
 
 // ***************************************************************************************************************
@@ -1782,16 +1793,21 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
   //#define SAVE_SCRIPT "SAVE_SCRIPT"
   else if (_cmdString == SAVE_SCRIPT)
   {
+     #ifdef USING_SD_CARD
     if (_numArgs == 1)
     {
       execFlag = saveScript(argStack[0]);
     }
     else
       PRINTLN("> BAD PARAMETERS");
+    #else
+    PRINTLN("> NO SD CARD INITIALIZED");
+#endif
   }
 
   else if (_cmdString == LIST_SD_PRM)
   {
+     #ifdef USING_SD_CARD
     if (_numArgs == 0)
     {
       File root;
@@ -1801,6 +1817,9 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     }
     else
       PRINTLN("> BAD PARAMETERS");
+    #else
+    PRINTLN("> NO SD CARD INITIALIZED");
+#endif
   }
 
   else if (_cmdString == SHOW_MEM_PRM)
