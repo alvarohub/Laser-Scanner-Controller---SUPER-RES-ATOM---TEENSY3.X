@@ -89,6 +89,9 @@ extern void addVertex(const P2 &_newPoint, uint16_t _manyTimes);
 // the former one [which may be of course a nice thing to compose
 // "scenes"]. However, since we are using a very simple renderer, there is
 // no blanking in between them nor special pose... beware!
+
+extern void addTrajectory(const P2 *trajectory, uint16_t _numPoints);
+
 extern void drawLine(
     const P2 &_fromPoint,
     const float _lenX, const float _lenY,

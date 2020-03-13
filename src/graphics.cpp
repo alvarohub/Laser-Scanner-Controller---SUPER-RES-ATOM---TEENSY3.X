@@ -91,7 +91,14 @@ void addVertex(const P2 &_newPoint, uint16_t _manyTimes)
 		addVertex(_newPoint);
 }
 
+void addTrajectory(const P2* trajectory, uint16_t _numPoints) {
+	for (uint16_t i = 0; i <= _numPoints; i++) {
+		addVertex(trajectory[i]);
+	}
+}
+
 // ======================== BASIC SHAPES ============================
+
 void drawLine(
 	const P2 &_fromPoint,
 	const float _lenX, const float _lenY,

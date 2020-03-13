@@ -1148,8 +1148,33 @@ bool interpretCommand(String _cmdString, uint8_t _numArgs, String argStack[])
     else
       PRINTLN("> BAD PARAMETERS");
   }
+  //================== GRAPHICS ============================
+ // ======================================================
+ else if (_cmdString == MAKE_POINT)
+  {
+    if ((_numArgs == 2) && Utils::areNumbers(_numArgs, argStack)) {
+        Graphics::updateScene();
+        Graphics::addVertex(P2(argStack[0].toFloat(), argStack[1].toFloat()));
+        Renderer2D::renderFigure();
+        execFlag = true;
+    }
+  }
+
+  else if (_cmdString == MAKE_TRAJECTORY)
+  {
+    if (!(_numArgs %2 ) && Utils::areNumbers(_numArgs, argStack)) {
+      Graphics::updateScene();
+        for (uint16_t i = 0; i < _numArgs; i+=2)
+        {
+          Graphics::addVertex(P2(argStack[i].toFloat(), argStack[i+1].toFloat()));
+        }
+        Renderer2D::renderFigure();
+        execFlag = true;
+    }
+  }
 
   // == MAKE LINE ==========================================
+
   else if (_cmdString == MAKE_LINE)
   {
     if (Utils::areNumbers(_numArgs, argStack))

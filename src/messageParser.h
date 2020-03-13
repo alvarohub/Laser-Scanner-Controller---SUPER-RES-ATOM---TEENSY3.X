@@ -232,6 +232,9 @@
 #define SET_INTER_POINT_BLANK "PTBLANK" // pt-to-pt blanking. ALWAYS affects all lasers for the time being.
 
 // c) Figure primitives:
+#define MAKE_POINT "POINT"
+#define MAKE_TRAJECTORY "TRAJECTORY"
+
 #define MAKE_LINE "LINE"      // Param: width,height,numpoints,LINE [from (0,0)] or posX,posY,length,height,numpoint,LINE
 #define MAKE_CIRCLE "CIRCLE"  // Param: radius,numpoints,CIRCLE ou X,Y,radius,numpoints,CIRCLE
 #define MAKE_RECTANGLE "RECT" // Param: width,height,numpointX,numPointX,RECT ou X,Y,width,height,numpointsX, numpointY,RECT
